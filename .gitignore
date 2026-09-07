@@ -1,0 +1,17 @@
+# Backend (Spring Boot / Maven)
+saas/target/
+saas/.mvn/
+saas/*.iml
+saas/.idea/
+saas/.env
+
+# Frontend (React)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env
+
+# General
+.DS_Store
+*.log
+.vscode/
