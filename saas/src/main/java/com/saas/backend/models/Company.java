@@ -20,6 +20,6 @@ public class Company extends BaseEntity {
 
     @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="subscription_plan_id")
     private SubscriptionPlan subscriptionPlan;
-
+    
     @Enumerated(EnumType.STRING) private SubscriptionStatus status;
 }
