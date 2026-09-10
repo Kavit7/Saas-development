@@ -32,6 +32,8 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth->auth
             .requestMatchers("/api/users/**","/api/v1/auth/**","/api/v1/**","/docs/**","/swagger-ui/**","/v3/api-docs/**")
             .permitAll()
+            .requestMatchers("/api/platform-admin/**")
+            .hasRole("super admin")
             .anyRequest()
             .authenticated())
             .sessionManagement(session->session

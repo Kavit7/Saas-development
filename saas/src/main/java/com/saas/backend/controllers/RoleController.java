@@ -2,6 +2,7 @@ package com.saas.backend.controllers;
 
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,13 +18,14 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor 
 
-@RequestMapping("/api/v1")
+@RequestMapping("/api/platform-admin")
 public class RoleController {
     
 
     private final RoleServiceImpl roleService;
 
 
+    @PreAuthorize ("hasRole('super admin')")
     @PostMapping("/roles")
     public ResponseEntity<?> createRole(@RequestBody RoleRequest roleRequest){
  

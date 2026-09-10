@@ -3,6 +3,11 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
 @Entity @Table(name="subscription_plans")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class SubscriptionPlan extends BaseEntity {
@@ -10,7 +15,7 @@ public class SubscriptionPlan extends BaseEntity {
     private BigDecimal price;
     private String currency;
     private Integer maxUsers;
-    @Column(columnDefinition="jsonb") private String features;
+    @JdbcTypeCode(SqlTypes.JSON) @Column(columnDefinition="jsonb") private JsonNode features;
     @Enumerated(EnumType.STRING) private SubscriptionStatus status;
     @Version private Integer version;
 }
