@@ -11,19 +11,16 @@ import org.springframework.web.bind.annotation.RestController;
 import com.saas.backend.dto.RoleRequest;
 import com.saas.backend.serviceImpl.RoleServiceImpl;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-
-
 @RequiredArgsConstructor 
-
+@SecurityRequirement(name="bearerAuth")
 @RequestMapping("/api/platform-admin")
 public class RoleController {
     
-
     private final RoleServiceImpl roleService;
-
 
     @PreAuthorize ("hasRole('super admin')")
     @PostMapping("/roles")
