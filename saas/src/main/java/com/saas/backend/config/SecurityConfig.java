@@ -33,7 +33,7 @@ public class SecurityConfig {
             .requestMatchers("/api/users/**","/api/v1/auth/**","/api/v1/**","/docs/**","/swagger-ui/**","/v3/api-docs/**")
             .permitAll()
             .requestMatchers("/api/platform-admin/**")
-            .hasRole("super admin")
+            .hasRole("SUPER_ADMIN")
             .anyRequest()
             .authenticated())
             .sessionManagement(session->session
