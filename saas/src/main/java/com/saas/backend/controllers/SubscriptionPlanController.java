@@ -12,13 +12,13 @@ import com.saas.backend.dto.SubscriptionRequest;
 import com.saas.backend.response.SubscriptionResponse;
 import com.saas.backend.serviceImpl.SubscriptionPlanServiceImpl;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 
 @RestController 
 @RequiredArgsConstructor 
-
-
-@RequestMapping("/api/v1/subscription-plans")
+@SecurityRequirement(name="bearerAuth")
+@RequestMapping("/api/platform-admin/subscription-plans")
 
 public class SubscriptionPlanController {
     private final SubscriptionPlanServiceImpl subscriptionPlanService;

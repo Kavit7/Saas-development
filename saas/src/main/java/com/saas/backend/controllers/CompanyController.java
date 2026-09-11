@@ -12,12 +12,13 @@ import com.saas.backend.dto.CompanyRequest;
 import com.saas.backend.response.CompanyResponse;
 import com.saas.backend.serviceImpl.CompanyServiceImpl;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 
 @RestController 
-
+@SecurityRequirement(name="bearerAuth")
 @RequiredArgsConstructor 
-@RequestMapping ("/api/v1/company")
+@RequestMapping ("/api/platform-admin/company")
 public class CompanyController {
 
 
