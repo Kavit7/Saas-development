@@ -22,7 +22,7 @@ public class RoleController {
     
     private final RoleServiceImpl roleService;
 
-    @PreAuthorize ("hasRole('super admin')")
+    @PreAuthorize ("hasRole('SUPER_ADMIN')")
     @PostMapping("/roles")
     public ResponseEntity<?> createRole(@RequestBody RoleRequest roleRequest){
  
