@@ -33,7 +33,8 @@ public class SecurityConfig {
         .cors(cors -> {})
             .csrf(csrf->csrf.disable())
             .authorizeHttpRequests(auth->auth
-            .requestMatchers("/api/users/**","/api/v1/auth/**","/docs/**","/swagger-ui/**","/v3/api-docs/**")
+              //this Url
+            .requestMatchers("/api/v1/auth/**","/api/v1/**","/docs/**","/swagger-ui/**","/v3/api-docs/**")
             .permitAll()
             .anyRequest()
             .authenticated())
