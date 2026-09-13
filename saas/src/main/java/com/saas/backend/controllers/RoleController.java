@@ -22,8 +22,9 @@ public class RoleController {
     
     private final RoleServiceImpl roleService;
 
-    @PreAuthorize ("hasRole('SUPER_ADMIN')")
+    
     @PostMapping("/roles")
+     @PreAuthorize ("hasRole('SUPER_ADMIN')")
     public ResponseEntity<?> createRole(@RequestBody RoleRequest roleRequest){
  
         try{

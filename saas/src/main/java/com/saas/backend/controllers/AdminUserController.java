@@ -18,21 +18,21 @@ import lombok.RequiredArgsConstructor;
 @RestController 
 @RequiredArgsConstructor 
 @SecurityRequirement(name="bearerAuth")
-@RequestMapping("/api/platform-admin")
+@RequestMapping("/api/users")
 public class AdminUserController {
     
     private final UserServiceImpl userServiceImpl;
     
 
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+   
     @PostMapping("/create_admin")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     ResponseEntity<?> createAdmin(UserRequest userRequest){
         try{
              UserResponse response= userServiceImpl.createAdmin(userRequest);
-           return ResponseEntity.ok(Map.of("message","Admin Added successfull ","id",response.getId(),"role",response.getRole(),"status",response.getStatus(),"created_at",response.getCreatedAt()));
+           return ResponseEntity.ok(Map.of("message","User Added successfull ","id",response.getId(),"role",response.getRole(),"status",response.getStatus(),"created_at",response.getCreatedAt()));
         } catch(Exception e){
            return  ResponseEntity.badRequest().body(e.getMessage());
         }
-
     }   
 }
