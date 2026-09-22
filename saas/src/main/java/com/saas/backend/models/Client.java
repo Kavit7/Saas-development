@@ -13,7 +13,7 @@ public class Client extends BaseEntity {
     private Company company;
     @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="sales_person_id")
     private User salesPerson;
-
+    
     @Column(nullable=false) private String firstName;
     @Column(nullable=false) private String lastName;
     private String email;
@@ -23,6 +23,5 @@ public class Client extends BaseEntity {
     private String countryOfResidence;
     @Column(columnDefinition="TEXT") private String notes;
     @Enumerated(EnumType.STRING) private ClientStatus status;
-
     @Version private Integer version;
 }

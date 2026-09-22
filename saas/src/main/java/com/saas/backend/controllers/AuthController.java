@@ -37,7 +37,44 @@ public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(
             Map.of(
                 "error", false,
-                "message", "Login successful",
+                "message", "Login Successfully",
+                "token", response.getToken()
+            )
+        );
+
+    } catch (UsernameNotFoundException e) {
+
+        return ResponseEntity.status(401).body(
+            Map.of(
+                "error", true,
+                "message", "Invalid email or password"
+            )
+        );
+
+    } catch (BadCredentialsException e) {
+
+        return ResponseEntity.status(401).body(
+            Map.of(
+                "error", true,
+                "message", "Invalid email or password"
+            )
+        );
+    }
+}
+
+
+
+   @PostMapping("/platform-admin/login")
+public ResponseEntity<?> platformLogin(@RequestBody LoginRequest request) {
+
+    try {
+
+        AuthResponse response = authService.platformAdminlogin(request);
+
+        return ResponseEntity.ok(
+            Map.of(
+                "error", false,
+                "message", "Login Successfully",
                 "token", response.getToken()
             )
         );

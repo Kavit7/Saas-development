@@ -19,8 +19,7 @@ public class SubscriptionPlanServiceImpl implements SubscriptionPlanService {
         
 
         try{
-
-        
+           
             SubscriptionPlan subscriptionPlan = new SubscriptionPlan();
             subscriptionPlan.setName(subscriptionRequest.getName());
             subscriptionPlan.setPrice(subscriptionRequest.getPrice());
