@@ -1,5 +1,6 @@
 package com.saas.backend.repositories;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,4 +13,5 @@ import com.saas.backend.models.Role;
 @Repository 
 public interface RoleRepository  extends JpaRepository<Role,UUID> {    
     Optional<Role> findByNameIgnoreCase(String name);
+    List<Role> findAll();
 }

@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.saas.backend.repositories.PlatformAdminRepository;
 import com.saas.backend.repositories.UserRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -23,17 +24,38 @@ public class ApplicationConfig {
 
 
   private final UserRepository userRepository;
+  private final PlatformAdminRepository platformAdminRepository;
+
+  //company authentication
 @Bean
 public UserDetailsService userDetailsService() {
      
   return username-> userRepository.findByEmailWithRole(username)
   .orElseThrow(()-> new UsernameNotFoundException("User not found"));
 }
+
 @Bean
-public AuthenticationProvider authenticationProvider() {
+public UserDetailsService platformAdminDetailsService() {
+     
+  return username-> platformAdminRepository.findByEmail(username)
+  .orElseThrow(()-> new UsernameNotFoundException("Platform Admin not found"));
+}
+
+@Bean
+public AuthenticationProvider companyAuthenticationProvider() {
 
     DaoAuthenticationProvider provider =
     new DaoAuthenticationProvider(userDetailsService());
+    provider.setPasswordEncoder(passwordEncoder());
+    return provider;
+}
+
+
+@Bean
+public AuthenticationProvider platformAdminAuthenticationProvider() {
+
+    DaoAuthenticationProvider provider =
+    new DaoAuthenticationProvider(platformAdminDetailsService());
     provider.setPasswordEncoder(passwordEncoder());
     return provider;
 }
@@ -42,8 +64,6 @@ public AuthenticationProvider authenticationProvider() {
     return config.getAuthenticationManager();
 
   }
-
-
 
   @Bean
   public PasswordEncoder passwordEncoder(){

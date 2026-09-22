@@ -1,5 +1,7 @@
 package com.saas.backend.serviceImpl;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.saas.backend.dto.RoleRequest;
@@ -36,6 +38,17 @@ public class RoleServiceImpl implements RoleService {
         }catch(Exception e){
             throw new RuntimeException("Error creating role: " + e.getMessage());
         }
+    }
+
+
+    public List<Role> getRoles(){
+       try{
+        List<Role> role = roleRepository.findAll();
+        return role;
+       }
+       catch(Exception e){
+        throw new RuntimeException(e.getMessage());
+       }
     }
     
 }

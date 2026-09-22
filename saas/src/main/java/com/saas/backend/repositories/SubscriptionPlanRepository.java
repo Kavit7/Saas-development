@@ -13,6 +13,6 @@ import com.saas.backend.models.SubscriptionPlan;
 @Repository 
 public interface SubscriptionPlanRepository extends JpaRepository<SubscriptionPlan, UUID> {
     
-   Optional<SubscriptionPlan> findByName(String name);
+   Optional<SubscriptionPlan> findByNameIgnoreCase(String name);
    SubscriptionPlan findSubscriptionPlanById(UUID id);
 }

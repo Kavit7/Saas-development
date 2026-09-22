@@ -8,7 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.access.AccessDeniedException;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +16,8 @@ import com.saas.backend.dto.CompanyRequest;
 import com.saas.backend.dto.CompanyUpdate;
 import com.saas.backend.models.Company;
 import com.saas.backend.models.SubscriptionPlan;
-import com.saas.backend.models.User;
 import com.saas.backend.repositories.CompanyRepository;
+import com.saas.backend.repositories.PlatformAdminRepository;
 import com.saas.backend.repositories.SubscriptionPlanRepository;
 import com.saas.backend.repositories.UserRepository;
 import com.saas.backend.response.CompanyResponse;
@@ -25,15 +25,14 @@ import com.saas.backend.service.CompanyService;
 
 import lombok.RequiredArgsConstructor;
 
-
 @Service 
 @RequiredArgsConstructor
 
 public class CompanyServiceImpl implements CompanyService {
-     
        private final CompanyRepository companyRepository;
        private final UserRepository userRepository;
        private final SubscriptionPlanRepository subscriptionPlanRepository;
+       private final PlatformAdminRepository adminRepository;
 
    public  CompanyResponse createCompany(CompanyRequest companyRequest){
        
@@ -43,7 +42,7 @@ public class CompanyServiceImpl implements CompanyService {
             throw new RuntimeException("Error obtained:-"+companyRequest.getName()+"is already Present" );
         }
     String slug = generateSlug(companyRequest.getName());
-    SubscriptionPlan sbp= subscriptionPlanRepository.findSubscriptionPlanById(companyRequest.getSubscription_plan_id());
+    SubscriptionPlan sbp= subscriptionPlanRepository.findByNameIgnoreCase(companyRequest.getSubscription_plan()).orElseThrow(()-> new RuntimeException("No plan found change the plan"));
     Company company = new Company();
 
       company.setEmail(companyRequest.getEmail());
@@ -91,16 +90,7 @@ public class CompanyServiceImpl implements CompanyService {
     public Company getCompanyDetailsByIdOrName(UUID id, String Name,Authentication auth){
     try{
         Company company =companyRepository.findByIdOrName(id, Name).orElseThrow(()-> new RuntimeException("No company found"));
-        // Lets check if your the Owner or your super admin or reservation Manager
-        boolean isAdmin= getUserAuthority(auth);
-        UUID currentUserId= userRepository.findByEmail(auth.getName()).orElseThrow().getId();
 
-        //check your the owner
-        User user= userRepository.findUserById(currentUserId);
-        boolean isOwner= user.getId().equals(company.getId());
-        if (!isAdmin && !isOwner){
-            throw new AccessDeniedException("Dear user with Email: " +user.getEmail()+" You can't view Details with different Company");
-        }
         return  company;
     }
     catch(Exception e){
@@ -140,9 +130,9 @@ public class CompanyServiceImpl implements CompanyService {
             .replaceAll("[^a-z0-9]+", "-")
             .replaceAll("^-|-$", "");
     }
-    
-    private boolean getUserAuthority(Authentication auth){
-  boolean isAdmin = auth.getAuthorities().stream().anyMatch(a->a.getAuthority().equals("ROLE_SUPER_ADMIN"));
-  return isAdmin;
-    }
+
+//   private boolean getUserAuthority(Authentication auth){
+//   boolean isAdmin = auth.getAuthorities().stream().anyMatch(a->a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+//   return isAdmin;
+//     }
 }

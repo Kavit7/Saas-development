@@ -14,5 +14,5 @@ public class Guest extends BaseEntity {
     private String nationality;
     private String passportNumber;
     private LocalDate passportExpiry;
-    private String gender;
+    @Enumerated(EnumType.STRING) private Gender gender;
 }

@@ -1,8 +1,6 @@
 package com.saas.backend.dto;
 
 
-import com.saas.backend.models.Company;
-import com.saas.backend.models.Role;
 import com.saas.backend.models.UserStatus;
 
 import jakarta.validation.constraints.Email;
@@ -14,6 +12,7 @@ import lombok.Data;
 @Data 
 @AllArgsConstructor 
 public class UserRequest {
+    
     private String companyName;
     private String firstName;
     private String lastName;
