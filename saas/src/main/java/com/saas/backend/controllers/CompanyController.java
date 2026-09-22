@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,7 +37,7 @@ public class CompanyController {
      private final CompanyServiceImpl companyService;
       @PostMapping("/create")
       @PreAuthorize("hasRole('SUPER_ADMIN')")
-       ResponseEntity<?> createCompany(CompanyRequest companyRequest){
+       ResponseEntity<?> createCompany(@RequestBody CompanyRequest companyRequest){
           try{
            CompanyResponse response= companyService.createCompany(companyRequest);
 
@@ -82,7 +83,7 @@ public class CompanyController {
 
         @PutMapping("/company/edit")
          @PreAuthorize("hasRole('SUPER_ADMIN')")
-         ResponseEntity<?> editCompany(UUID id, CompanyUpdate update){
+         ResponseEntity<?> editCompany(@RequestBody UUID id, CompanyUpdate update){
             try {
                 Company upd = companyService.updateCompany(id, update);
                 return ResponseEntity.ok(Map.of("message","Updated Successfully","data",upd));

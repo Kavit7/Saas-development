@@ -1,5 +1,6 @@
 package com.saas.backend.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -20,7 +21,12 @@ public class SecurityConfig {
 
   private final JwtAuthFilter jwtAuthFilter;
 
-  private final AuthenticationProvider authenticationProvider;
+
+
+  @Qualifier("companyAuthenticationProvider")
+  private final AuthenticationProvider companyAuthenticationProvider;
+  @Qualifier("platformAdminAuthenticationProvider")
+  private final AuthenticationProvider platformAdminAuthenticationProvider;
 
 
 
@@ -32,13 +38,14 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
         .cors(cors -> {})
             .authorizeHttpRequests(auth->auth
-            .requestMatchers("/api/v1/auth/**","/api/v1/**","/docs/**","/swagger-ui/**","/v3/api-docs/**")
+            .requestMatchers("/api/v1/auth/**","/docs/**","/swagger-ui/**","/v3/api-docs/**")
             .permitAll()
             .anyRequest()
             .authenticated())
             .sessionManagement(session->session
             .sessionCreationPolicy( SessionCreationPolicy.STATELESS))
-            .authenticationProvider(authenticationProvider)
+            .authenticationProvider(companyAuthenticationProvider)
+            .authenticationProvider(platformAdminAuthenticationProvider)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();   
 }
