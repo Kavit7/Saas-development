@@ -23,13 +23,12 @@ import lombok.RequiredArgsConstructor;
 public class PlatformAdminController {
 private final PlatformAdminServiceImpl adminServiceImpl;
 
-
     @PostMapping ("/create")
     @PreAuthorize ("hasRole('SUPER_ADMIN')")
     ResponseEntity<?> createPlatformAdmin(@RequestBody PlatformAdminRequest request){
 
         try{
-            PlatformAdminResponse response= adminServiceImpl.createPlatformAdmin(request);
+            PlatformAdminResponse response = adminServiceImpl.createPlatformAdmin(request);
             return ResponseEntity.ok(Map.of("Message", "platform admin created successfully", "id",response.getId(),"role",response.getRole()));
         }
         catch(Exception e){

@@ -1,4 +1,9 @@
 package com.saas.backend.models;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -9,6 +14,13 @@ public class AccommodationRequirement extends BaseEntity {
     private Safari safari;
     @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="itinerary_day_id", nullable=false)
     private ItineraryDay itineraryDay;
+    @OneToMany(
+        mappedBy = "accommodationRequirement",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true
+  )
+    @JsonManagedReference
+    private List<RoomRequirement> rooms = new ArrayList<>();
     private String destination;
     @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="required_category_id")
     private PropertyCategory requiredCategory;
@@ -17,6 +29,6 @@ public class AccommodationRequirement extends BaseEntity {
     private Integer numberOfRooms;
     @Column(columnDefinition="TEXT") private String roomPreferences;
     @Column(columnDefinition="TEXT") private String specialRequests;
-    private String status;
+    @Enumerated(EnumType.STRING) private AccomodationRequirmentStatus accomodationRequirmentStatus;
     @Version private Integer version;
 }

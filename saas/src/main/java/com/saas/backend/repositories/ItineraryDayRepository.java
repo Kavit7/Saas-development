@@ -15,4 +15,5 @@ import com.saas.backend.models.ItineraryDay;
 public interface ItineraryDayRepository extends JpaRepository<ItineraryDay,UUID> {
     List<ItineraryDay> findBySafariId(UUID safarId);
    Optional< ItineraryDay>findByIdAndSafariId(UUID itineraryId, UUID safariId);
+   List<ItineraryDay> findBySafariIdOrderByDayNumberAsc(UUID safariId);
 }
