@@ -4,24 +4,34 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
-
+import java.time.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saas.backend.AccessHelper.CompanyAccessValidator;
 import com.saas.backend.Exception.ResourceNotFoundException;
 import com.saas.backend.dto.ItineraryDayUpdateRequest;
+import com.saas.backend.dto.ItineraryRequest;
 import com.saas.backend.dto.ItineraryUpdateRequest;
 import com.saas.backend.dto.SafariRequest;
 import com.saas.backend.models.Client;
 import com.saas.backend.models.ItineraryDay;
 import com.saas.backend.models.Safari;
 import com.saas.backend.models.SafariStatus;
+import com.saas.backend.models.User;
 import com.saas.backend.repositories.ClientRepository;
 import com.saas.backend.repositories.GuestRepository;
 import com.saas.backend.repositories.ItineraryDayRepository;
 import com.saas.backend.repositories.SafariRepository;
 import com.saas.backend.service.SafariService;
+import com.saas.backend.specification.SafariSpecification;
 
 import lombok.RequiredArgsConstructor;
 
@@ -139,6 +149,125 @@ for (int i=0; i<7; i++){
             itineraryDayRepository.save(day);
          }
 
-    }  
+    } 
+    
+    
+
+    @Transactional
+    public void deleteItineraryDay(UUID safariId, UUID dayId) {
+
+    Safari safari = safariRepository.findById(safariId)
+            .orElseThrow(() -> new ResourceNotFoundException("Safari not found"));
+
+    ItineraryDay day = itineraryDayRepository
+            .findByIdAndSafariId(dayId, safariId)
+            .orElseThrow(() -> new ResourceNotFoundException("Itinerary day not found"));
+
+    itineraryDayRepository.delete(day);
+
+    List<ItineraryDay> days =
+            itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safariId);
+
+    int dayNumber = 1;
+    LocalDate date = safari.getStartDate();
+
+    for (ItineraryDay itineraryDay : days) {
+        itineraryDay.setDayNumber(dayNumber);
+        itineraryDay.setDate(date);
+
+        dayNumber++;
+        date = date.plusDays(1);
+    }
+
+    itineraryDayRepository.saveAll(days);
+
+    safari.setEndDate(date.minusDays(1));
+    safariRepository.save(safari);
+}
+
+
+
+    @Transactional
+    public void updateItineraryDay(
+        UUID safariId,
+        UUID dayId,
+        ItineraryRequest request) {
+
+    Safari safari = safariRepository.findById(safariId)
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("Safari not found"));
+
+    ItineraryDay day = itineraryDayRepository
+            .findByIdAndSafariId(
+                    dayId,
+                    safariId
+            )
+            .orElseThrow(() ->
+                    new ResourceNotFoundException("Itinerary day not found"));
+
+    day.setDestination(request.getDestination());
+    day.setNotes(request.getNotes());
+
+    itineraryDayRepository.save(day);
+}
+
+
+
+
+
+    @Override
+    public Page<Safari> getAllSafari(int page,int size,String sortBy,String search,String direction,SafariStatus status, LocalDate startDate,LocalDate endDate) {
+          Authentication auth= SecurityContextHolder.getContext().getAuthentication();
+
+          User user =(User) auth.getPrincipal();
+          if (auth == null || !auth.isAuthenticated()){
+              throw new ResourceNotFoundException("User not found");
+          }
+
+          //sort 
+          Sort sort = direction.equalsIgnoreCase("desc") ?
+          Sort.by(sortBy).descending(): Sort.by(sortBy).ascending(); 
+
+          Pageable pageable= PageRequest.of(page,size,sort);
+
+
+          Specification specification;
+           
+          specification =SafariSpecification.hasCompany(user.getCompany().getId());
+
+
+
+          if (search !=null && !search.isBlank()){
+              specification=specification.and(SafariSpecification.hasStatus(status));
+          }
+
+          if (startDate != null){
+            specification=specification.and(SafariSpecification.hasStartDate(startDate));
+          }
+           
+          if (endDate != null){
+            specification=specification.and(SafariSpecification.hasEndDate(endDate));
+          }
+
+
+          
+
+          return safariRepository.findAll(specification,pageable);
+        
+
+        
+    }
+
+
+
+
+
+   
+
+
+
+
+
+  
 
 }
