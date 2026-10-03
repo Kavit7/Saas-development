@@ -84,8 +84,12 @@ const Layout = () => {
                         : "text-white/90 hover:bg-white/15 hover:text-white"
                     }`}
                   >
-                    <span>{config.icon}</span>
-                    <span>{config.label}</span>
+                    <span className="flex items-center justify-center">
+                      {config.icon && (
+                        <config.icon size={20} aria-hidden="true" />
+                      )}
+                    </span>
+                    <span>{config.label ?? config.title ?? key}</span>
                   </div>
                 )}
               </NavLink>
