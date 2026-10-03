@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -30,7 +30,7 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 
 @RestController 
-@RequestMapping("/api")
+// @RequestMapping("/api")
 @RequiredArgsConstructor 
 @SecurityRequirement(name="bearerAuth")
 public class ClientController {
@@ -38,12 +38,11 @@ public class ClientController {
 
     private final ClientServiceImpl clientService;
     
-
-    @PostMapping("/client")
+    @PostMapping("/clients/{salesPersonId}")
     @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
-    ResponseEntity<?> createClient( @RequestBody ClientRequest request){
+    ResponseEntity<?> createClient(@PathVariable UUID salesPersonId, @RequestBody ClientRequest request){
         try{
-             ClientResponse client = clientService.createClient(request);
+             ClientResponse client = clientService.createClient(salesPersonId, request);
              return ResponseEntity.ok(Map.of("message","Client added successfully", "clientId",client.getId(),"companyName",client.getCompanyName(),"salePerson",client.getSalePeson(),"createdAt",client.getCreatedAt()
             ));
         }
@@ -55,7 +54,7 @@ public class ClientController {
 
         @GetMapping("/clients")
         @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
-         ResponseEntity<?> getClients(
+         ResponseEntity<Page<Client>> getClients(
             Authentication auth,
             @RequestParam (defaultValue = "0") int page,
             @RequestParam (defaultValue = "20") int size,
@@ -64,13 +63,10 @@ public class ClientController {
             @RequestParam (defaultValue="asc") String direction,
             @RequestParam(defaultValue = "ACTIVE") ClientStatus status
          ){
-
-              try {
-             Page client = clientService.getClients(auth, page, size, sortBy, search, direction, status);
-             return ResponseEntity.ok(Map.of("message","Loaded successfully", "data",client));
-        } catch (Exception e) {
-           return ResponseEntity.badRequest().body(e.getMessage());
-        }
+              
+             Page<Client> client = clientService.getClients(auth, page, size, sortBy, search, direction, status);
+             return ResponseEntity.ok(client);
+    
          }
 
 

@@ -43,12 +43,12 @@ public class ClientServiceImpl implements ClientService{
     private final GuestRepository guestRepository;
     private final CompanyAccessValidator companyAccessValidator;
 
-    public ClientResponse createClient(ClientRequest request){
+    public ClientResponse createClient(UUID salesPersonId, ClientRequest request){
         try{
 
     // logic to get the company id and verify sales person with valid id 
 
-    User user = userRepository.findById(request.getSaleId()).orElseThrow(()-> new RuntimeException("The id is not valid for the sale person"));
+    User user = userRepository.findById(salesPersonId).orElseThrow(()-> new RuntimeException("The id is not valid for the sale person"));
 
 
     //block admin to add client to its own id 
@@ -75,7 +75,7 @@ public class ClientServiceImpl implements ClientService{
     client.setNotes(request.getNotes());
     client.setLastName(request.getLastName());
     client.setNationality(request.getNationality());
-    client.setStatus(request.getStatus().ACTIVE);
+    client.setStatus(request.getStatus());
 
     // save to database 
     clientRepository.save(client);
