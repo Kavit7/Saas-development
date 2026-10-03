@@ -1,6 +1,5 @@
-import React from "react";
 import { decorations } from "../../config/decorations";
-import { useAuth } from "../../context/AuthProvider";
+import { useAuth } from "../../hooks/useAuth";
 
 const DynamicTable = ({
   title,
@@ -95,27 +94,28 @@ const DynamicTable = ({
                 </td>
               </tr>
             ) : (
-              safeItems.map((item, index) => (
-                <tr key={index} className="transition hover:bg-[#101B82]/5">
+              safeItems.map((item) => (
+                <tr key={item.id ?? item._id ?? JSON.stringify(item)} className="border-b border-[#211917]/5 last:border-b-0">
                   {safeFields.map((field) => (
                     <td
-                      key={field.name}
-                      className="border-b border-[#211917]/5 px-3 py-3 align-top text-sm text-[#211917] sm:px-4"
+                      key={`${item.id ?? item._id ?? JSON.stringify(item)}-${field.name}`}
+                      className="px-3 py-3 align-middle text-[#211917] sm:px-4"
                     >
-                      {renderCell(item?.[field.name], field)}
+                      {renderCell(item[field.name], field)}
                     </td>
                   ))}
+
                   {visibleActions.length > 0 && (
-                    <td className="border-b border-[#211917]/5 px-3 py-3 align-top sm:px-4">
+                    <td className="px-3 py-3 align-middle sm:px-4">
                       <div className="flex flex-wrap gap-2">
                         {visibleActions.map((action) => (
                           <button
                             key={action.key}
                             type="button"
                             onClick={() => onAction(action.key, item)}
-                            className={`rounded-md px-2.5 py-1.5 text-xs font-semibold shadow-sm transition ${getActionClass(action.key)}`}
+                            className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${getActionClass(action.key)}`}
                           >
-                            {action.label}
+                            {action.label || action.key}
                           </button>
                         ))}
                       </div>

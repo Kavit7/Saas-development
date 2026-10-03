@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { useContext, createContext } from "react";
+import { createContext, useEffect, useState } from "react";
 
 import { loginAuth } from "../api/api";
 import { jwtDecode } from "jwt-decode";
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 const AuthProvider = ({ children }) => {
   const [user, setUser] = useState({
@@ -13,20 +12,15 @@ const AuthProvider = ({ children }) => {
     role_name: "",
   });
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState(localStorage.getItem("token"));
-  const [data, setData] = useState(null);
+  const [token, setToken] = useState(() => localStorage.getItem("token"));
 
   const login = async (payloads) => {
     setLoading(true);
     try {
-      const data = await loginAuth(payloads);
+      const response = await loginAuth(payloads);
 
-      setData(data);
-      console.log(data);
-
-      localStorage.setItem("token", data.token);
-
-      setToken(data.token);
+      localStorage.setItem("token", response.token);
+      setToken(response.token);
     } catch (error) {
       setUser(null);
       throw error;
@@ -38,6 +32,7 @@ const AuthProvider = ({ children }) => {
   const logout = async () => {
     setUser(null);
     localStorage.removeItem("token");
+    setToken(null);
   };
 
   const hasAccess = (allowedRoles) => {
@@ -45,16 +40,25 @@ const AuthProvider = ({ children }) => {
     return allowedRoles.includes(user?.role_name);
   };
 
-  console.log(user);
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setUser(null);
+      return;
+    }
 
-    const decode = jwtDecode(token);
-    setUser({
-      sub: decode.sub,
-      companyId: decode.companyId,
-      role_name: decode.role_name,
-    });
+    try {
+      const decode = jwtDecode(token);
+      setUser({
+        sub: decode.sub,
+        companyId: decode.companyId,
+        role_name: decode.role_name,
+      });
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+      setUser(null);
+      localStorage.removeItem("token");
+      setToken(null);
+    }
   }, [token]);
 
   const can = (action, permissions) => {
@@ -76,6 +80,5 @@ const AuthProvider = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-export const useAuth = () => useContext(AuthContext);
 
 export default AuthProvider;

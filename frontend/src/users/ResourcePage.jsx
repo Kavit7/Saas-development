@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+
 import DynamicTable from "../components/tables/DynamicTable";
-import { useAuth } from "../context/AuthProvider";
+import { useAuth } from "../hooks/useAuth";
 import { getAllData } from "../api/api";
 
 const ResourcePage = ({ title, fields, table, permissions }) => {
@@ -10,8 +11,7 @@ const ResourcePage = ({ title, fields, table, permissions }) => {
   const [items, setItems] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState(
-    table?.filters?.find((filter) => filter.key === "status")?.defaultValue ||
-      "",
+    table?.filters?.find((filter) => filter.key === "status")?.defaultValue || "",
   );
   const [page, setPage] = useState(0);
   const [pageInfo, setPageInfo] = useState({
@@ -21,45 +21,45 @@ const ResourcePage = ({ title, fields, table, permissions }) => {
     size: 20,
   });
 
-  const loadData = async () => {
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        size: "20",
-        sortBy: "createdAt",
-        direction: "asc",
-      });
-
-      if (searchTerm.trim()) {
-        params.set("search", searchTerm.trim());
-      }
-
-      if (statusFilter) {
-        params.set("status", statusFilter);
-      }
-
-      const data = await getAllData(`/${resource}?${params.toString()}`, token);
-      const result = Array.isArray(data?.content)
-        ? data.content
-        : Array.isArray(data)
-          ? data
-          : [];
-
-      setItems(result);
-      setPageInfo({
-        totalPages: data?.totalPages || 1,
-        totalElements: data?.totalElements || result.length,
-        number: data?.number ?? page,
-        size: data?.size || 20,
-      });
-    } catch (error) {
-      console.log(error);
-      setItems([]);
-      setPageInfo({ totalPages: 1, totalElements: 0, number: 0, size: 20 });
-    }
-  };
-
   useEffect(() => {
+    const loadData = async () => {
+      try {
+        const params = new URLSearchParams({
+          page: String(page),
+          size: "20",
+          sortBy: "createdAt",
+          direction: "asc",
+        });
+
+        if (searchTerm.trim()) {
+          params.set("search", searchTerm.trim());
+        }
+
+        if (statusFilter) {
+          params.set("status", statusFilter);
+        }
+
+        const data = await getAllData(`/${resource}?${params.toString()}`, token);
+        const result = Array.isArray(data?.content)
+          ? data.content
+          : Array.isArray(data)
+            ? data
+            : [];
+
+        setItems(result);
+        setPageInfo({
+          totalPages: data?.totalPages || 1,
+          totalElements: data?.totalElements || result.length,
+          number: data?.number ?? page,
+          size: data?.size || 20,
+        });
+      } catch (error) {
+        console.log(error);
+        setItems([]);
+        setPageInfo({ totalPages: 1, totalElements: 0, number: 0, size: 20 });
+      }
+    };
+
     loadData();
   }, [resource, token, searchTerm, statusFilter, page]);
 

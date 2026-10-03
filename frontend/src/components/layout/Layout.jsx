@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+
 import { resources } from "../../config/resources";
-import { useAuth } from "../../context/AuthProvider";
 import Header from "../others/Header";
+import { useAuth } from "../../hooks/useAuth";
 
 const Layout = () => {
   const { hasAccess } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // close sidebar with the Escape key
   useEffect(() => {
-    const handleKey = (e) => {
-      if (e.key === "Escape") setSidebarOpen(false);
+    const handleKey = (event) => {
+      if (event.key === "Escape") setSidebarOpen(false);
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
@@ -19,7 +19,6 @@ const Layout = () => {
 
   return (
     <div className="h-screen w-full overflow-hidden bg-white font-serif">
-      {/* mobile overlay */}
       {sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
@@ -28,24 +27,22 @@ const Layout = () => {
         />
       )}
 
-      {/* sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex h-screen w-[270px] shrink-0 transform flex-col overflow-y-auto border-r border-[#211917]/10 bg-[#101B82] px-5 py-6 text-white transition-transform duration-300 md:w-[260px] md:translate-x-0 lg:w-[300px] ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="mb-3 flex items-center justify-between">
-          <div className="flex font-serif items-center">
-            <span className="text-5xl text-black bg-white p-1 rounded-[15px] mr-2">
+          <div className="flex items-center font-serif">
+            <span className="mr-2 rounded-[15px] bg-white p-1 text-5xl text-black">
               SS
             </span>
             <div className="grid grid-cols">
-              <p className="tracking-[1.5px] font-bold">Safari Sales</p>
+              <p className="font-bold tracking-[1.5px]">Safari Sales</p>
               <p className="text-sm text-white/70">Operations</p>
             </div>
           </div>
 
-          {/* close button (below md only) */}
           <button
             onClick={() => setSidebarOpen(false)}
             className="flex h-9 w-9 items-center justify-center rounded-full text-white transition hover:bg-white/15 md:hidden"
@@ -70,7 +67,7 @@ const Layout = () => {
 
         <div className="mt-6 h-px w-full bg-white/15" />
 
-        <nav className="space-y-2 mt-6 flex-1">
+        <nav className="mt-6 flex flex-1 flex-col space-y-2">
           {Object.entries(resources)
             .filter(([, filter]) => hasAccess(filter.roles))
             .map(([key, config]) => (
@@ -81,21 +78,14 @@ const Layout = () => {
               >
                 {({ isActive }) => (
                   <div
-                    className={`flex items-center gap-3 px-4 py-2.5 text-sm font-semibold transition rounded-[10px] ${
+                    className={`flex items-center gap-3 rounded-[10px] px-4 py-2.5 text-sm font-semibold transition ${
                       isActive
                         ? "bg-white text-[#101B82] shadow-sm"
                         : "text-white/90 hover:bg-white/15 hover:text-white"
                     }`}
                   >
-                    {config.icon && (
-                      <config.icon
-                        size={20}
-                        weight={isActive ? "fill" : "regular"}
-                        aria-hidden="true"
-                        className="shrink-0"
-                      />
-                    )}
-                    {config.title}
+                    <span>{config.icon}</span>
+                    <span>{config.label}</span>
                   </div>
                 )}
               </NavLink>
@@ -103,13 +93,10 @@ const Layout = () => {
         </nav>
       </aside>
 
-      {/* main area */}
-      <div className="flex h-screen flex-col bg-white md:ml-[260px] lg:ml-[300px]">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 text-[#211917] sm:p-5 md:p-6 lg:p-8">
-          <div className="mx-auto w-full max-w-full">
-            <Outlet />
-          </div>
+      <div className="flex h-full flex-col md:pl-[260px] lg:pl-[300px]">
+        <Header onMenuClick={() => setSidebarOpen((prev) => !prev)} />
+        <main className="flex-1 overflow-y-auto bg-[#F8F8FC] p-4 sm:p-6">
+          <Outlet />
         </main>
       </div>
     </div>

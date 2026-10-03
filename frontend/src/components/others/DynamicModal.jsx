@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 
 const modalStyles = {
   error: {
@@ -66,7 +66,7 @@ const DynamicModal = ({
           type="button"
           onClick={onClose}
           aria-label="Funga ujumbe"
-          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#101B82]/10"
+          className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-4 focus:ring-slate-200"
         >
           <svg
             viewBox="0 0 24 24"

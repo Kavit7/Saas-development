@@ -1,41 +1,42 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../context/AuthProvider";
+
+import { useAuth } from "../../hooks/useAuth";
 
 const Header = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(null);
-
   const [notifications, setNotifications] = useState([]);
-
   const wrapperRef = useRef(null);
 
   const displayName = user?.name || user?.email || "User";
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
         setOpenMenu(null);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const toggle = (menu) => setOpenMenu((prev) => (prev === menu ? null : menu));
+  const toggle = (menu) =>
+    setOpenMenu((prev) => (prev === menu ? null : menu));
 
   const handleRead = (id) => {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
+      prev.map((notification) =>
+        notification.id === id ? { ...notification, read: true } : notification,
+      ),
     );
   };
 
   const handleReadAll = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
   };
 
   const handleLogout = async () => {
@@ -48,9 +49,7 @@ const Header = ({ onMenuClick }) => {
 
   return (
     <header className="sticky top-0 z-30 flex h-[72px] w-full items-center justify-between border-b border-[#211917]/10 bg-white px-3 sm:px-6 md:px-8">
-      {/* LEFT */}
       <div className="flex min-w-0 max-w-[60%] items-center gap-2 sm:gap-3">
-        {/* Hamburger */}
         <button
           onClick={onMenuClick}
           className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[#211917]/10 text-[#101B82] transition hover:bg-[#101B82]/10 md:hidden"
@@ -72,7 +71,6 @@ const Header = ({ onMenuClick }) => {
           </svg>
         </button>
 
-        {/* Title */}
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-[#101B82] sm:text-lg">
             Safari Sales
@@ -84,12 +82,10 @@ const Header = ({ onMenuClick }) => {
         </div>
       </div>
 
-      {/* RIGHT */}
       <div
         ref={wrapperRef}
         className="flex shrink-0 items-center gap-1.5 sm:gap-3"
       >
-        {/* Notifications */}
         <div className="relative">
           <button
             onClick={() => toggle("notifications")}
@@ -121,9 +117,7 @@ const Header = ({ onMenuClick }) => {
           {openMenu === "notifications" && (
             <div className="fixed left-3 right-3 top-[80px] z-50 overflow-hidden rounded-[12px] border border-[#211917]/10 bg-white shadow-lg sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-3 sm:w-80">
               <div className="flex items-center justify-between gap-3 border-b border-[#211917]/10 px-4 py-3">
-                <p className="text-sm font-bold text-[#211917]">
-                  Notifications
-                </p>
+                <p className="text-sm font-bold text-[#211917]">Notifications</p>
 
                 {unreadCount > 0 && (
                   <button
@@ -141,28 +135,28 @@ const Header = ({ onMenuClick }) => {
                     No notifications yet
                   </p>
                 ) : (
-                  notifications.map((n) => (
+                  notifications.map((notification) => (
                     <button
-                      key={n.id}
-                      onClick={() => handleRead(n.id)}
+                      key={notification.id}
+                      onClick={() => handleRead(notification.id)}
                       className={`flex w-full items-start gap-3 border-b border-[#211917]/5 px-4 py-3 text-left transition hover:bg-[#101B82]/5 ${
-                        n.read ? "" : "bg-[#101B82]/5"
+                        notification.read ? "" : "bg-[#101B82]/5"
                       }`}
                     >
                       <span
                         className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                          n.read ? "bg-transparent" : "bg-[#101B82]"
+                          notification.read ? "bg-transparent" : "bg-[#101B82]"
                         }`}
                       />
 
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-[#211917]">
-                          {n.title}
+                          {notification.title}
                         </p>
 
-                        {n.message && (
+                        {notification.message && (
                           <p className="break-words text-xs text-[#211917]/60">
-                            {n.message}
+                            {notification.message}
                           </p>
                         )}
                       </div>
@@ -174,7 +168,6 @@ const Header = ({ onMenuClick }) => {
           )}
         </div>
 
-        {/* Profile */}
         <div className="relative">
           <button
             onClick={() => toggle("profile")}
@@ -209,7 +202,7 @@ const Header = ({ onMenuClick }) => {
 
                   {user?.role && (
                     <span className="mt-1 inline-block max-w-full truncate rounded-full bg-[#101B82]/10 px-2 py-0.5 text-[11px] font-semibold capitalize text-[#101B82]">
-                      {String(user.role).replace(/\_/g, " ").toLowerCase()}
+                      {String(user.role).replace(/_/g, " ").toLowerCase()}
                     </span>
                   )}
                 </div>
