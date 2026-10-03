@@ -1,6 +1,6 @@
 package com.saas.backend.dto;
 
-import java.util.UUID;
+
 
 import com.saas.backend.models.ClientStatus;
 
@@ -13,7 +13,6 @@ import lombok.Data;
 @AllArgsConstructor 
 public class ClientRequest {
     
-    private UUID saleId;
     private String firstName;
     private String lastName;
     private String email;
