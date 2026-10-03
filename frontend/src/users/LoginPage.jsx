@@ -56,6 +56,48 @@ const LoginPage = () => {
             </div>
 
             <div className="relative max-w-lg py-12">
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-amber-300">
+                Your business, in sync
+              </p>
+              <h2 className="mt-5 text-4xl font-black leading-tight tracking-tight xl:text-5xl">
+                A simpler way to run your sales operations.
+              </h2>
+              <p className="mt-5 max-w-md text-base leading-7 text-white/75">
+                Safari Sales brings your team and client information together in
+                one secure workspace, so you can spend less time switching
+                between tools and more time building great customer
+                relationships.
+              </p>
+
+              <ul className="mt-8 space-y-4 text-sm text-white/90">
+                <li className="flex items-center gap-3">
+                  <span
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/15 text-amber-300"
+                    aria-hidden="true"
+                  >
+                    ✓
+                  </span>
+                  Keep client details organized and easy to find
+                </li>
+                <li className="flex items-center gap-3">
+                  <span
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/15 text-amber-300"
+                    aria-hidden="true"
+                  >
+                    ✓
+                  </span>
+                  Give each team member access to the right tools
+                </li>
+                <li className="flex items-center gap-3">
+                  <span
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/15 text-amber-300"
+                    aria-hidden="true"
+                  >
+                    ✓
+                  </span>
+                  Manage your sales workflow from one dashboard
+                </li>
+              </ul>
             </div>
           </div>
 
@@ -68,9 +110,17 @@ const LoginPage = () => {
                 <h1 className="mt-3 text-3xl font-black tracking-tight text-[#211917]">
                   Sign in
                 </h1>
+                <p className="mt-2 text-sm leading-6 text-[#211917]/60">
+                  Sign in to your Safari Sales workspace to manage clients and
+                  keep your sales operations moving.
+                </p>
               </div>
 
-              <AuthForm formName="login" OnSubmit={handleSubmit} loading={loading} />
+              <AuthForm
+                formName="login"
+                OnSubmit={handleSubmit}
+                loading={loading}
+              />
             </div>
           </div>
         </section>
