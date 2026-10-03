@@ -1,18 +1,41 @@
-import { createContext, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { loginAuth } from "../api/api";
 import { jwtDecode } from "jwt-decode";
-
-export const AuthContext = createContext(null);
+import { AuthContext } from "./AuthContext";
 
 const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState({
-    sub: "",
-    company_id: "",
-    role_name: "",
-  });
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState(() => localStorage.getItem("token"));
+  const [token, setToken] = useState(() => {
+    const savedToken = localStorage.getItem("token");
+    if (!savedToken) return null;
+
+    try {
+      jwtDecode(savedToken);
+      return savedToken;
+    } catch (error) {
+      console.error("Failed to decode stored token:", error);
+      localStorage.removeItem("token");
+      return null;
+    }
+  });
+
+  const user = useMemo(() => {
+    if (!token) return null;
+
+    try {
+      const decode = jwtDecode(token);
+      return {
+        sub: decode.sub,
+        companyId: decode.companyId,
+        role_name: decode.role_name,
+      };
+    } catch (error) {
+      console.error("Failed to decode token:", error);
+      localStorage.removeItem("token");
+      return null;
+    }
+  }, [token]);
 
   const login = async (payloads) => {
     setLoading(true);
@@ -22,7 +45,6 @@ const AuthProvider = ({ children }) => {
       localStorage.setItem("token", response.token);
       setToken(response.token);
     } catch (error) {
-      setUser(null);
       throw error;
     } finally {
       setLoading(false);
@@ -30,7 +52,6 @@ const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    setUser(null);
     localStorage.removeItem("token");
     setToken(null);
   };
@@ -39,27 +60,6 @@ const AuthProvider = ({ children }) => {
     if (!allowedRoles || allowedRoles.length === 0) return true;
     return allowedRoles.includes(user?.role_name);
   };
-
-  useEffect(() => {
-    if (!token) {
-      setUser(null);
-      return;
-    }
-
-    try {
-      const decode = jwtDecode(token);
-      setUser({
-        sub: decode.sub,
-        companyId: decode.companyId,
-        role_name: decode.role_name,
-      });
-    } catch (error) {
-      console.error("Failed to decode token:", error);
-      setUser(null);
-      localStorage.removeItem("token");
-      setToken(null);
-    }
-  }, [token]);
 
   const can = (action, permissions) => {
     if (!action || !permissions || typeof permissions !== "object") {
