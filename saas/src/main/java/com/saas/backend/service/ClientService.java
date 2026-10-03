@@ -16,7 +16,7 @@ import com.saas.backend.models.ClientStatus;
 import com.saas.backend.response.ClientResponse;
 
 public interface ClientService {
-        ClientResponse createClient(ClientRequest request);
+        ClientResponse createClient(UUID salesPersonId, ClientRequest request);
         Page<Client> getClients(Authentication auth,int page,int size,String sortBy,String direction,String search,ClientStatus status);
         Client getClientById(UUID id);
         Client editClient(UUID id,ClientUpdate request);

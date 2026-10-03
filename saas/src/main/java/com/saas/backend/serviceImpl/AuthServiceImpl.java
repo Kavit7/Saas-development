@@ -69,7 +69,7 @@ public class AuthServiceImpl implements AuthService {
         claims.put("id",user.getId());
         claims.put("companyId", user.getCompany().getId());
         claims.put("userType","COMPANY_USER");
-        claims.put("role_name", user.getRole().getName());
+        claims.put("role_name", user.getRole().getName().toUpperCase().replace(" ", "_"));
 
         // 4. Generate JWT
         String token = jwtService.generateToken(claims, user);
