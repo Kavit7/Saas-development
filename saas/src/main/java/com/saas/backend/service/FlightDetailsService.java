@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.UUID;
 
 import com.saas.backend.dto.FlightRequest;
-import com.saas.backend.models.FlightDetail;
+import com.saas.backend.response.FlightDetailResponse;
 
 public interface FlightDetailsService {
-    FlightDetail createClientFlightDetails(UUID clientId,FlightRequest request);
-     List<FlightDetail> getClientFlightDetails(UUID clientId);
+    FlightDetailResponse createClientFlightDetails(UUID clientId, FlightRequest request);
+    List<FlightDetailResponse> getClientFlightDetails(UUID clientId);
 }

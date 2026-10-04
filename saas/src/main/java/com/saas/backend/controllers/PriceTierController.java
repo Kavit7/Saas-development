@@ -17,8 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.saas.backend.dto.PriceTierRequest;
-import com.saas.backend.models.PriceTier;
-
+import com.saas.backend.response.PriceTierResponse;
 import com.saas.backend.serviceImpl.PriceTierServiceImpl;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -33,11 +32,11 @@ public class PriceTierController {
     private final PriceTierServiceImpl priceTierService;
 
     @PostMapping
-     @PreAuthorize("hasAnyRole('ADMIN','RESERVATION_MANAGER')")
-    public ResponseEntity<PriceTier> createPriceTier(
+    @PreAuthorize("hasAnyRole('ADMIN','RESERVATION_MANAGER')")
+    public ResponseEntity<PriceTierResponse> createPriceTier(
             @RequestBody PriceTierRequest request) {
 
-        PriceTier priceTier =
+        PriceTierResponse priceTier =
                 priceTierService.createPriceTier(request);
 
         return ResponseEntity
@@ -47,24 +46,24 @@ public class PriceTierController {
 
     @PutMapping("/{priceId}")
     @PreAuthorize("hasAnyRole('ADMIN','RESERVATION_MANAGER')")
-    public ResponseEntity<PriceTier> updatePriceTier(
+    public ResponseEntity<PriceTierResponse> updatePriceTier(
             @PathVariable UUID priceId,
             @RequestBody PriceTierRequest request) {
-        PriceTier priceTier =
+        PriceTierResponse priceTier =
                 priceTierService.updatPriceTier(priceId, request);
 
         return ResponseEntity.ok(priceTier);
     }
 
     @GetMapping
-    public ResponseEntity<List<PriceTier>> getAllPriceTier() {
-        List<PriceTier> priceTiers =
-        priceTierService.getAllPriceTier();
+    public ResponseEntity<List<PriceTierResponse>> getAllPriceTier() {
+        List<PriceTierResponse> priceTiers =
+                priceTierService.getAllPriceTier();
         return ResponseEntity.ok(priceTiers);
     }
 
     @DeleteMapping("/{priceId}")
-     @PreAuthorize("hasAnyRole('ADMIN','RESERVATION_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','RESERVATION_MANAGER')")
     public ResponseEntity<?> deletePriceTier(
             @PathVariable UUID priceId) {
         priceTierService.deletePriceTier(priceId);

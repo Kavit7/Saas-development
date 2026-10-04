@@ -1,16 +1,14 @@
 package com.saas.backend.response;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
-
-;
-
-/**
- * RoomRequirementResponse
- */
+import lombok.NoArgsConstructor;
 
 @Data 
 @AllArgsConstructor 
+@NoArgsConstructor
+@Builder
 public class RoomRequirementResponse {
     private String roomType;
     private Integer quantity;

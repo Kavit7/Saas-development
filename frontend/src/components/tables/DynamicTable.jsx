@@ -22,65 +22,69 @@ const DynamicTable = ({
   const getActionClass = (actionKey) => {
     switch (actionKey) {
       case "view":
-        return "bg-[#101B82] text-white hover:bg-[#0d1b70]";
+        return "bg-[#101B82] text-white hover:bg-[#0d176f] shadow-2xs";
       case "update":
-        return "bg-amber-500 text-white hover:bg-amber-600";
+        return "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200";
       case "delete":
-        return "bg-red-500 text-white hover:bg-red-600";
+        return "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200";
       default:
-        return "bg-slate-200 text-slate-700 hover:bg-slate-300";
+        return "bg-slate-100 text-slate-700 hover:bg-slate-200";
     }
   };
 
   const renderCell = (value, field) => {
+    if (value === null || value === undefined || value === "") {
+      return <span className="text-slate-400 font-normal">—</span>;
+    }
+
     if (!field?.decorate) {
-      return value ?? "—";
+      return <span className="text-slate-800 font-medium text-[13px]">{String(value)}</span>;
     }
 
     const style = decorations[field.decorate]?.[value];
 
     if (!style) {
-      return value ?? "—";
+      return <span className="text-slate-800 font-medium text-[13px]">{String(value)}</span>;
     }
 
     return (
-      <span className={`rounded-full px-2 py-1 ${style} lowercase`}>
-        {value ?? "—"}
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide border shadow-2xs ${style}`}>
+        {value}
       </span>
     );
   };
 
   return (
-    <div className="w-full overflow-hidden rounded-[18px] border border-[#211917]/10 bg-white shadow-sm">
+    <div className="w-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
       {title && (
-        <div className="border-b border-[#211917]/10 px-4 py-4 sm:px-6">
-          <h2 className="text-lg font-bold text-[#101B82] sm:text-xl">
+        <div className="border-b border-slate-100 px-5 py-4">
+          <h2 className="text-lg font-bold text-[#101B82] tracking-tight">
             {title}
           </h2>
         </div>
       )}
 
       <div className="overflow-x-auto">
-        <table className="min-w-[720px] w-full border-collapse text-left text-sm text-[#211917]">
-          <thead className="bg-[#101B82]/5">
+        <table className="min-w-[720px] w-full border-collapse text-left text-sm font-sans">
+          <thead className="bg-slate-50/75 border-b border-slate-200/80">
             <tr>
               {safeFields.map((field) => (
                 <th
                   key={field.name}
-                  className="whitespace-nowrap border-b border-[#211917]/10 px-3 py-3 text-left text-xs font-bold uppercase tracking-[0.08em] text-[#211917]/70 sm:px-4"
+                  className="whitespace-nowrap px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500"
                 >
                   {field.label}
                 </th>
               ))}
               {visibleActions.length > 0 && (
-                <th className="whitespace-nowrap border-b border-[#211917]/10 px-3 py-3 text-left text-xs font-bold uppercase tracking-[0.08em] text-[#211917]/70 sm:px-4">
+                <th className="whitespace-nowrap px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Actions
                 </th>
               )}
             </tr>
           </thead>
 
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {safeItems.length === 0 ? (
               <tr>
                 <td
@@ -88,32 +92,35 @@ const DynamicTable = ({
                     (safeFields.length || 1) +
                     (visibleActions.length > 0 ? 1 : 0)
                   }
-                  className="px-3 py-8 text-center text-sm text-[#211917]/60 sm:px-4"
+                  className="px-4 py-12 text-center text-sm text-slate-500"
                 >
                   No records available
                 </td>
               </tr>
             ) : (
               safeItems.map((item) => (
-                <tr key={item.id ?? item._id ?? JSON.stringify(item)} className="border-b border-[#211917]/5 last:border-b-0">
+                <tr
+                  key={item.id ?? item._id ?? JSON.stringify(item)}
+                  className="hover:bg-slate-50/60 transition-colors"
+                >
                   {safeFields.map((field) => (
                     <td
                       key={`${item.id ?? item._id ?? JSON.stringify(item)}-${field.name}`}
-                      className="px-3 py-3 align-middle text-[#211917] sm:px-4"
+                      className="px-4 py-3.5 align-middle text-slate-700"
                     >
                       {renderCell(item[field.name], field)}
                     </td>
                   ))}
 
                   {visibleActions.length > 0 && (
-                    <td className="px-3 py-3 align-middle sm:px-4">
-                      <div className="flex flex-wrap gap-2">
+                    <td className="px-4 py-3.5 align-middle">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         {visibleActions.map((action) => (
                           <button
                             key={action.key}
                             type="button"
                             onClick={() => onAction(action.key, item)}
-                            className={`rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${getActionClass(action.key)}`}
+                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition active:scale-95 ${getActionClass(action.key)}`}
                           >
                             {action.label || action.key}
                           </button>

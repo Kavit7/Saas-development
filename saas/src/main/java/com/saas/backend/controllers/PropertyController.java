@@ -6,7 +6,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.saas.backend.dto.PropertyRequest;
-import com.saas.backend.models.Property;
 import com.saas.backend.models.VerificationStatus;
 import com.saas.backend.response.PropertyResponse;
 import com.saas.backend.service.PropertyService;
@@ -30,9 +28,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/properties")
+@RequestMapping({"/properties", "/api/v1/properties"})
 @RequiredArgsConstructor
-@SecurityRequirement (name="bearerAuth")
+@SecurityRequirement(name = "bearerAuth")
 @Tag(name = "Properties", description = "Manage properties")
 public class PropertyController {
 
@@ -54,7 +52,7 @@ public class PropertyController {
 
     @GetMapping
     @Operation(summary = "Get all properties")
-    public ResponseEntity<Page<Property>> getAllProperty(
+    public ResponseEntity<Page<PropertyResponse>> getAllProperty(
 
             @RequestParam(defaultValue = "0")
             int page,
@@ -74,7 +72,7 @@ public class PropertyController {
             @RequestParam(required = false)
             VerificationStatus status) {
 
-        Page<Property> properties =
+        Page<PropertyResponse> properties =
                 propertyService.getAllProperty(
                         page,
                         size,
@@ -89,10 +87,10 @@ public class PropertyController {
 
     @GetMapping("/{propertyId}")
     @Operation(summary = "Get property by ID")
-    public ResponseEntity<Property> getPropertyById(
+    public ResponseEntity<PropertyResponse> getPropertyById(
             @PathVariable UUID propertyId) {
 
-        Property property =
+        PropertyResponse property =
                 propertyService.getPropertyById(propertyId);
 
         return ResponseEntity.ok(property);
@@ -100,12 +98,12 @@ public class PropertyController {
 
     @PutMapping("/{propertyId}")
     @Operation(summary = "Update property")
-    @PreAuthorize("hasAnyRole('ADMIN','RESERVATION_MANAGER')")
-    public ResponseEntity<Property> updateProperty(
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','RESERVATION_MANAGER')")
+    public ResponseEntity<PropertyResponse> updateProperty(
             @PathVariable UUID propertyId,
             @Valid @RequestBody PropertyRequest request) {
 
-        Property property =
+        PropertyResponse property =
                 propertyService.UpdateProperty(propertyId, request);
 
         return ResponseEntity.ok(property);
@@ -113,7 +111,7 @@ public class PropertyController {
 
     @PatchMapping("/{propertyId}/verify")
     @Operation(summary = "Verify property")
-    @PreAuthorize("hasAnyRole('ADMIN','RESERVATION_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','RESERVATION_MANAGER')")
     public ResponseEntity<Void> verifyProperty(
             @PathVariable UUID propertyId) {
 

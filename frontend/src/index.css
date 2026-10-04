@@ -1,15 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  font-family: Inter, "Segoe UI", sans-serif;
-  line-height: 1.5;
+  font-family: "Lora", "Playfair Display", Georgia, Cambria, "Times New Roman", Times, serif;
+  line-height: 1.6;
   font-weight: 400;
-  color: #211917;
+  color: #0f172a;
   background: #ffffff;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, .font-serif-title {
+  font-family: "Playfair Display", "Lora", Georgia, serif;
 }
 
 html,

@@ -1,8 +1,12 @@
 import { useMemo, useState } from "react";
-
-import { loginAuth } from "../api/api";
 import { jwtDecode } from "jwt-decode";
+import { loginAuth } from "../api/api";
 import { AuthContext } from "./AuthContext";
+
+const normalizeRole = (role) => {
+  if (!role) return "";
+  return String(role).toUpperCase().replace(/^ROLE_/, "").trim();
+};
 
 const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
@@ -26,8 +30,11 @@ const AuthProvider = ({ children }) => {
     try {
       const decode = jwtDecode(token);
       return {
+        id: decode.id,
+        email: decode.sub,
         sub: decode.sub,
         companyId: decode.companyId,
+        role: decode.role_name,
         role_name: decode.role_name,
       };
     } catch (error) {
@@ -41,7 +48,6 @@ const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await loginAuth(payloads);
-
       localStorage.setItem("token", response.token);
       setToken(response.token);
     } catch (error) {
@@ -57,19 +63,19 @@ const AuthProvider = ({ children }) => {
   };
 
   const hasAccess = (allowedRoles) => {
-    if (!allowedRoles || allowedRoles.length === 0) return true;
-    return allowedRoles.includes(user?.role_name);
+    if (!user || (!user.role_name && !user.role)) return false;
+    if (!allowedRoles || !Array.isArray(allowedRoles) || allowedRoles.length === 0) return false;
+    const currentRole = normalizeRole(user.role_name || user.role);
+    return allowedRoles.some((r) => normalizeRole(r) === currentRole);
   };
 
   const can = (action, permissions) => {
     if (!action || !permissions || typeof permissions !== "object") {
       return false;
     }
-
     const allowedRoles = permissions[action];
-    if (!Array.isArray(allowedRoles)) return false;
-
-    return allowedRoles.includes(user?.role_name);
+    if (!Array.isArray(allowedRoles) || allowedRoles.length === 0) return false;
+    return hasAccess(allowedRoles);
   };
 
   return (

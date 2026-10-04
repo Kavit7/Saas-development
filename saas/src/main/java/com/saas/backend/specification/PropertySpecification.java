@@ -22,8 +22,11 @@ public class PropertySpecification {
         
     }
 
-    public static Specification<Property> hasStatus(VerificationStatus status){
-        return (root,query,cb)-> cb.equal(root.get("verificationStatus"),status);
+    public static Specification<Property> hasStatus(VerificationStatus status) {
+        if (status == null) {
+            return (root, query, cb) -> cb.conjunction();
+        }
+        return (root, query, cb) -> cb.equal(root.get("verificationStatus"), status);
     }
     
 }

@@ -1,17 +1,35 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-
 import { useAuth } from "../../hooks/useAuth";
+import { getAllData, apiRequest } from "../../api/api";
 
 const Header = ({ onMenuClick }) => {
-  const { user, logout } = useAuth();
+  const { user, token, logout } = useAuth();
   const navigate = useNavigate();
   const [openMenu, setOpenMenu] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const wrapperRef = useRef(null);
 
   const displayName = user?.name || user?.email || "User";
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.readAt && n.status !== "READ").length;
+
+  const fetchNotifications = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await getAllData("/api/v1/notifications", token);
+      if (Array.isArray(res)) {
+        setNotifications(res);
+      }
+    } catch {
+      // Fallback silently if offline
+    }
+  }, [token]);
+
+  useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 20000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -27,16 +45,26 @@ const Header = ({ onMenuClick }) => {
   const toggle = (menu) =>
     setOpenMenu((prev) => (prev === menu ? null : menu));
 
-  const handleRead = (id) => {
+  const handleRead = async (id) => {
     setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification,
-      ),
+      prev.map((n) => (n.id === id ? { ...n, readAt: new Date().toISOString(), status: "READ" } : n))
     );
+    try {
+      await apiRequest(`/api/v1/notifications/${id}/read`, { method: "PATCH" }, token);
+    } catch {
+      // Ignore error
+    }
   };
 
-  const handleReadAll = () => {
-    setNotifications((prev) => prev.map((notification) => ({ ...notification, read: true })));
+  const handleReadAll = async () => {
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, readAt: new Date().toISOString(), status: "READ" }))
+    );
+    try {
+      await apiRequest("/api/v1/notifications/mark-all-read", { method: "PATCH" }, token);
+    } catch {
+      // Ignore error
+    }
   };
 
   const handleLogout = async () => {

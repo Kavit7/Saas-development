@@ -18,6 +18,13 @@ public class SafariSpecification {
         );   
     }
 
+    public static Specification<Safari> hasSalesPerson(UUID salesPersonId){
+        return (root, query, cb) -> cb.or(
+            cb.equal(root.get("salesPerson").get("id"), salesPersonId),
+            cb.equal(root.get("client").get("salesPerson").get("id"), salesPersonId)
+        );
+    }
+
     public static Specification<Safari> hasSearch(String keyword){
         return (root,query,cb)->{
             String searchValue = "%"+keyword.toLowerCase()+"%";

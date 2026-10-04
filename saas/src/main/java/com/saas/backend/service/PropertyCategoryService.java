@@ -4,15 +4,14 @@ import java.util.List;
 import java.util.UUID;
 
 import com.saas.backend.dto.PropertyCategoryRequest;
-import com.saas.backend.models.PropertyCategory;
+import com.saas.backend.response.PropertyCategoryResponse;
 
 public interface PropertyCategoryService {
-    PropertyCategory createCategory(PropertyCategoryRequest request);
+    PropertyCategoryResponse createCategory(PropertyCategoryRequest request);
 
-    PropertyCategory editCategory(UUID categoryId,PropertyCategoryRequest request);
+    PropertyCategoryResponse editCategory(UUID categoryId, PropertyCategoryRequest request);
 
-    List<PropertyCategory> viewAllCategory();
+    List<PropertyCategoryResponse> viewAllCategory();
 
     void deletePropertyCategory(UUID propertyCat);
-    
 }

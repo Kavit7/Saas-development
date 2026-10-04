@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.saas.backend.dto.PropertyCategoryRequest;
-import com.saas.backend.models.PropertyCategory;
+import com.saas.backend.response.PropertyCategoryResponse;
 import com.saas.backend.service.PropertyCategoryService;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -33,10 +33,10 @@ public class PropertyCategoryController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN','RESERVATION_MANAGER')")
-    public ResponseEntity<PropertyCategory> createCategory(
+    public ResponseEntity<PropertyCategoryResponse> createCategory(
             @RequestBody PropertyCategoryRequest request) {
 
-        PropertyCategory propertyCategory =
+        PropertyCategoryResponse propertyCategory =
                 propertyCategoryService.createCategory(request);
 
         return ResponseEntity
@@ -45,24 +45,20 @@ public class PropertyCategoryController {
     }
      
     @PutMapping("/{categoryId}")
-     @PreAuthorize("hasAnyRole('ADMIN','RESERVATION_MANAGER')")
-    public ResponseEntity<PropertyCategory> editCategory(
+    @PreAuthorize("hasAnyRole('ADMIN','RESERVATION_MANAGER')")
+    public ResponseEntity<PropertyCategoryResponse> editCategory(
             @PathVariable UUID categoryId,
             @RequestBody PropertyCategoryRequest request) {
 
-        PropertyCategory propertyCategory =
+        PropertyCategoryResponse propertyCategory =
                 propertyCategoryService.editCategory(categoryId, request);
 
         return ResponseEntity.ok(propertyCategory);
     }
 
-
-
     @GetMapping
-    // @PreAuthorize("hasAnyRole('ADMIN','RESERVATION_MANAGER')")
-    public ResponseEntity<List<PropertyCategory>> viewAllCategory() {
-
-        List<PropertyCategory> propertyCategories =
+    public ResponseEntity<List<PropertyCategoryResponse>> viewAllCategory() {
+        List<PropertyCategoryResponse> propertyCategories =
                 propertyCategoryService.viewAllCategory();
 
         return ResponseEntity.ok(propertyCategories);

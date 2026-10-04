@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.saas.backend.dto.OccasionRequest;
-import com.saas.backend.models.SpecialOccasion;
+import com.saas.backend.response.SpecialOccasionResponse;
 import com.saas.backend.serviceImpl.GuestServiceImpl;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -29,7 +29,6 @@ import lombok.RequiredArgsConstructor;
 public class GuestSpecialOccasionController {
    private final GuestServiceImpl guestService;
 
-
 @PostMapping("guest-occasions/{guestId}")
 @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
 public ResponseEntity<?> createGuestOccasion(
@@ -37,18 +36,14 @@ public ResponseEntity<?> createGuestOccasion(
         @RequestBody OccasionRequest request) {
 
     try {
-
-        SpecialOccasion specialOccasion =
+        SpecialOccasionResponse specialOccasion =
                 guestService.createGuestOccassion(guestId, request);
 
         return ResponseEntity.ok(specialOccasion);
-
     } catch (Exception e) {
-
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 }
-
 
 @PutMapping("guest-occasions/{guestId}")
 @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
@@ -57,18 +52,14 @@ public ResponseEntity<?> updateGuestOccasion(
         @RequestBody OccasionRequest request) {
 
     try {
-
-        SpecialOccasion specialOccasion =
+        SpecialOccasionResponse specialOccasion =
                 guestService.updateGuestOccasion(guestId, request);
 
         return ResponseEntity.ok(specialOccasion);
-
     } catch (Exception e) {
-
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 }
-
 
 @GetMapping("guest-occasions/{guestId}")
 @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
@@ -76,18 +67,14 @@ public ResponseEntity<?> getGuestSpecialOccasion(
         @PathVariable UUID guestId) {
 
     try {
-
-        List<SpecialOccasion> occasions =
+        List<SpecialOccasionResponse> occasions =
                 guestService.getGuestSpecialOcassion(guestId);
 
         return ResponseEntity.ok(occasions);
-
     } catch (Exception e) {
-
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 }
-
 
 @DeleteMapping("guest-occasions/{occasionId}")
 @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
@@ -100,15 +87,9 @@ public ResponseEntity<?> deleteGuestOccasion(
         return ResponseEntity.ok(
                 Map.of("message", "Guest Occasion deleted Successfully")
         );
-
     } catch (Exception e) {
-
         return ResponseEntity.badRequest().body(e.getMessage());
     }
 }
 
-
-
-
-    
 }

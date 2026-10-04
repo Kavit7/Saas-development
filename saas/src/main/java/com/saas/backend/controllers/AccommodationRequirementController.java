@@ -1,5 +1,6 @@
 package com.saas.backend.controllers;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -54,6 +55,26 @@ public class AccommodationRequirementController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(accommodationRequirement);
+    }
+
+    @GetMapping("/safari/{safariId}")
+    @Operation(summary = "Get accommodation requirements by safari")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER')")
+    public ResponseEntity<List<AccommodationRequirementResponse>> getAccommodationRequirementsBySafari(
+            @PathVariable UUID safariId) {
+        return ResponseEntity.ok(
+                accommodationRequirementService.getAccommodationRequirementsBySafari(safariId)
+        );
+    }
+
+    @GetMapping("/itinerary-day/{itineraryId}")
+    @Operation(summary = "Get accommodation requirement by itinerary day")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER')")
+    public ResponseEntity<?> getAccommodationRequirementByItineraryDay(
+            @PathVariable UUID itineraryId) {
+        AccommodationRequirementResponse response =
+                accommodationRequirementService.getAccommodationRequirementByItineraryDay(itineraryId);
+        return ResponseEntity.ok(response);
     }
 
 

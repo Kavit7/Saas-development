@@ -17,5 +17,6 @@ import com.saas.backend.models.Property;
 public interface PropertyRepository extends JpaRepository<Property,UUID> ,JpaSpecificationExecutor<Property> {
     boolean existsByName(String name);
     boolean existsByNameAndIdNot(String name, UUID id);
+    long countByVerificationStatus(com.saas.backend.models.VerificationStatus verificationStatus);
     Page<Property> findAll(Specification specification, Pageable pageable);
 }

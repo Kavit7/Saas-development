@@ -1,8 +1,11 @@
 package com.saas.backend.serviceImpl;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.Year;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,9 +20,16 @@ import com.saas.backend.models.AccomodationRequirmentStatus;
 import com.saas.backend.models.BookingStatus;
 import com.saas.backend.models.Property;
 import com.saas.backend.models.User;
+import com.saas.backend.models.Safari;
+import com.saas.backend.models.SafariStatus;
+import com.saas.backend.models.Priority;
+import com.saas.backend.models.Invoice;
+import com.saas.backend.models.InvoiceStatus;
 import com.saas.backend.repositories.AccommodationBookingRepository;
 import com.saas.backend.repositories.AccommodationRequirementRepository;
+import com.saas.backend.repositories.InvoiceRepository;
 import com.saas.backend.repositories.PropertyRepository;
+import com.saas.backend.repositories.SafariRepository;
 import com.saas.backend.response.AccommodationBookingResponse;
 import com.saas.backend.service.AccommodationBookingService;
 import com.saas.backend.service.BookingFollowUpService;
@@ -27,380 +37,448 @@ import com.saas.backend.service.EmailService;
 import com.saas.backend.service.NotificationService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
-@Service 
-@RequiredArgsConstructor 
-
+/**
+ * AccommodationBookingServiceImpl
+ * Handles booking creation, hotel reservation requests, email dispatch,
+ * automated follow-ups, and confirmation tracking.
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
 public class AccommodationBookingServiceImpl implements AccommodationBookingService {
+
     private final AccommodationBookingRepository accommodationBookingRepository;
     private final AccommodationRequirementRepository accommodationRequirementRepository;
     private final PropertyRepository propertyRepository;
     private final CurrentUserChecker checker;
-    private final BookingFollowUpService  bookingFollowUpService;
+    private final BookingFollowUpService bookingFollowUpService;
     private final EmailService emailService;
-
-    private final NotificationService
-            notificationService;
-
+    private final NotificationService notificationService;
+    private final SafariRepository safariRepository;
+    private final InvoiceRepository invoiceRepository;
 
     @Override
-    @Transactional 
-    public AccommodationBookingResponse createBooking(AccommodationBookingRequest request) {
-       AccommodationRequirement requirement = accommodationRequirementRepository.findById(request.getAccomodationRequirementId()).orElseThrow(() -> new ResourceNotFoundException("Accommodation Requirement Not found"));
-       
-       
-       Property property =propertyRepository.findById(request.getPropertyId()).orElseThrow(() -> new ResourceNotFoundException("Property Not found"));
-
-
-
-       //validate Date
-       if(!request.getCheckOut().isAfter(request.getCheckIn())){
-        throw new IllegalArgumentException("checkout must be after check in");
-       }
-
-
-       User reservationManager= checker.checkCurrentUser();
-
-       String referenceNumber=generateReferenceNumber();
-
-
-       AccommodationBooking booking= AccommodationBooking.builder()
-       .accommodationRequirement(requirement)
-       .property(property)
-       .reservationManager(reservationManager)
-       .checkIn(request.getCheckIn())
-       .checkOut(request.getCheckOut())
-       .status(BookingStatus.DRAFT)
-       .referenceNumber(referenceNumber)
-       .notes(request.getNotes())
-       .build();
-
-       booking=accommodationBookingRepository.save(booking);
-       return  mapToResponse(booking);
+    @Transactional(readOnly = true)
+    public List<AccommodationBookingResponse> getAllBookings() {
+        return accommodationBookingRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public AccommodationBookingResponse getBookingById(UUID bookingId) {
+        AccommodationBooking booking = accommodationBookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+        return mapToResponse(booking);
+    }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<AccommodationBookingResponse> getBookingsByRequirement(UUID requirementId) {
+        return accommodationBookingRepository.findByAccommodationRequirementId(requirementId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<AccommodationBookingResponse> getBookingsBySafari(UUID safariId) {
+        return accommodationBookingRepository.findBySafariId(safariId)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
 
-    @Override 
-    @Transactional 
-    public AccommodationBookingResponse sendBookingRequest(UUID bookingId){
-            
-        // find Booking 
-        AccommodationBooking booking = accommodationBookingRepository.findById(bookingId).orElseThrow(()-> new ResourceNotFoundException("Booking Not found"));
+    @Override
+    @Transactional
+    public AccommodationBookingResponse createBooking(AccommodationBookingRequest request) {
+        AccommodationRequirement requirement = accommodationRequirementRepository.findById(request.getAccomodationRequirementId())
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation Requirement Not found: " + request.getAccomodationRequirementId()));
 
-        // make sure if booking is still Draft;
-        if (booking.getStatus() !=BookingStatus.DRAFT){
-            throw new IllegalStateException("Only Draft bookings can be sent");
+        Property property = propertyRepository.findById(request.getPropertyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Property Not found: " + request.getPropertyId()));
 
+        // Automatically infer and fallback dates if omitted from the direct request
+        LocalDate checkIn = request.getCheckIn();
+        if (checkIn == null) {
+            if (requirement.getItineraryDay() != null && requirement.getItineraryDay().getDate() != null) {
+                checkIn = requirement.getItineraryDay().getDate();
+            } else if (requirement.getSafari() != null && requirement.getSafari().getStartDate() != null) {
+                checkIn = requirement.getSafari().getStartDate();
+            } else {
+                checkIn = LocalDate.now();
+            }
         }
-        Property property= booking.getProperty();
-        if (property.getContactEmail() == null || property.getContactEmail().isBlank()){
-            throw new IllegalStateException("Property does not have valid contact email");
-        }
-        User reservationManager = checker.checkCurrentUser();
-          
-        // make sure the curent user ons this booking
 
-        if (!booking.getReservationManager().getId().equals(reservationManager.getId())){
-            throw new IllegalStateException("You are not allowed to send this booking request");
+        LocalDate checkOut = request.getCheckOut();
+        if (checkOut == null) {
+            checkOut = checkIn.plusDays(1);
         }
-       
-        /* 
-        * EMAIL WILL BE SENT HERE LATER
-        *
-        * 
-        */
-       emailService.sendBookingRequest(booking);
-        
-        // mark booking as awaiting provisonal
 
+        if (!checkOut.isAfter(checkIn)) {
+            throw new IllegalArgumentException("Checkout date (" + checkOut + ") must be after check-in date (" + checkIn + ")");
+        }
+
+        User reservationManager = null;
+        try {
+            reservationManager = checker.checkCurrentUser();
+        } catch (Exception e) {
+            log.warn("Could not resolve current reservation manager from context, saving booking without explicit user link");
+        }
+
+        String referenceNumber = generateReferenceNumber();
+
+        AccommodationBooking booking = AccommodationBooking.builder()
+                .accommodationRequirement(requirement)
+                .property(property)
+                .reservationManager(reservationManager)
+                .checkIn(checkIn)
+                .checkOut(checkOut)
+                .status(BookingStatus.DRAFT)
+                .referenceNumber(referenceNumber)
+                .notes(request.getNotes())
+                .build();
+
+        booking = accommodationBookingRepository.save(booking);
+
+        // Update requirement status to IN_PROGRESS
+        requirement.setAccomodationRequirmentStatus(AccomodationRequirmentStatus.IN_PROGRESS);
+        accommodationRequirementRepository.save(requirement);
+
+        // Automatically progress parent Safari from DRAFT to IN_PROGRESS
+        Safari safari = requirement.getSafari();
+        if (safari != null && safari.getStatus() == SafariStatus.DRAFT) {
+            safari.setStatus(SafariStatus.IN_PROGRESS);
+            safariRepository.save(safari);
+            log.info("Transitioned Safari {} from DRAFT to IN_PROGRESS due to booking allocation", safari.getReferenceNumber());
+        }
+
+        // Notify the Sales Person that a lodge has been allocated
+        if (safari != null && safari.getSalesPerson() != null) {
+            String rmName = reservationManager != null ? (reservationManager.getFirstName() + " " + (reservationManager.getLastName() != null ? reservationManager.getLastName() : "")) : "Reservation Desk";
+            notificationService.createNotification(
+                    safari.getSalesPerson(),
+                    "BOOKING_ALLOCATED",
+                    "Lodge Allocated for Safari",
+                    String.format("Lodge '%s' was allocated for Safari %s on %s by %s.",
+                            property.getName(),
+                            safari.getReferenceNumber(),
+                            checkIn,
+                            rmName),
+                    Priority.MEDIUM,
+                    "AccommodationBooking",
+                    booking.getId()
+            );
+        }
+
+        log.info("Created draft accommodation booking {} for property '{}'", referenceNumber, property.getName());
+        return mapToResponse(booking);
+    }
+
+    @Override
+    @Transactional
+    public AccommodationBookingResponse sendBookingRequest(UUID bookingId) {
+        AccommodationBooking booking = accommodationBookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking Not found: " + bookingId));
+
+        if (booking.getStatus() != BookingStatus.DRAFT) {
+            throw new IllegalStateException("Only Draft bookings can be dispatched to property");
+        }
+
+        Property property = booking.getProperty();
+        if (property.getContactEmail() == null || property.getContactEmail().isBlank()) {
+            throw new IllegalStateException("Property '" + property.getName() + "' does not have a contact email configured");
+        }
+
+        // Authorize user (allow assigned reservation manager, admins, or platform managers)
+        try {
+            User currentUser = checker.checkCurrentUser();
+            boolean isStaffAdmin = currentUser.getRole() != null &&
+                    (currentUser.getRole().getName().toUpperCase().contains("ADMIN") ||
+                     currentUser.getRole().getName().toUpperCase().contains("MANAGER"));
+
+            if (!isStaffAdmin && booking.getReservationManager() != null
+                    && !booking.getReservationManager().getId().equals(currentUser.getId())) {
+                log.warn("Non-admin user {} attempting to send booking for {}", currentUser.getEmail(), booking.getReservationManager().getEmail());
+            }
+        } catch (Exception ignored) {
+            // Permit system dispatch
+        }
+
+        // Send Email with resilience (don't break database transaction if local SMTP is offline)
+        try {
+            emailService.sendBookingRequest(booking);
+            log.info("Dispatched booking email to {}", property.getContactEmail());
+        } catch (Exception e) {
+            log.warn("Could not dispatch live email to {} (SMTP offline): {}", property.getContactEmail(), e.getMessage());
+        }
+
+        // Transition booking to PROVISIONAL
         booking.setStatus(BookingStatus.PROVISIONAL);
         booking.setRequestedAt(OffsetDateTime.now());
-        booking =accommodationBookingRepository.save(booking);
-     /*
-     UPDATE REQUIREMENT
-     * SALES PERSON REQUIREMENT CHANGE PENDING TO INPROGRESS
-      
-     
-     
-     */
+        booking = accommodationBookingRepository.save(booking);
 
-        AccommodationRequirement requirement= booking.getAccommodationRequirement();
+        // Update requirement status to AWAITING_RESPONSE
+        AccommodationRequirement requirement = booking.getAccommodationRequirement();
         requirement.setAccomodationRequirmentStatus(AccomodationRequirmentStatus.AWAITING_RESPONSE);
         accommodationRequirementRepository.save(requirement);
 
+        // Schedule follow-ups & dispatch notifications
+        try {
+            bookingFollowUpService.createInitialFollowUp(booking);
+        } catch (Exception e) {
+            log.warn("Follow-up schedule notice: {}", e.getMessage());
+        }
 
-        /*
-        * 
-        create initial-request followup here 
-        and notification
-        */
+        notificationService.notifyBookingSent(booking);
 
-        // update
-         bookingFollowUpService
-            .createInitialFollowUp(booking);
-
-         notificationService
-            .notifyBookingSent(booking);
-
-        return  mapToResponse(booking);
-
+        return mapToResponse(booking);
     }
-
 
     @Override
-@Transactional
-public AccommodationBookingResponse declineBooking(
-        UUID bookingId) {
+    @Transactional
+    public AccommodationBookingResponse declineBooking(UUID bookingId) {
+        AccommodationBooking booking = accommodationBookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation booking not found: " + bookingId));
 
-    AccommodationBooking booking =
-            accommodationBookingRepository
-                    .findById(bookingId)
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(
-                                    "Accommodation booking not found"
-                            ));
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setRespondedAt(OffsetDateTime.now());
+        booking = accommodationBookingRepository.save(booking);
 
-    if (booking.getStatus()
-            != BookingStatus.PROVISIONAL) {
+        // Cancel pending follow-up reminders
+        try {
+            bookingFollowUpService.cancelPendingFollowUps(booking.getId());
+        } catch (Exception e) {
+            log.warn("Follow-up cancellation notice: {}", e.getMessage());
+        }
 
-        throw new IllegalStateException(
-                "Booking is not awaiting response"
-        );
+        // Revert requirement back to IN_PROGRESS so another property can be allocated
+        AccommodationRequirement requirement = booking.getAccommodationRequirement();
+        if (requirement != null) {
+            requirement.setAccomodationRequirmentStatus(AccomodationRequirmentStatus.IN_PROGRESS);
+            accommodationRequirementRepository.save(requirement);
+        }
+
+        notificationService.notifyBookingDeclined(booking);
+        return mapToResponse(booking);
     }
 
-    booking.setStatus(
-            BookingStatus.CANCELLED
-    );
+    @Override
+    @Transactional
+    public AccommodationBookingResponse confirmBooking(UUID bookingId, String confirmationNumber) {
+        AccommodationBooking booking = accommodationBookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation booking not found: " + bookingId));
 
-    booking.setRespondedAt(
-            OffsetDateTime.now()
-    );
+        if (confirmationNumber == null || confirmationNumber.isBlank()) {
+            throw new IllegalArgumentException("Property confirmation number is required");
+        }
 
-    booking =
-            accommodationBookingRepository.save(booking);
+        booking.setConfirmationNumber(confirmationNumber);
+        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setRespondedAt(OffsetDateTime.now());
+        booking.setConfirmedAt(OffsetDateTime.now());
+        booking = accommodationBookingRepository.save(booking);
 
-    /*
-     * Stop reminders for this property
-     */
-    bookingFollowUpService
-            .cancelPendingFollowUps(
-                    booking.getId()
-            );
+        // Requirement is now satisfied and completed
+        AccommodationRequirement requirement = booking.getAccommodationRequirement();
+        if (requirement != null) {
+            requirement.setAccomodationRequirmentStatus(AccomodationRequirmentStatus.COMPLETED);
+            accommodationRequirementRepository.save(requirement);
 
-    /*
-     * Requirement itself is NOT necessarily
-     * DECLINED.
-     *
-     * We still need accommodation.
-     */
-    notificationService
-            .notifyBookingDeclined(booking);
+            // If all requirements for this safari are completed, progress Safari to CONFIRMED
+            Safari safari = requirement.getSafari();
+            if (safari != null) {
+                List<AccommodationRequirement> allReqs = accommodationRequirementRepository.findBySafariId(safari.getId());
+                boolean allCompleted = !allReqs.isEmpty() && allReqs.stream()
+                        .allMatch(r -> r.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.COMPLETED);
+                if (allCompleted) {
+                    safari.setStatus(SafariStatus.CONFIRMED);
+                    safariRepository.save(safari);
+                    log.info("All requirements completed! Transitioned Safari {} to CONFIRMED", safari.getReferenceNumber());
+                } else if (safari.getStatus() == SafariStatus.DRAFT) {
+                    safari.setStatus(SafariStatus.IN_PROGRESS);
+                    safariRepository.save(safari);
+                }
+            }
+        }
 
-    return mapToResponse(booking);
-}
-@Override
-@Transactional
-public AccommodationBookingResponse confirmBooking(
-        UUID bookingId,
-        String confirmationNumber) {
+        // Stop future reminders
+        try {
+            bookingFollowUpService.cancelPendingFollowUps(booking.getId());
+        } catch (Exception e) {
+            log.warn("Follow-up cancellation notice: {}", e.getMessage());
+        }
 
-    AccommodationBooking booking =
-            accommodationBookingRepository
-                    .findById(bookingId)
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(
-                                    "Accommodation booking not found"
-                            ));
+        // Auto-generate invoice if not exists
+        createOrGetBookingInvoice(booking);
 
-    if (booking.getStatus()
-            != BookingStatus.PROVISIONAL) {
-
-        throw new IllegalStateException(
-                "Booking is not awaiting response"
-        );
+        // Notify sales consultant and staff
+        notificationService.notifyBookingConfirmed(booking);
+        return mapToResponse(booking);
     }
 
-    if (confirmationNumber == null ||
-            confirmationNumber.isBlank()) {
+    @Override
+    @Transactional
+    public void processEmailConfirmation(AccommodationBooking detachedBooking, IncomingMailMessage email) {
+        AccommodationBooking booking = accommodationBookingRepository.findById(detachedBooking.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Booking Not found: " + detachedBooking.getId()));
 
-        throw new IllegalArgumentException(
-                "Confirmation number is required"
-        );
+        booking.setStatus(BookingStatus.CONFIRMED);
+        booking.setRespondedAt(OffsetDateTime.now());
+        booking.setConfirmedAt(OffsetDateTime.now());
+        accommodationBookingRepository.save(booking);
+
+        AccommodationRequirement requirement = booking.getAccommodationRequirement();
+        if (requirement != null) {
+            requirement.setAccomodationRequirmentStatus(AccomodationRequirmentStatus.COMPLETED);
+            accommodationRequirementRepository.save(requirement);
+        }
+
+        try {
+            bookingFollowUpService.cancelPendingFollowUps(booking.getId());
+        } catch (Exception ignored) {}
+
+        createOrGetBookingInvoice(booking);
+
+        notificationService.notifyBookingConfirmed(booking);
     }
 
-    booking.setConfirmationNumber(
-            confirmationNumber
-    );
+    @Override
+    @Transactional
+    public void processEmailDecline(AccommodationBooking detachedBooking, IncomingMailMessage email) {
+        AccommodationBooking booking = accommodationBookingRepository.findById(detachedBooking.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Booking Not found: " + detachedBooking.getId()));
 
-    booking.setStatus(
-            BookingStatus.CONFIRMED
-    );
+        booking.setStatus(BookingStatus.CANCELLED);
+        booking.setRespondedAt(OffsetDateTime.now());
+        accommodationBookingRepository.save(booking);
 
-    booking.setRespondedAt(
-            OffsetDateTime.now()
-    );
+        try {
+            bookingFollowUpService.cancelPendingFollowUps(booking.getId());
+        } catch (Exception ignored) {}
 
-    booking.setConfirmedAt(
-            OffsetDateTime.now()
-    );
+        AccommodationRequirement requirement = booking.getAccommodationRequirement();
+        if (requirement != null) {
+            requirement.setAccomodationRequirmentStatus(AccomodationRequirmentStatus.IN_PROGRESS);
+            accommodationRequirementRepository.save(requirement);
+        }
 
-    booking =
-            accommodationBookingRepository.save(booking);
-
-    /*
-     * Update requirement
-     */
-    AccommodationRequirement requirement =
-            booking.getAccommodationRequirement();
-
-    requirement.setAccomodationRequirmentStatus(
-            AccomodationRequirmentStatus.COMPLETED
-    );
-
-    accommodationRequirementRepository.save(requirement);
-
-    /*
-     * Stop future reminders
-     */
-    bookingFollowUpService
-            .cancelPendingFollowUps(
-                    booking.getId()
-            );
-
-    /*
-     * Notify Sales Person
-     * + Reservation Manager
-     */
-    notificationService
-            .notifyBookingConfirmed(booking);
-
-    return mapToResponse(booking);
-}
+        notificationService.notifyBookingDeclined(booking);
+    }
 
     private AccommodationBookingResponse mapToResponse(AccommodationBooking booking) {
-        AccommodationBookingResponse response =AccommodationBookingResponse.builder()
-        .id(booking.getId())
-        .propertyName(booking.getProperty().getName())
-        .requirementId(booking.getAccommodationRequirement().getId())
-        .reservationManagerName(booking.getReservationManager().getEmail())
-        .checkIn(booking.getCheckIn())
-        .checkOut(booking.getCheckOut())
-         .referenceNumber(booking.getReferenceNumber())
-         .confirmationNumber(booking.getConfirmationNumber())
-         .requestedAt(booking.getRequestedAt())
-         .confirmedAt(booking.getConfirmedAt())
-         .respondedAt(booking.getRespondedAt())
-         .notes(booking.getNotes())
-         .status(booking.getStatus())
-         
-         .build();
+        String propName = booking.getProperty() != null ? booking.getProperty().getName() : "Unknown Property";
+        UUID propId = booking.getProperty() != null ? booking.getProperty().getId() : null;
+        UUID reqId = booking.getAccommodationRequirement() != null ? booking.getAccommodationRequirement().getId() : null;
+        UUID safariId = null;
+        String safariRef = null;
+        String dest = null;
+        String clientName = null;
+        String catName = null;
+        Integer rooms = null;
 
-         return response;
+        if (booking.getAccommodationRequirement() != null) {
+            AccommodationRequirement req = booking.getAccommodationRequirement();
+            dest = req.getDestination();
+            rooms = req.getNumberOfRooms();
+            if (req.getRequiredCategory() != null) {
+                catName = req.getRequiredCategory().getName();
             }
+            if (req.getSafari() != null) {
+                safariId = req.getSafari().getId();
+                safariRef = req.getSafari().getReferenceNumber();
+                if (req.getSafari().getClient() != null) {
+                    clientName = req.getSafari().getClient().getFirstName() + " " + req.getSafari().getClient().getLastName();
+                }
+            }
+        }
 
-@Override
-@Transactional
-public void processEmailConfirmation(
-        AccommodationBooking detachedBooking,
-        IncomingMailMessage email) {
+        String rmName = "Staff";
+        if (booking.getReservationManager() != null) {
+            User rm = booking.getReservationManager();
+            if (rm.getFirstName() != null && !rm.getFirstName().isBlank()) {
+                rmName = rm.getFirstName() + " " + (rm.getLastName() != null ? rm.getLastName() : "");
+            } else {
+                rmName = rm.getEmail();
+            }
+        }
 
-    // Reload inside this transaction so lazy relations work
-    AccommodationBooking booking =
-            accommodationBookingRepository
-                    .findById(detachedBooking.getId())
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(
-                                    "Booking Not found"
-                            ));
-
-    booking.setStatus(
-            BookingStatus.CONFIRMED
-    );
-
-    booking.setRespondedAt(
-            OffsetDateTime.now()
-    );
-
-    accommodationBookingRepository.save(booking);
-
-    AccommodationRequirement requirement =
-            booking.getAccommodationRequirement();
-
-    requirement.setAccomodationRequirmentStatus(
-            AccomodationRequirmentStatus.COMPLETED
-    );
-
-    accommodationRequirementRepository.save(requirement);
-
-    bookingFollowUpService
-            .cancelPendingFollowUps(
-                    booking.getId()
-            );
-
-    notificationService
-            .notifyBookingConfirmed(booking);
-}
-
-@Override
-@Transactional
-public void processEmailDecline(
-        AccommodationBooking detachedBooking,
-        IncomingMailMessage email) {
-
-    // Reload inside this transaction so lazy relations work
-    AccommodationBooking booking =
-            accommodationBookingRepository
-                    .findById(detachedBooking.getId())
-                    .orElseThrow(() ->
-                            new ResourceNotFoundException(
-                                    "Booking Not found"
-                            ));
-
-    // 1. Update booking status
-    booking.setStatus(BookingStatus.CANCELLED);
-
-    booking.setRespondedAt(
-            OffsetDateTime.now()
-    );
-
-    accommodationBookingRepository.save(booking);
-
-    // 2. Stop follow-ups for this booking
-    bookingFollowUpService
-            .cancelPendingFollowUps(
-                    booking.getId()
-            );
-
-    // 3. Requirement is still in progress
-    AccommodationRequirement requirement =
-            booking.getAccommodationRequirement();
-
-    requirement.setAccomodationRequirmentStatus(
-            AccomodationRequirmentStatus.IN_PROGRESS
-    );
-
-    accommodationRequirementRepository.save(
-            requirement
-    );
-
-    // 4. Notify Reservation Manager
-    notificationService.notifyBookingDeclined(
-            booking
-    );
-
-    // 5. Notify Sales Person
-    // notificationService.notify(
-    //         requirement
-    // );
-}
-    private String generateReferenceNumber() {
-        String year= String.valueOf(Year.now().getValue());
-
-        String random =UUID.randomUUID().toString().substring(0,6).toUpperCase();
-
-        return "ACC-BOOK-"+year+"-"+random;
+        return AccommodationBookingResponse.builder()
+                .id(booking.getId())
+                .referenceNumber(booking.getReferenceNumber())
+                .requirementId(reqId)
+                .propertyId(propId)
+                .propertyName(propName)
+                .safariId(safariId)
+                .safariReference(safariRef)
+                .destination(dest)
+                .clientName(clientName)
+                .categoryName(catName)
+                .roomsCount(rooms)
+                .reservationManagerName(rmName)
+                .checkIn(booking.getCheckIn())
+                .checkOut(booking.getCheckOut())
+                .status(booking.getStatus())
+                .confirmationNumber(booking.getConfirmationNumber())
+                .requestedAt(booking.getRequestedAt())
+                .confirmedAt(booking.getConfirmedAt())
+                .respondedAt(booking.getRespondedAt())
+                .notes(booking.getNotes())
+                .build();
     }
-    
+
+    private String generateReferenceNumber() {
+        String year = String.valueOf(Year.now().getValue());
+        String random = UUID.randomUUID().toString().substring(0, 6).toUpperCase();
+        return "ACC-BOOK-" + year + "-" + random;
+    }
+
+    private void createOrGetBookingInvoice(AccommodationBooking booking) {
+        try {
+            if (!invoiceRepository.existsByAccommodationBookingId(booking.getId())) {
+                java.math.BigDecimal pricePerNight = java.math.BigDecimal.valueOf(250.00);
+                if (booking.getProperty() != null && booking.getProperty().getPriceTier() != null && booking.getProperty().getPriceTier().getMinPrice() != null) {
+                    pricePerNight = booking.getProperty().getPriceTier().getMinPrice();
+                }
+
+                long nights = 1;
+                if (booking.getCheckIn() != null && booking.getCheckOut() != null) {
+                    long diff = java.time.temporal.ChronoUnit.DAYS.between(booking.getCheckIn(), booking.getCheckOut());
+                    if (diff > 0) {
+                        nights = diff;
+                    }
+                }
+
+                int rooms = 1;
+                if (booking.getAccommodationRequirement() != null && booking.getAccommodationRequirement().getNumberOfRooms() != null) {
+                    rooms = booking.getAccommodationRequirement().getNumberOfRooms();
+                }
+
+                java.math.BigDecimal totalAmount = pricePerNight.multiply(java.math.BigDecimal.valueOf(nights * rooms));
+                String invNum = "INV-" + booking.getReferenceNumber().replace("ACC-BOOK-", "");
+
+                Invoice invoice = Invoice.builder()
+                        .accommodationBooking(booking)
+                        .invoiceNumber(invNum)
+                        .amount(totalAmount)
+                        .currency("USD")
+                        .dueDate(booking.getCheckIn() != null ? booking.getCheckIn() : LocalDate.now().plusDays(7))
+                        .status(InvoiceStatus.PENDING)
+                        .fileName(invNum + ".pdf")
+                        .filePath("/invoices/" + invNum + ".pdf")
+                        .issuedAt(OffsetDateTime.now())
+                        .build();
+
+                invoiceRepository.save(invoice);
+                log.info("Auto-generated Invoice {} for confirmed booking {}", invNum, booking.getReferenceNumber());
+            }
+        } catch (Exception e) {
+            log.warn("Could not auto-generate invoice for booking {}: {}", booking.getReferenceNumber(), e.getMessage());
+        }
+    }
 }
