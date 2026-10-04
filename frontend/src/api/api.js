@@ -77,9 +77,17 @@ export const updateData = async (path, payload, token) => {
   );
 };
 
-export const deleteData = async (path, id, token) => {
+export const deleteData = async (path, idOrToken = null, maybeToken = null) => {
+  let targetPath = path;
+  let token = idOrToken;
+
+  if (maybeToken !== null) {
+    targetPath = `${path}/${idOrToken}`;
+    token = maybeToken;
+  }
+
   return apiRequest(
-    path,
+    targetPath,
     {
       method: "DELETE",
     },

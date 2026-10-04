@@ -23,4 +23,5 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> findAll(Pageable pageable);
 
     Long countByCompany(Company company);
+    Page<User> findByCompany(Company company, Pageable pageable);
 }

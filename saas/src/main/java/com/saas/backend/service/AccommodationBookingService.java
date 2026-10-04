@@ -1,5 +1,6 @@
 package com.saas.backend.service;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.saas.backend.dto.AccommodationBookingRequest;
@@ -7,16 +8,60 @@ import com.saas.backend.dto.IncomingMailMessage;
 import com.saas.backend.models.AccommodationBooking;
 import com.saas.backend.response.AccommodationBookingResponse;
 
+/**
+ * AccommodationBookingService
+ * Core business contract for lodge room reservations, provisional requests,
+ * confirmation codes, and status transitions.
+ */
 public interface AccommodationBookingService {
+
+    /**
+     * Lists all accommodation bookings in the system ordered by newest first.
+     */
+    List<AccommodationBookingResponse> getAllBookings();
+
+    /**
+     * Retrieves single booking by unique ID.
+     */
+    AccommodationBookingResponse getBookingById(UUID bookingId);
+
+    /**
+     * Retrieves all bookings created for a specific accommodation requirement.
+     */
+    List<AccommodationBookingResponse> getBookingsByRequirement(UUID requirementId);
+
+    /**
+     * Retrieves all bookings attached to a specific safari expedition.
+     */
+    List<AccommodationBookingResponse> getBookingsBySafari(UUID safariId);
+
+    /**
+     * Creates a new draft accommodation booking.
+     */
     AccommodationBookingResponse createBooking(AccommodationBookingRequest request);
 
+    /**
+     * Dispatches the booking request to the property's contact email.
+     */
     AccommodationBookingResponse sendBookingRequest(UUID bookingId);
 
+    /**
+     * Declines/cancels a booking.
+     */
     AccommodationBookingResponse declineBooking(UUID bookingId);
 
+    /**
+     * Confirms a booking with an official property confirmation code.
+     */
     AccommodationBookingResponse confirmBooking(UUID bookingId, String confirmationNumber);
 
+    /**
+     * Handles automated inbound email confirmations.
+     */
     void processEmailConfirmation(AccommodationBooking booking, IncomingMailMessage email);
 
+    /**
+     * Handles automated inbound email declines.
+     */
     void processEmailDecline(AccommodationBooking booking, IncomingMailMessage email);
 }

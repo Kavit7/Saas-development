@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.saas.backend.models.RoomType;
+import com.saas.backend.response.RoomTypeResponse;
 import com.saas.backend.service.RoomTypeService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,10 +35,10 @@ public class RoomTypeController {
     @PostMapping
     @Operation(summary = "Create room type")
     @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
-    public ResponseEntity<RoomType> createRoomType(
+    public ResponseEntity<RoomTypeResponse> createRoomType(
             @RequestParam String name) {
 
-        RoomType roomType = roomTypeService.createRoomtype(name);
+        RoomTypeResponse roomType = roomTypeService.createRoomtype(name);
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -48,9 +48,9 @@ public class RoomTypeController {
     @GetMapping
     @Operation(summary = "Get all room types")
     @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER')")
-    public ResponseEntity<List<RoomType>> getAllRoomType() {
+    public ResponseEntity<List<RoomTypeResponse>> getAllRoomType() {
 
-        List<RoomType> roomTypes = roomTypeService.getAllRoomType();
+        List<RoomTypeResponse> roomTypes = roomTypeService.getAllRoomType();
 
         return ResponseEntity.ok(roomTypes);
     }
@@ -58,11 +58,11 @@ public class RoomTypeController {
     @PutMapping("/{roomTypeId}")
     @Operation(summary = "Update room type")
     @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
-    public ResponseEntity<RoomType> updateRoomType(
+    public ResponseEntity<RoomTypeResponse> updateRoomType(
             @PathVariable UUID roomTypeId,
             @RequestParam String name) {
 
-        RoomType roomType =
+        RoomTypeResponse roomType =
                 roomTypeService.updateRoomType(roomTypeId, name);
 
         return ResponseEntity.ok(roomType);

@@ -22,11 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.saas.backend.dto.ItineraryRequest;
 import com.saas.backend.dto.ItineraryUpdateRequest;
 import com.saas.backend.dto.SafariRequest;
-import com.saas.backend.models.ItineraryDay;
-import com.saas.backend.models.Safari;
 import com.saas.backend.models.SafariStatus;
+import com.saas.backend.response.ItineraryDayResponse;
+import com.saas.backend.response.SafariResponse;
 import com.saas.backend.serviceImpl.SafariServiceImpl;
-import com.saas.backend.specification.SafariSpecification;
 
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
@@ -36,100 +35,90 @@ import lombok.RequiredArgsConstructor;
 @SecurityRequirement(name="bearerAuth")
 @RequiredArgsConstructor 
 public class SafariController {
-       private final SafariServiceImpl safariServiceImpl;
-       
-
+    private final SafariServiceImpl safariServiceImpl;
 
     @PostMapping("{clientId}/create")
     @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
-    ResponseEntity<?> createClientSafari( @PathVariable UUID clientId,@RequestBody SafariRequest safariRequest){
-        Safari safari = safariServiceImpl.createClientSafari(clientId, safariRequest);
-        return  ResponseEntity.ok(Map.of("message","Safari Successfully created", "data", safari));
+    public ResponseEntity<?> createClientSafari(@PathVariable UUID clientId, @RequestBody SafariRequest safariRequest) {
+        SafariResponse safari = safariServiceImpl.createClientSafari(clientId, safariRequest);
+        return ResponseEntity.ok(Map.of("message", "Safari Successfully created", "data", safari));
     }
     
     @GetMapping("/{safariId}/itineraryDays")
     @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER')")
-    ResponseEntity<?> getSafariItinerary(@PathVariable  UUID safariId){
-        List<ItineraryDay> itinerary= safariServiceImpl.getItineraryDaySafari(safariId);
-         return  ResponseEntity.ok(Map.of("message","Itinerary day Successfully Loaded", "data", itinerary));
+    public ResponseEntity<?> getSafariItinerary(@PathVariable UUID safariId) {
+        List<ItineraryDayResponse> itinerary = safariServiceImpl.getItineraryDaySafari(safariId);
+        return ResponseEntity.ok(Map.of("message", "Itinerary day Successfully Loaded", "data", itinerary));
     }
 
-@PutMapping("/{safariId}/update/itinenaryDays")
-@PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
-ResponseEntity<?> updateSafariItenaryDay(
-        @PathVariable UUID safariId,
-        @RequestBody ItineraryUpdateRequest request) {
-    safariServiceImpl.updateSafariItenaryDay(safariId, request);
+    @PutMapping("/{safariId}/update/itinenaryDays")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
+    public ResponseEntity<?> updateSafariItenaryDay(
+            @PathVariable UUID safariId,
+            @RequestBody ItineraryUpdateRequest request) {
+        safariServiceImpl.updateSafariItenaryDay(safariId, request);
 
-    return ResponseEntity.ok(
-            Map.of("message", "Successfully saved all days")
-    );
-}
+        return ResponseEntity.ok(
+                Map.of("message", "Successfully saved all days")
+        );
+    }
 
+    @PutMapping("/{safariId}/itinerary-days/{dayId}")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
+    public ResponseEntity<?> updateItineraryDay(
+            @PathVariable UUID safariId,
+            @PathVariable UUID dayId,
+            @RequestBody ItineraryRequest request) {
+        safariServiceImpl.updateItineraryDay(safariId, dayId, request);
+        return ResponseEntity.ok(
+                Map.of("message", "Itinerary day updated successfully")
+        );
+    }
 
+    @DeleteMapping("/{safariId}/itinerary-days/{dayId}")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
+    public ResponseEntity<?> deleteItineraryDay(
+            @PathVariable UUID safariId,
+            @PathVariable UUID dayId) {
 
-@PutMapping("/{safariId}/itinerary-days/{dayId}")
-@PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
-public ResponseEntity<?> updateItineraryDay(
-        @PathVariable UUID safariId,
-        @PathVariable UUID dayId,
-        @RequestBody ItineraryRequest request) {
-    safariServiceImpl.updateItineraryDay(safariId, dayId,request);
-    return ResponseEntity.ok(
-            Map.of("message", "Itinerary day updated successfully")
-    );
-}
+        safariServiceImpl.deleteItineraryDay(safariId, dayId);
+        return ResponseEntity.ok(
+                Map.of("message", "Itinerary day deleted successfully")
+        );
+    }
 
+    @GetMapping("/company")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER')")
+    public ResponseEntity<?> getAllSafari(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "asc") String direction,
+            @RequestParam(required = false) SafariStatus status,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate) {
 
+        Page<SafariResponse> safaris = safariServiceImpl.getAllSafari(
+                page,
+                size,
+                sortBy,
+                search,
+                direction,
+                status,
+                startDate,
+                endDate
+        );
 
-
-@DeleteMapping("/{safariId}/itinerary-days/{dayId}")
-@PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
-public ResponseEntity<?> deleteItineraryDay(
-        @PathVariable UUID safariId,
-        @PathVariable UUID dayId) {
-
-    safariServiceImpl.deleteItineraryDay(safariId, dayId);
-    return ResponseEntity.ok(
-            Map.of("message", "Itinerary day deleted successfully")
-    );
-}
-
-
-@GetMapping("/company")
-@PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER')")
-public ResponseEntity<?> getAllSafari(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "10") int size,
-        @RequestParam(defaultValue = "createdAt") String sortBy,
-        @RequestParam(required = false) String search,
-        @RequestParam(defaultValue = "asc") String direction,
-        @RequestParam(required = false) SafariStatus status,
-        @RequestParam(required = false)
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-        LocalDate startDate,
-        @RequestParam(required = false)
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-        LocalDate endDate) {
-
-    Page<Safari> safaris = safariServiceImpl.getAllSafari(
-            page,
-            size,
-            sortBy,
-            search,
-            direction,
-            status,
-            startDate,
-            endDate
-    );
-
-    return ResponseEntity.ok(
-            Map.of(
-                    "message", "Safaris successfully loaded",
-                    "data", safaris
-            )
-    );
-}
-
-
+        return ResponseEntity.ok(
+                Map.of(
+                        "message", "Safaris successfully loaded",
+                        "data", safaris
+                )
+        );
+    }
 }

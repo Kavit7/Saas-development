@@ -4,15 +4,13 @@ import java.util.List;
 import java.util.UUID;
 
 import com.saas.backend.dto.PriceTierRequest;
-import com.saas.backend.models.PriceTier;
+import com.saas.backend.response.PriceTierResponse;
 
 public interface PriceTierService {
 
-
-    PriceTier createPriceTier(PriceTierRequest request);
+    PriceTierResponse createPriceTier(PriceTierRequest request);
     void deletePriceTier(UUID priceId);
-    List<PriceTier> getAllPriceTier();
-    PriceTier updatPriceTier(UUID priceId,PriceTierRequest request);
+    List<PriceTierResponse> getAllPriceTier();
+    PriceTierResponse updatPriceTier(UUID priceId, PriceTierRequest request);
 
-    
 }

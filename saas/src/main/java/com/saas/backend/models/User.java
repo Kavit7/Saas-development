@@ -47,6 +47,9 @@ public class User extends BaseEntity implements UserDetails {
     @Column(nullable = false)
     private String lastName;
 
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
     @Column(nullable = false, unique = true)
     private String email;
 
