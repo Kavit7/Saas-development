@@ -13,16 +13,26 @@ import DashboardPage from "./users/DashboardPage";
 import ResourcePage from "./users/ResourcePage";
 import Layout from "./components/layout/Layout";
 import { resources } from "./config/resources";
+import { useAuth } from "./hooks/useAuth";
 
 function ResourceRoute() {
   const { resource } = useParams();
+  const { hasAccess } = useAuth();
   const config = resources[resource];
-  if (!config) return <div>Resource not found</div>;
-  if (config.fields) {
-    return <ResourcePage {...config} />;
+
+  if (!config || !hasAccess(config.roles)) {
+    return <Navigate to="/dashboard" replace />;
   }
 
-  if (config.page) {
+  if (config.fields) {
+    return <ResourcePage key={resource} resourceName={resource} {...config} />;
+  }
+
+  if (resource === "dashboard" || config.page === "DashboardPage") {
+    return <DashboardPage />;
+  }
+
+  if (config.page && typeof config.page !== "string") {
     const Page = config.page;
     return <Page />;
   }

@@ -1,0 +1,148 @@
+import { Users, Airplane, Plus } from "@phosphor-icons/react";
+
+const ClientSubdataView = ({
+  activeTab, // "guests" | "flights"
+  client,
+  guests = [],
+  flights = [],
+  canCreate = false,
+  onAddGuest,
+  onAddFlight,
+}) => {
+  if (activeTab === "guests") {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-slate-800 font-serif-title">
+            Registered Guests ({guests.length})
+          </h3>
+          {canCreate && (
+            <button
+              type="button"
+              onClick={onAddGuest}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#101B82] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0d176f] transition shadow-2xs"
+            >
+              <Plus size={14} weight="bold" />
+              <span>Add Guest</span>
+            </button>
+          )}
+        </div>
+
+        {guests.length === 0 ? (
+          <div className="rounded-2xl border border-slate-200/90 bg-white p-12 text-center shadow-xs">
+            <Users size={36} className="mx-auto text-slate-300 mb-2" />
+            <p className="text-sm font-semibold text-slate-700 font-serif-title">
+              No guests registered for this client yet.
+            </p>
+            <p className="text-xs text-slate-400 mt-1">
+              Click the button above to add the first guest record.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
+            <table className="w-full text-left text-xs text-slate-700">
+              <thead className="bg-slate-50/80 border-b border-slate-200/80">
+                <tr>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Name</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Gender</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Nationality</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Passport Number</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Passport Expiry</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Date of Birth</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {guests.map((g) => (
+                  <tr key={g.id} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="px-4 py-3 font-semibold text-slate-900">
+                      {g.firstName} {g.lastName}
+                    </td>
+                    <td className="px-4 py-3">{g.gender || "—"}</td>
+                    <td className="px-4 py-3">{g.nationality || "—"}</td>
+                    <td className="px-4 py-3 font-mono">{g.passportNumber || "—"}</td>
+                    <td className="px-4 py-3">{g.passportExpiry || "—"}</td>
+                    <td className="px-4 py-3">{g.dateOfBirth || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Flights view
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-slate-800 font-serif-title">
+          Flight Schedules ({flights.length})
+        </h3>
+        {canCreate && (
+          <button
+            type="button"
+            onClick={onAddFlight}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#101B82] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0d176f] transition shadow-2xs"
+          >
+            <Plus size={14} weight="bold" />
+            <span>Add Flight</span>
+          </button>
+        )}
+      </div>
+
+      {flights.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200/90 bg-white p-12 text-center shadow-xs">
+          <Airplane size={36} className="mx-auto text-slate-300 mb-2" />
+          <p className="text-sm font-semibold text-slate-700 font-serif-title">
+            No flight records registered for this client.
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            Click the button above to register an arrival, departure, or internal flight.
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
+          <table className="w-full text-left text-xs text-slate-700">
+            <thead className="bg-slate-50/80 border-b border-slate-200/80">
+              <tr>
+                <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Type</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Airline</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Flight No</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Airport</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Arrival</th>
+                <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Departure</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {flights.map((f) => (
+                <tr key={f.id} className="hover:bg-slate-50/60 transition-colors">
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
+                        f.flightType === "ARRIVAL"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : f.flightType === "DEPARTURE"
+                          ? "bg-blue-50 text-blue-700 border-blue-200"
+                          : "bg-indigo-50 text-[#101B82] border-indigo-200"
+                      }`}
+                    >
+                      {f.flightType}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-semibold text-slate-900">{f.airline}</td>
+                  <td className="px-4 py-3 font-mono font-medium">{f.flightNumber}</td>
+                  <td className="px-4 py-3">{f.airport}</td>
+                  <td className="px-4 py-3">{f.arrivalDatetime ? String(f.arrivalDatetime).slice(0, 16).replace("T", " ") : "—"}</td>
+                  <td className="px-4 py-3">{f.departureDatetime ? String(f.departureDatetime).slice(0, 16).replace("T", " ") : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ClientSubdataView;

@@ -9,16 +9,28 @@ import com.saas.backend.models.BookingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
+/**
+ * AccommodationBookingResponse DTO
+ * Comprehensive response model representing an accommodation booking file.
+ */
 @Builder
 @Data 
+@NoArgsConstructor
 @AllArgsConstructor 
-
 public class AccommodationBookingResponse {
     private UUID id;
     private String referenceNumber;
     private UUID requirementId;
+    private UUID propertyId;
     private String propertyName;
+    private UUID safariId;
+    private String safariReference;
+    private String destination;
+    private String clientName;
+    private String categoryName;
+    private Integer roomsCount;
     private String reservationManagerName;
     private LocalDate checkIn;
     private LocalDate checkOut;

@@ -18,8 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.saas.backend.dto.GuestRequest;
 import com.saas.backend.dto.GuestRequirmentRequest;
-import com.saas.backend.models.Guest;
-import com.saas.backend.models.GuestRequirement;
+import com.saas.backend.response.GuestRequirementResponse;
 import com.saas.backend.response.GuestResponse;
 import com.saas.backend.serviceImpl.GuestServiceImpl;
 
@@ -30,12 +29,9 @@ import lombok.RequiredArgsConstructor;
 @SecurityRequirement(name="bearerAuth")
 @RequestMapping("/guest") 
 @RequiredArgsConstructor 
-
 public class GuestController {
     
   private final GuestServiceImpl guestService;
-
-
 
   @PostMapping ("/{id}/client")
   @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
@@ -48,11 +44,12 @@ public class GuestController {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
   }
-@PutMapping ("/{id}")
+
+  @PutMapping ("/{id}")
   @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
   ResponseEntity<?> editGuest( @PathVariable UUID id, @RequestBody GuestRequest request){
     try{
-        Guest guest= guestService.editGuest(id, request);
+        GuestResponse guest= guestService.editGuest(id, request);
         return ResponseEntity.ok(Map.of("message","Guest Updated Successfully","data",guest));
     }
     catch(Exception e){
@@ -71,11 +68,12 @@ public class GuestController {
         return ResponseEntity.badRequest().body(e.getMessage());
     }
   }
+
   @PostMapping ("/{id}/requirements")
   @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
   ResponseEntity<?> createGuestRequirement( @PathVariable UUID id,@RequestBody GuestRequirmentRequest request,Authentication auth){
     try{
-        GuestRequirement guestRequirement =guestService.createGuestRequirment(id,request, auth);
+        GuestRequirementResponse guestRequirement = guestService.createGuestRequirment(id,request, auth);
         return ResponseEntity.ok(Map.of("message","Guest Requirement added Successfully","data",guestRequirement));
     }
     catch(Exception e){
@@ -83,24 +81,23 @@ public class GuestController {
     }
   }
 
- @GetMapping("guest-requirements/{guestId}")
- @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
- ResponseEntity<?> getGuestRequirement(@PathVariable UUID guestId){
-          try{
-           List<GuestRequirement> requirement= guestService.getGuestRequirement(guestId);
-           return ResponseEntity.ok(Map.of("message","Guest Requirement Loaded","data",requirement));
+  @GetMapping("guest-requirements/{guestId}")
+  @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
+  ResponseEntity<?> getGuestRequirement(@PathVariable UUID guestId){
+    try{
+        List<GuestRequirementResponse> requirement= guestService.getGuestRequirement(guestId);
+        return ResponseEntity.ok(Map.of("message","Guest Requirement Loaded","data",requirement));
     }
     catch(Exception e){
         return ResponseEntity.badRequest().body(e.getMessage());
     }
- }
- //Update Guest Requirement
- 
- @PutMapping ("guest-requirements/{reqId}")
+  }
+
+  @PutMapping ("guest-requirements/{reqId}")
   @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
   ResponseEntity<?> updateGuestRequirement(@PathVariable UUID reqId,@RequestBody GuestRequirmentRequest request){
     try{
-        GuestRequirement guestRequirement= guestService.updateGuestRequirement(reqId, request);
+        GuestRequirementResponse guestRequirement= guestService.updateGuestRequirement(reqId, request);
         return ResponseEntity.ok(Map.of("message","GuestRequirement Updated Successfully","data",guestRequirement));
     }
     catch(Exception e){
@@ -110,7 +107,7 @@ public class GuestController {
 
   @DeleteMapping("guest-requirements/{reqId}")
   @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
-ResponseEntity<?> deleteGuestRequirement( @PathVariable UUID reqId){
+  ResponseEntity<?> deleteGuestRequirement( @PathVariable UUID reqId){
     try{
         guestService.deleteGuestRequirement(reqId);
         return ResponseEntity.ok(Map.of("message","Guest Requirement deleted Successfully"));
@@ -119,5 +116,4 @@ ResponseEntity<?> deleteGuestRequirement( @PathVariable UUID reqId){
         return ResponseEntity.badRequest().body(e.getMessage());
     }
   }
-
 }

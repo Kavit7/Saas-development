@@ -20,6 +20,8 @@ public interface ClientRepository extends JpaRepository<Client,UUID>,JpaSpecific
  boolean existsByCompanyIdAndEmail(UUID id,String email);
  List<Client> findAllBySalesPersonId(UUID userId);
  List<Client> findAllByCompany_Id(UUID companyId);
+ long countByCompany_Id(UUID companyId);
+ long countBySalesPersonId(UUID userId);
 
  Page<Client> findAll(Specification specification,Pageable pageable);
 } 
