@@ -70,7 +70,7 @@ public class GuestController {
   }
 
   @PostMapping ("/{id}/requirements")
-  @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
+  @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN','RESERVATION_MANAGER','SUPER_ADMIN')")
   ResponseEntity<?> createGuestRequirement( @PathVariable UUID id,@RequestBody GuestRequirmentRequest request,Authentication auth){
     try{
         GuestRequirementResponse guestRequirement = guestService.createGuestRequirment(id,request, auth);
@@ -82,7 +82,7 @@ public class GuestController {
   }
 
   @GetMapping("guest-requirements/{guestId}")
-  @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
+  @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN','RESERVATION_MANAGER','SUPER_ADMIN')")
   ResponseEntity<?> getGuestRequirement(@PathVariable UUID guestId){
     try{
         List<GuestRequirementResponse> requirement= guestService.getGuestRequirement(guestId);
@@ -94,7 +94,7 @@ public class GuestController {
   }
 
   @PutMapping ("guest-requirements/{reqId}")
-  @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
+  @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN','RESERVATION_MANAGER','SUPER_ADMIN')")
   ResponseEntity<?> updateGuestRequirement(@PathVariable UUID reqId,@RequestBody GuestRequirmentRequest request){
     try{
         GuestRequirementResponse guestRequirement= guestService.updateGuestRequirement(reqId, request);
@@ -106,7 +106,7 @@ public class GuestController {
   }
 
   @DeleteMapping("guest-requirements/{reqId}")
-  @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN')")
+  @PreAuthorize("hasAnyRole('SALES_PERSON','ADMIN','RESERVATION_MANAGER','SUPER_ADMIN')")
   ResponseEntity<?> deleteGuestRequirement( @PathVariable UUID reqId){
     try{
         guestService.deleteGuestRequirement(reqId);

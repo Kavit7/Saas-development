@@ -26,10 +26,11 @@ const BookingActionBanner = ({
 
   if (!booking) return null;
 
-  const isDraft = booking.status === "DRAFT";
-  const isProvisional = booking.status === "PROVISIONAL";
-  const isConfirmed = booking.status === "CONFIRMED";
-  const isCancelled = booking.status === "CANCELLED";
+  const status = String(booking?.status || "").toUpperCase();
+  const isDraft = status === "DRAFT";
+  const isProvisional = status === "PROVISIONAL";
+  const isConfirmed = status === "CONFIRMED";
+  const isCancelled = status === "CANCELLED";
 
   const getStatusColor = () => {
     if (isConfirmed) return "bg-emerald-50 text-emerald-700 border-emerald-200";

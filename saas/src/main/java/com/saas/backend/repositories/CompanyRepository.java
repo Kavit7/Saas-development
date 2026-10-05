@@ -18,6 +18,7 @@ public interface CompanyRepository extends JpaRepository<Company,UUID> {
      
     Optional<Company> findById(UUID id);
     Optional<Company> findByNameIgnoreCase(String name);
+    Optional<Company> findBySlug(String slug);
     Page<Company> findAll(Pageable pageable);
     Optional<Company> findByIdOrName(UUID id, String Name);
 

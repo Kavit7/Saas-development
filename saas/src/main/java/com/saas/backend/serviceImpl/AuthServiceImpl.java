@@ -38,6 +38,11 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
 
+        // Check if email belongs to a Platform Admin
+        if (platformAdminRepository.findByEmail(request.getEmail()).isPresent()) {
+            return platformAdminlogin(request);
+        }
+
         // 1. Check email and password
         try {
 

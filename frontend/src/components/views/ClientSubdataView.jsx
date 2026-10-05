@@ -1,4 +1,6 @@
-import { Users, Airplane, Plus } from "@phosphor-icons/react";
+import { useState } from "react";
+import { Users, Airplane, Plus, FirstAid } from "@phosphor-icons/react";
+import GuestRequirementsModal from "../guests/GuestRequirementsModal";
 
 const ClientSubdataView = ({
   activeTab, // "guests" | "flights"
@@ -6,9 +8,13 @@ const ClientSubdataView = ({
   guests = [],
   flights = [],
   canCreate = false,
+  canManage = true,
   onAddGuest,
   onAddFlight,
 }) => {
+  const [selectedGuestForReqs, setSelectedGuestForReqs] = useState(null);
+  const [reqsModalOpen, setReqsModalOpen] = useState(false);
+
   if (activeTab === "guests") {
     return (
       <div className="space-y-4">
@@ -49,6 +55,7 @@ const ClientSubdataView = ({
                   <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Passport Number</th>
                   <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Passport Expiry</th>
                   <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500">Date of Birth</th>
+                  <th className="px-4 py-3 font-semibold uppercase tracking-wider text-slate-500 text-right">Special Requirements</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -62,12 +69,35 @@ const ClientSubdataView = ({
                     <td className="px-4 py-3 font-mono">{g.passportNumber || "—"}</td>
                     <td className="px-4 py-3">{g.passportExpiry || "—"}</td>
                     <td className="px-4 py-3">{g.dateOfBirth || "—"}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedGuestForReqs(g);
+                          setReqsModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200/80 bg-indigo-50/70 text-[#101B82] text-xs font-bold hover:bg-indigo-100 hover:border-indigo-300 transition active:scale-95 shadow-2xs"
+                      >
+                        <FirstAid size={14} weight="duotone" />
+                        <span>Requirements</span>
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         )}
+
+        <GuestRequirementsModal
+          open={reqsModalOpen}
+          onClose={() => {
+            setReqsModalOpen(false);
+            setSelectedGuestForReqs(null);
+          }}
+          guest={selectedGuestForReqs}
+          canManage={canManage}
+        />
       </div>
     );
   }

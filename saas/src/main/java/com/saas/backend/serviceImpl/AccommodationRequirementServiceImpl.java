@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.saas.backend.AccessHelper.CompanyAccessValidator;
 import com.saas.backend.Exception.DuplicateException;
@@ -244,12 +245,14 @@ public AccommodationRequirementResponse updateAccommodationRequirement(
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<AccommodationRequirementResponse> getAccommodationRequirementsBySafari(UUID safariId) {
         List<AccommodationRequirement> requirements = accommodationRequirementRepository.findBySafariId(safariId);
         return requirements.stream().map(this::mapToResponse).toList();
     }
 
     @Override
+    @Transactional(readOnly = true)
     public AccommodationRequirementResponse getAccommodationRequirementByItineraryDay(UUID itineraryId) {
         AccommodationRequirement requirement = accommodationRequirementRepository.findByItineraryDayId(itineraryId)
                 .orElse(null);
