@@ -102,10 +102,15 @@ const MailboxView = () => {
   const fetchBookings = useCallback(async () => {
     if (!token) return;
     try {
-      const res = await getAllData("/api/v1/accommodation-bookings", token);
-      if (Array.isArray(res)) {
-        setBookingsList(res);
-      }
+      const res = await getAllData("/api/v1/accommodation-bookings?size=1000", token);
+      const list = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.content)
+        ? res.content
+        : Array.isArray(res?.data)
+        ? res.data
+        : [];
+      setBookingsList(list);
     } catch (err) {
       console.warn("Could not load bookings list:", err);
     }

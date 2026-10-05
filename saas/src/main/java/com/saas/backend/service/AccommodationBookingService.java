@@ -6,7 +6,9 @@ import java.util.UUID;
 import com.saas.backend.dto.AccommodationBookingRequest;
 import com.saas.backend.dto.IncomingMailMessage;
 import com.saas.backend.models.AccommodationBooking;
+import com.saas.backend.models.BookingStatus;
 import com.saas.backend.response.AccommodationBookingResponse;
+import org.springframework.data.domain.Page;
 
 /**
  * AccommodationBookingService
@@ -14,6 +16,18 @@ import com.saas.backend.response.AccommodationBookingResponse;
  * confirmation codes, and status transitions.
  */
 public interface AccommodationBookingService {
+
+    /**
+     * Lists accommodation bookings with pagination, multi-tenancy validation, and filtering.
+     */
+    Page<AccommodationBookingResponse> getBookings(
+            int page,
+            int size,
+            String sortBy,
+            String direction,
+            String search,
+            BookingStatus status
+    );
 
     /**
      * Lists all accommodation bookings in the system ordered by newest first.

@@ -7,9 +7,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.saas.backend.AccessHelper.CompanyAccessValidator;
 import com.saas.backend.AccessHelper.CurrentUserChecker;
 import com.saas.backend.Exception.ResourceNotFoundException;
 import com.saas.backend.dto.AccommodationBookingRequest;
@@ -35,6 +41,7 @@ import com.saas.backend.service.AccommodationBookingService;
 import com.saas.backend.service.BookingFollowUpService;
 import com.saas.backend.service.EmailService;
 import com.saas.backend.service.NotificationService;
+import com.saas.backend.specification.AccommodationBookingSpecification;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,15 +60,73 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
     private final AccommodationRequirementRepository accommodationRequirementRepository;
     private final PropertyRepository propertyRepository;
     private final CurrentUserChecker checker;
+    private final CompanyAccessValidator companyAccessValidator;
     private final BookingFollowUpService bookingFollowUpService;
     private final EmailService emailService;
     private final NotificationService notificationService;
     private final SafariRepository safariRepository;
     private final InvoiceRepository invoiceRepository;
 
+    private void validateBookingCompanyAccess(AccommodationBooking booking) {
+        if (booking != null &&
+            booking.getAccommodationRequirement() != null &&
+            booking.getAccommodationRequirement().getSafari() != null &&
+            booking.getAccommodationRequirement().getSafari().getClient() != null &&
+            booking.getAccommodationRequirement().getSafari().getClient().getCompany() != null) {
+            companyAccessValidator.validate(booking.getAccommodationRequirement().getSafari().getClient().getCompany().getId());
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AccommodationBookingResponse> getBookings(
+            int page,
+            int size,
+            String sortBy,
+            String direction,
+            String search,
+            BookingStatus status
+    ) {
+        User currentUser = checker.checkCurrentUser();
+        Sort sort = "desc".equalsIgnoreCase(direction) ?
+                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Specification<AccommodationBooking> specification = (root, query, cb) -> cb.conjunction();
+
+        boolean isSuperAdmin = currentUser.getRole() != null &&
+                "SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName().replace("ROLE_", "").trim());
+
+        if (!isSuperAdmin && currentUser.getCompany() != null) {
+            specification = specification.and(AccommodationBookingSpecification.hasCompany(currentUser.getCompany().getId()));
+        }
+
+        if (status != null) {
+            specification = specification.and(AccommodationBookingSpecification.hasStatus(status));
+        }
+
+        if (search != null && !search.isBlank()) {
+            specification = specification.and(AccommodationBookingSpecification.hasSearch(search));
+        }
+
+        return accommodationBookingRepository.findAll(specification, pageable).map(this::mapToResponse);
+    }
+
     @Override
     @Transactional(readOnly = true)
     public List<AccommodationBookingResponse> getAllBookings() {
+        User currentUser = checker.checkCurrentUser();
+        boolean isSuperAdmin = currentUser.getRole() != null &&
+                "SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName().replace("ROLE_", "").trim());
+
+        if (!isSuperAdmin && currentUser.getCompany() != null) {
+            Specification<AccommodationBooking> spec = AccommodationBookingSpecification.hasCompany(currentUser.getCompany().getId());
+            return accommodationBookingRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "createdAt"))
+                    .stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        }
+
         return accommodationBookingRepository.findAllByOrderByCreatedAtDesc()
                 .stream()
                 .map(this::mapToResponse)
@@ -73,12 +138,20 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
     public AccommodationBookingResponse getBookingById(UUID bookingId) {
         AccommodationBooking booking = accommodationBookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + bookingId));
+        validateBookingCompanyAccess(booking);
         return mapToResponse(booking);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<AccommodationBookingResponse> getBookingsByRequirement(UUID requirementId) {
+        AccommodationRequirement requirement = accommodationRequirementRepository.findById(requirementId)
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation requirement not found: " + requirementId));
+        if (requirement.getSafari() != null &&
+            requirement.getSafari().getClient() != null &&
+            requirement.getSafari().getClient().getCompany() != null) {
+            companyAccessValidator.validate(requirement.getSafari().getClient().getCompany().getId());
+        }
         return accommodationBookingRepository.findByAccommodationRequirementId(requirementId)
                 .stream()
                 .map(this::mapToResponse)
@@ -88,6 +161,11 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
     @Override
     @Transactional(readOnly = true)
     public List<AccommodationBookingResponse> getBookingsBySafari(UUID safariId) {
+        Safari safari = safariRepository.findById(safariId)
+                .orElseThrow(() -> new ResourceNotFoundException("Safari not found: " + safariId));
+        if (safari.getClient() != null && safari.getClient().getCompany() != null) {
+            companyAccessValidator.validate(safari.getClient().getCompany().getId());
+        }
         return accommodationBookingRepository.findBySafariId(safariId)
                 .stream()
                 .map(this::mapToResponse)
@@ -100,8 +178,18 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         AccommodationRequirement requirement = accommodationRequirementRepository.findById(request.getAccomodationRequirementId())
                 .orElseThrow(() -> new ResourceNotFoundException("Accommodation Requirement Not found: " + request.getAccomodationRequirementId()));
 
+        if (requirement.getSafari() != null &&
+            requirement.getSafari().getClient() != null &&
+            requirement.getSafari().getClient().getCompany() != null) {
+            companyAccessValidator.validate(requirement.getSafari().getClient().getCompany().getId());
+        }
+
         Property property = propertyRepository.findById(request.getPropertyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Property Not found: " + request.getPropertyId()));
+
+        if (requirement.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.COMPLETED) {
+            throw new IllegalStateException("This accommodation requirement has already been booked and completed.");
+        }
 
         // Automatically infer and fallback dates if omitted from the direct request
         LocalDate checkIn = request.getCheckIn();
@@ -185,6 +273,7 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
     public AccommodationBookingResponse sendBookingRequest(UUID bookingId) {
         AccommodationBooking booking = accommodationBookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking Not found: " + bookingId));
+        validateBookingCompanyAccess(booking);
 
         if (booking.getStatus() != BookingStatus.DRAFT) {
             throw new IllegalStateException("Only Draft bookings can be dispatched to property");
@@ -245,6 +334,7 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
     public AccommodationBookingResponse declineBooking(UUID bookingId) {
         AccommodationBooking booking = accommodationBookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Accommodation booking not found: " + bookingId));
+        validateBookingCompanyAccess(booking);
 
         booking.setStatus(BookingStatus.CANCELLED);
         booking.setRespondedAt(OffsetDateTime.now());
@@ -273,6 +363,7 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
     public AccommodationBookingResponse confirmBooking(UUID bookingId, String confirmationNumber) {
         AccommodationBooking booking = accommodationBookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Accommodation booking not found: " + bookingId));
+        validateBookingCompanyAccess(booking);
 
         if (confirmationNumber == null || confirmationNumber.isBlank()) {
             throw new IllegalArgumentException("Property confirmation number is required");
@@ -288,7 +379,7 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         AccommodationRequirement requirement = booking.getAccommodationRequirement();
         if (requirement != null) {
             requirement.setAccomodationRequirmentStatus(AccomodationRequirmentStatus.COMPLETED);
-            accommodationRequirementRepository.save(requirement);
+            accommodationRequirementRepository.saveAndFlush(requirement);
 
             // If all requirements for this safari are completed, progress Safari to CONFIRMED
             Safari safari = requirement.getSafari();
@@ -298,11 +389,11 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
                         .allMatch(r -> r.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.COMPLETED);
                 if (allCompleted) {
                     safari.setStatus(SafariStatus.CONFIRMED);
-                    safariRepository.save(safari);
+                    safariRepository.saveAndFlush(safari);
                     log.info("All requirements completed! Transitioned Safari {} to CONFIRMED", safari.getReferenceNumber());
                 } else if (safari.getStatus() == SafariStatus.DRAFT) {
                     safari.setStatus(SafariStatus.IN_PROGRESS);
-                    safariRepository.save(safari);
+                    safariRepository.saveAndFlush(safari);
                 }
             }
         }
@@ -336,7 +427,18 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         AccommodationRequirement requirement = booking.getAccommodationRequirement();
         if (requirement != null) {
             requirement.setAccomodationRequirmentStatus(AccomodationRequirmentStatus.COMPLETED);
-            accommodationRequirementRepository.save(requirement);
+            accommodationRequirementRepository.saveAndFlush(requirement);
+
+            Safari safari = requirement.getSafari();
+            if (safari != null) {
+                List<AccommodationRequirement> allReqs = accommodationRequirementRepository.findBySafariId(safari.getId());
+                boolean allCompleted = !allReqs.isEmpty() && allReqs.stream()
+                        .allMatch(r -> r.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.COMPLETED);
+                if (allCompleted) {
+                    safari.setStatus(SafariStatus.CONFIRMED);
+                    safariRepository.saveAndFlush(safari);
+                }
+            }
         }
 
         try {

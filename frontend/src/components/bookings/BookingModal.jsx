@@ -15,7 +15,10 @@ const BookingModal = ({
   safari,
   onSuccess,
 }) => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const normalizedRole = String(user?.role_name || user?.role || "").toUpperCase().replace(/^ROLE_/, "").trim();
+  const isSalesPerson = ["SALES_PERSON", "SALE", "SALES", "SALESPERSON"].includes(normalizedRole);
+
   const [properties, setProperties] = useState([]);
   const [loadingProps, setLoadingProps] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -29,7 +32,7 @@ const BookingModal = ({
 
   // Populate initial dates and load properties
   useEffect(() => {
-    if (!open) return;
+    if (!open || isSalesPerson) return;
 
     setError(null);
     setSelectedPropertyId("");
@@ -117,6 +120,8 @@ const BookingModal = ({
       setSubmitting(false);
     }
   };
+
+  if (!open || isSalesPerson) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150">

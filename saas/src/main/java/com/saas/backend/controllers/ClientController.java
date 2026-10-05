@@ -52,22 +52,22 @@ public class ClientController {
     }
    
     @GetMapping("/clients")
-    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
     public ResponseEntity<Page<ClientResponse>> getClients(
             Authentication auth,
             @RequestParam (defaultValue = "0") int page,
             @RequestParam (defaultValue = "20") int size,
             @RequestParam (defaultValue = "createdAt") String sortBy,
-            @RequestParam (defaultValue = "") String search,
+            @RequestParam (required = false) String search,
             @RequestParam (defaultValue="asc") String direction,
-            @RequestParam(defaultValue = "ACTIVE") ClientStatus status
+            @RequestParam (required = false) ClientStatus status
     ) {
         Page<ClientResponse> client = clientService.getClients(auth, page, size, sortBy, search, direction, status);
         return ResponseEntity.ok(client);
     }
 
     @GetMapping("/client/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
     public ResponseEntity<?> getClientsById(@PathVariable UUID id) {
         try {
             ClientResponse client = clientService.getClientById(id);
@@ -89,7 +89,7 @@ public class ClientController {
     }
 
     @GetMapping("/client/{id}/guests")
-    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
     public ResponseEntity<?> getClientGuests(@PathVariable UUID id) {
         try {
             List<GuestResponse> guests = clientService.getClientGuest(id);

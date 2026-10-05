@@ -8,8 +8,10 @@ import {
   Trash, 
   CalendarCheck,
   CheckCircle,
-  WarningCircle
+  WarningCircle,
+  ArrowsClockwise
 } from "@phosphor-icons/react";
+import { useAuth } from "../../hooks/useAuth";
 
 const getStatusBadgeClass = (status) => {
   const s = String(status || "").toUpperCase();
@@ -28,6 +30,7 @@ const getStatusBadgeClass = (status) => {
 const SafariItineraryView = ({
   days = [],
   requirements = [],
+  bookings = [],
   canUpdate = false,
   canCreate = false,
   canDelete = false,
@@ -38,6 +41,34 @@ const SafariItineraryView = ({
   onDeleteRequirement,
   onBookLodge,
 }) => {
+  const { user } = useAuth();
+  const normalizedRole = String(user?.role_name || user?.role || "").toUpperCase().replace(/^ROLE_/, "").trim();
+  const isSalesPerson = ["SALES_PERSON", "SALE", "SALES", "SALESPERSON"].includes(normalizedRole);
+
+  // Helper to match booking for a day/requirement
+  const getBookingForDay = (day, req) => {
+    return (bookings || []).find((b) => {
+      if (req && b.requirementId && String(b.requirementId) === String(req.id)) {
+        return true;
+      }
+      if (b.checkIn && day.date && b.checkIn === day.date) {
+        return true;
+      }
+      return false;
+    });
+  };
+
+  const isDayConfirmed = (day) => {
+    const req = requirements.find((r) => String(r.itineraryDayId) === String(day.id));
+    const b = getBookingForDay(day, req);
+    const bookingConfirmed = b && String(b.status || "").toUpperCase() === "CONFIRMED";
+    const reqConfirmed = req && (
+      String(req.status || "").toUpperCase() === "COMPLETED" ||
+      String(req.status || "").toUpperCase() === "CONFIRMED"
+    );
+    return bookingConfirmed || reqConfirmed;
+  };
+
   if (days.length === 0) {
     return (
       <div className="rounded-2xl border border-slate-200/90 bg-white p-12 text-center shadow-xs">
@@ -54,9 +85,7 @@ const SafariItineraryView = ({
 
   // Booking Progress Calculations across all days
   const totalDays = days.length;
-  const confirmedCount = requirements.filter(
-    (r) => String(r.status || "").toUpperCase() === "COMPLETED" || String(r.status || "").toUpperCase() === "CONFIRMED"
-  ).length;
+  const confirmedCount = days.filter(isDayConfirmed).length;
   const progressPercent = totalDays > 0 ? Math.round((confirmedCount / totalDays) * 100) : 0;
   const pendingCount = Math.max(totalDays - confirmedCount, 0);
 
@@ -111,12 +140,30 @@ const SafariItineraryView = ({
 
       {/* 2. List of Scheduled Itinerary Days */}
       {days.map((day) => {
-        const req = requirements.find((r) => r.itineraryDayId === day.id);
+        const req = requirements.find((r) => String(r.itineraryDayId) === String(day.id));
+        const booking = getBookingForDay(day, req);
         const isDestinationConfigured = day.destination && day.destination !== "Destination not set";
-        const isRequirementConfirmed = req && (
-          String(req.status || "").toUpperCase() === "COMPLETED" ||
-          String(req.status || "").toUpperCase() === "CONFIRMED"
-        );
+
+        const isBookingConfirmed = booking && String(booking.status || "").toUpperCase() === "CONFIRMED";
+        const isRequirementConfirmed =
+          isBookingConfirmed ||
+          (req && (
+            String(req.status || "").toUpperCase() === "COMPLETED" ||
+            String(req.status || "").toUpperCase() === "CONFIRMED"
+          ));
+
+        const isBookingPending =
+          !isRequirementConfirmed &&
+          booking &&
+          String(booking.status || "").toUpperCase() !== "CANCELLED" &&
+          (
+            String(booking.status || "").toUpperCase() === "PROVISIONAL" ||
+            String(booking.status || "").toUpperCase() === "DRAFT" ||
+            (req && (
+              String(req.status || "").toUpperCase() === "IN_PROGRESS" ||
+              String(req.status || "").toUpperCase() === "AWAITING_RESPONSE"
+            ))
+          );
 
         return (
           <div
@@ -183,10 +230,18 @@ const SafariItineraryView = ({
                       </span>
                       <span
                         className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusBadgeClass(
-                          req.status
+                          isRequirementConfirmed
+                            ? "COMPLETED"
+                            : isBookingPending
+                            ? (booking?.status || "IN_PROGRESS")
+                            : req.status
                         )}`}
                       >
-                        {req.status || "PENDING"}
+                        {isRequirementConfirmed
+                          ? "CONFIRMED"
+                          : isBookingPending
+                          ? (booking?.status ? String(booking.status).toUpperCase() : (req.status || "IN_PROGRESS"))
+                          : (req.status || "PENDING")}
                       </span>
                     </div>
 
@@ -282,11 +337,18 @@ const SafariItineraryView = ({
                   {/* Booking Trigger / Status Bar */}
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-indigo-100/60">
                     <div className="text-[11px] text-slate-500">
-                      Requirement Status: <span className="font-semibold text-slate-800">{req.status || "PENDING"}</span>
+                      Requirement Status:{" "}
+                      <span className="font-semibold text-slate-800">
+                        {isRequirementConfirmed
+                          ? "CONFIRMED"
+                          : isBookingPending
+                          ? (booking?.status ? String(booking.status).toUpperCase() : (req?.status || "IN_PROGRESS"))
+                          : (req?.status || "PENDING")}
+                      </span>
                     </div>
 
-                    {/* ONLY show Allocate & Book button if user has permission (NOT Sales Person) AND requirement is NOT already confirmed */}
-                    {canBook && !isRequirementConfirmed && (
+                    {/* ONLY show Allocate & Book button if user has permission (NOT Sales Person) AND requirement is NOT already confirmed or pending */}
+                    {!isSalesPerson && canBook && !isRequirementConfirmed && !isBookingPending && (
                       <button
                         type="button"
                         onClick={() => onBookLodge && onBookLodge(req, day)}
@@ -297,11 +359,27 @@ const SafariItineraryView = ({
                       </button>
                     )}
 
-                    {/* If requirement is already confirmed, show confirmation badge */}
+                    {/* Pending / In-progress booking */}
+                    {isBookingPending && (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
+                        <ArrowsClockwise size={14} weight="bold" className="text-amber-600 animate-spin" />
+                        <span>
+                          {String(booking?.status || "").toUpperCase() === "PROVISIONAL"
+                            ? `Inquiry Dispatched${booking.propertyName ? ` (${booking.propertyName})` : ""}`
+                            : `Draft Booking Allocated${booking?.propertyName ? ` (${booking.propertyName})` : ""}`}
+                        </span>
+                      </span>
+                    )}
+
+                    {/* Confirmed booking */}
                     {isRequirementConfirmed && (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
                         <CheckCircle size={15} weight="bold" className="text-emerald-600" />
-                        <span>Lodge Booked & Confirmed</span>
+                        <span>
+                          Lodge Booked & Confirmed
+                          {booking?.propertyName ? ` — ${booking.propertyName}` : ""}
+                          {booking?.confirmationNumber ? ` (#${booking.confirmationNumber})` : ""}
+                        </span>
                       </span>
                     )}
                   </div>

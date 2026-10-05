@@ -11,5 +11,5 @@ import com.saas.backend.models.PropertyCategory;
 @Repository 
 public interface PropertyCategoryRepository extends JpaRepository<PropertyCategory,UUID> {
     boolean existsByNameIgnoreCase(String name);
-
+    java.util.Optional<PropertyCategory> findByNameIgnoreCase(String name);
 }

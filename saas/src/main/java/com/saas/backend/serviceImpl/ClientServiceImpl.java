@@ -126,25 +126,35 @@ public class ClientServiceImpl implements ClientService {
                     Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
                
             Pageable pageable = PageRequest.of(page, size, sort);
-            Specification specification;
+            Specification<Client> specification;
               
             User user = userRepository.findByEmail(auth.getName())
-                    .orElseThrow(() -> new RuntimeException("No user found with this id"));
+                    .orElseThrow(() -> new RuntimeException("No user found with this email"));
 
-            if (user.getRole().getName().toUpperCase().replace(" ", "_").equals("SALES_PERSON")) {
-                specification = ClientSpecification.hasSalePerson(user.getId());
-            } else {
+            String roleName = user.getRole() != null ? user.getRole().getName().toUpperCase().replace(" ", "_") : "";
+            boolean isSuperAdmin = roleName.contains("SUPER_ADMIN");
+            boolean isSalesPerson = roleName.contains("SALES_PERSON");
+
+            if (isSuperAdmin) {
+                specification = (root, query, cb) -> cb.conjunction();
+            } else if (isSalesPerson && user.getCompany() != null) {
+                specification = ClientSpecification.hasCompany(user.getCompany().getId())
+                        .and(ClientSpecification.hasSalePerson(user.getId()));
+            } else if (user.getCompany() != null) {
                 specification = ClientSpecification.hasCompany(user.getCompany().getId());
+            } else {
+                specification = (root, query, cb) -> cb.conjunction();
             }
 
             if (status != null) {
                 specification = specification.and(ClientSpecification.hasStatus(status));
             }
             if (search != null && !search.isBlank()) {
-                specification = specification.and(ClientSpecification.hasSearch(search));
+                specification = specification.and(ClientSpecification.hasSearch(search.trim()));
             }
 
-            return clientRepository.findAll(specification, pageable).map(this::mapToResponse);
+            Page<Client> clientPage = clientRepository.findAll(specification, pageable);
+            return clientPage.map(this::mapToResponse);
         } catch (Exception e) {
             throw new RuntimeException("Error: " + e.getMessage());
         }

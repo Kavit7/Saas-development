@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -16,7 +17,7 @@ import com.saas.backend.models.BookingStatus;
  * Data access operations for lodge/hotel accommodation bookings.
  */
 @Repository
-public interface AccommodationBookingRepository extends JpaRepository<AccommodationBooking, UUID> {
+public interface AccommodationBookingRepository extends JpaRepository<AccommodationBooking, UUID>, JpaSpecificationExecutor<AccommodationBooking> {
 
     AccommodationBooking findByReferenceNumber(String refno);
 
