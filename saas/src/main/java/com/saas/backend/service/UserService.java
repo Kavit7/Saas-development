@@ -18,4 +18,8 @@ public interface UserService {
     UserResponse getUserById(UUID id, Authentication auth);
 
     UserResponse updateUserStatus(UUID id, UserStatusRequest status, Authentication auth);
+
+    UserResponse updateUser(UUID id, UserRequest request, Authentication auth);
+
+    java.util.Map<String, Object> triggerPasswordResetForUser(UUID id, Authentication auth);
 }

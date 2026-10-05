@@ -19,4 +19,7 @@ public interface CompanyService {
 
     public CompanyResponse updateCompany(UUID id, CompanyUpdate companyUpdate);
 
+    public CompanyResponse getMyCompany(Authentication authentication);
+
+    public CompanyResponse changeCompanyPlan(UUID companyId, String planIdentifier, Authentication authentication);
 }

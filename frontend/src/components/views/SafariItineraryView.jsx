@@ -27,14 +27,29 @@ const getStatusBadgeClass = (status) => {
   return "bg-indigo-50 text-[#101B82] border-indigo-200/90";
 };
 
+const formatDisplayDate = (val) => {
+  if (!val) return "Date not set";
+  if (Array.isArray(val) && val.length >= 3) {
+    const [y, m, d] = val;
+    return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  }
+  if (typeof val === "string") {
+    return val.includes("T") ? val.substring(0, 10) : val;
+  }
+  return String(val);
+};
+
 const SafariItineraryView = ({
   days = [],
   requirements = [],
   bookings = [],
+  safariStatus = "DRAFT",
   canUpdate = false,
   canCreate = false,
   canDelete = false,
   canBook = false,
+  actionLoading = false,
+  onRegenerateDays,
   onEditDay,
   onAddRequirement,
   onEditRequirement,
@@ -47,11 +62,12 @@ const SafariItineraryView = ({
 
   // Helper to match booking for a day/requirement
   const getBookingForDay = (day, req) => {
+    const dayDate = formatDisplayDate(day?.date);
     return (bookings || []).find((b) => {
       if (req && b.requirementId && String(b.requirementId) === String(req.id)) {
         return true;
       }
-      if (b.checkIn && day.date && b.checkIn === day.date) {
+      if (b.checkIn && dayDate && (b.checkIn === dayDate || b.checkIn === day?.date)) {
         return true;
       }
       return false;
@@ -71,23 +87,68 @@ const SafariItineraryView = ({
 
   if (days.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-12 text-center shadow-xs">
-        <Compass size={40} className="mx-auto text-slate-300 mb-3" />
-        <h3 className="text-base font-bold text-slate-800 font-serif-title">
-          No Itinerary Days Generated
-        </h3>
-        <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-          The itinerary schedule for this safari has not been configured yet.
-        </p>
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-12 text-center shadow-xs space-y-4">
+        <Compass size={44} className="mx-auto text-slate-300" />
+        <div>
+          <h3 className="text-base font-bold text-slate-800 font-serif-title">
+            No Itinerary Days Generated
+          </h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+            The itinerary schedule for this safari has not been generated or synchronized yet.
+          </p>
+        </div>
+        {canUpdate && onRegenerateDays && (
+          <button
+            type="button"
+            onClick={onRegenerateDays}
+            disabled={actionLoading}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#101B82] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#0d176f] transition active:scale-95 shadow-md disabled:opacity-50"
+          >
+            <ArrowsClockwise size={16} className={actionLoading ? "animate-spin" : ""} weight="bold" />
+            <span>{actionLoading ? "Generating Days..." : "Generate / Retry Days"}</span>
+          </button>
+        )}
       </div>
     );
   }
 
-  // Booking Progress Calculations across all days
+  // Booking & Destination Calculations across all days
   const totalDays = days.length;
+  const configuredDestinationsCount = days.filter(
+    (d) => d.destination && !d.destination.toLowerCase().includes("not set") && !d.destination.toLowerCase().includes("pending")
+  ).length;
+  const allDestinationsConfigured = totalDays > 0 && configuredDestinationsCount === totalDays;
+
   const confirmedCount = days.filter(isDayConfirmed).length;
+  const allBookingsConfirmed = totalDays > 0 && confirmedCount === totalDays;
   const progressPercent = totalDays > 0 ? Math.round((confirmedCount / totalDays) * 100) : 0;
   const pendingCount = Math.max(totalDays - confirmedCount, 0);
+
+  // Status Badge Class & Label
+  const effectiveStatus = (safariStatus || "").toUpperCase();
+  const getSafariStatusBadge = () => {
+    if (effectiveStatus === "COMPLETED" || allBookingsConfirmed) {
+      return {
+        label: "COMPLETED",
+        desc: "All Day Bookings Confirmed",
+        cls: "bg-emerald-50 text-emerald-800 border-emerald-300",
+      };
+    }
+    if (effectiveStatus === "CONFIRMED" || allDestinationsConfigured) {
+      return {
+        label: "CONFIRMED",
+        desc: "All Destinations Configured",
+        cls: "bg-blue-50 text-blue-800 border-blue-300",
+      };
+    }
+    return {
+      label: "DRAFT",
+      desc: `${totalDays - configuredDestinationsCount} Destinations Pending`,
+      cls: "bg-amber-50 text-amber-800 border-amber-300",
+    };
+  };
+
+  const statusBadge = getSafariStatusBadge();
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200 font-sans">
@@ -99,19 +160,37 @@ const SafariItineraryView = ({
               <CalendarCheck size={22} weight="duotone" />
             </div>
             <div>
-              <h3 className="font-bold text-slate-900 text-sm sm:text-base font-serif-title">
-                Safari Accommodation & Route Booking Tracker
-              </h3>
-              <p className="text-xs text-slate-500">
-                Tracking room confirmation status across {totalDays} scheduled itinerary days
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-slate-900 text-sm sm:text-base font-serif-title">
+                  Safari Route & Accommodation Tracker
+                </h3>
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${statusBadge.cls}`}>
+                  <span>{statusBadge.label}</span>
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {statusBadge.desc} • {confirmedCount} of {totalDays} room nights confirmed
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            {canUpdate && onRegenerateDays && (
+              <button
+                type="button"
+                onClick={onRegenerateDays}
+                disabled={actionLoading}
+                title="Sync / Regenerate Itinerary Days from Start to End Date"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-50 text-slate-700 border border-slate-200 hover:bg-indigo-50 hover:text-[#101B82] hover:border-indigo-200 transition active:scale-95 disabled:opacity-50 shadow-2xs"
+              >
+                <ArrowsClockwise size={14} className={actionLoading ? "animate-spin" : ""} weight="bold" />
+                <span>{actionLoading ? "Syncing..." : "Retry / Sync Days"}</span>
+              </button>
+            )}
+
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
               <CheckCircle size={14} weight="bold" className="text-emerald-600" />
-              <span>{confirmedCount} of {totalDays} Confirmed</span>
+              <span>{confirmedCount}/{totalDays} Booked</span>
             </span>
 
             {pendingCount > 0 && (
@@ -179,7 +258,7 @@ const SafariItineraryView = ({
 
                 <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
                   <CalendarBlank size={15} className="text-slate-400" />
-                  <span>{day.date || "Date not set"}</span>
+                  <span>{formatDisplayDate(day.date)}</span>
                 </div>
 
                 <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900 font-serif-title">

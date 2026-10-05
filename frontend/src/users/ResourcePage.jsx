@@ -179,6 +179,26 @@ const ResourcePage = ({
             })),
             roomTypes: rooms.map((r) => ({ label: r.name, value: r.name })),
           });
+        } else if (resource === "companies") {
+          let plansRes = await getAllData("/api/subscription-plans/active", token).catch(() => null);
+          let plansList = plansRes?.data || (Array.isArray(plansRes) ? plansRes : []);
+          if (!plansList || plansList.length === 0) {
+            const allPlansRes = await getAllData("/api/subscription-plans", token).catch(() => null);
+            plansList = allPlansRes?.data || (Array.isArray(allPlansRes) ? allPlansRes : []);
+          }
+          if (!plansList || plansList.length === 0) {
+            plansList = [
+              { name: "Starter Plan", currency: "$", price: 49, maxUsers: 3 },
+              { name: "Professional Plan", currency: "$", price: 149, maxUsers: 15 },
+              { name: "Enterprise Plan", currency: "$", price: 399, maxUsers: 100 },
+            ];
+          }
+          setDynamicOptions({
+            subscription_plan: plansList.map((p) => ({
+              label: `${p.name} (${p.currency || "$"}${Number(p.price || 0).toLocaleString()}/mo - max ${p.maxUsers || "unlimited"} users)`,
+              value: p.name,
+            })),
+          });
         }
       } catch (err) {
         console.error("Failed to load select options:", err);
@@ -280,15 +300,35 @@ const ResourcePage = ({
           getAllData(`/api/v1/accommodation-requirements/safari/${item.id}`, token),
           getAllData(`/accommodation-bookings/by-safari/${item.id}`, token),
           clientId ? getAllData(`/client/${clientId}/guests`, token) : Promise.resolve([]),
-          clientId ? getAllData(`/client/${clientId}/flight-details`, token) : Promise.resolve([]),
+          clientId ? getAllData(`/client-flight/${clientId}/view`, token) : Promise.resolve([]),
         ]);
+        const days = daysRes.status === "fulfilled" ? daysRes.value?.data || daysRes.value || [] : [];
+        const reqs = reqsRes.status === "fulfilled" ? reqsRes.value?.data || reqsRes.value || [] : [];
+        const bookings = bookingsRes.status === "fulfilled" ? bookingsRes.value?.data || bookingsRes.value || [] : [];
+
         setSubData({
-          days: daysRes.status === "fulfilled" ? daysRes.value?.data || daysRes.value || [] : [],
-          requirements: reqsRes.status === "fulfilled" ? reqsRes.value?.data || reqsRes.value || [] : [],
-          bookings: bookingsRes.status === "fulfilled" ? bookingsRes.value?.data || bookingsRes.value || [] : [],
+          days,
+          requirements: reqs,
+          bookings,
           guests: guestsRes.status === "fulfilled" ? guestsRes.value?.data || guestsRes.value || [] : [],
           flights: flightsRes.status === "fulfilled" ? flightsRes.value?.data || flightsRes.value || [] : [],
         });
+
+        // Dynamically compute and reflect safari status
+        if (days.length > 0) {
+          const allDestSet = days.every(
+            (d) => d.destination && !d.destination.toLowerCase().includes("not set") && !d.destination.toLowerCase().includes("pending")
+          );
+          const allBooked = allDestSet && days.every((d) => {
+            const req = reqs.find((r) => String(r.itineraryDayId) === String(d.id));
+            const b = bookings.find(
+              (bk) => (req && bk.requirementId && String(bk.requirementId) === String(req.id)) || (bk.checkIn && bk.checkIn === d.date)
+            );
+            return (b && String(bk.status || "").toUpperCase() === "CONFIRMED") || (req && (String(req.status || "").toUpperCase() === "COMPLETED" || String(req.status || "").toUpperCase() === "CONFIRMED"));
+          });
+          const computedStatus = allBooked ? "COMPLETED" : allDestSet ? "CONFIRMED" : "DRAFT";
+          setSelectedItem((prev) => (prev ? { ...prev, status: computedStatus } : prev));
+        }
       }
     } catch (err) {
       console.error("Failed to load subdata:", err);
@@ -370,6 +410,8 @@ const ResourcePage = ({
           putUrl = `/client/${formConfig.initialValues.id}`;
         } else if (resource === "room-types") {
           putUrl = `/api/v1/room-types/${formConfig.initialValues.id}?name=${encodeURIComponent(formData.name)}`;
+        } else if (resource === "users") {
+          putUrl = `/api/users/user/${formConfig.initialValues.id}`;
         }
 
         await updateData(putUrl, payload, token);
@@ -682,14 +724,40 @@ const ResourcePage = ({
     try {
       if (!selectedItem) return;
 
+      const targetClientId = subFormConfig.clientId || selectedItem.id;
+
       if (subFormConfig.type === "guest") {
-        await createData(`/guest/${selectedItem.id}/client`, formData, token);
+        await createData(`/guest/${targetClientId}/client`, formData, token);
       } else if (subFormConfig.type === "flight") {
-        await createData(`/client-flight/${selectedItem.id}/create`, formData, token);
+        const toIsoStringOrNull = (val) => {
+          if (!val) return null;
+          if (typeof val === "string") {
+            const trimmed = val.trim();
+            if (!trimmed) return null;
+            const d = new Date(trimmed);
+            return isNaN(d.getTime()) ? null : d.toISOString();
+          }
+          if (val instanceof Date) {
+            return isNaN(val.getTime()) ? null : val.toISOString();
+          }
+          return null;
+        };
+
+        const payload = {
+          ...formData,
+          arrivalDatetime: toIsoStringOrNull(formData.arrivalDatetime),
+          departureDatetime: toIsoStringOrNull(formData.departureDatetime),
+        };
+        await createData(`/client-flight/${targetClientId}/create`, payload, token);
       } else if (subFormConfig.type === "itineraryDay") {
+        const payload = {
+          destination: formData.destination || "",
+          notes: formData.notes || "",
+          date: formData.date || subFormConfig.initialValues?.date || null,
+        };
         await updateData(
           `/safari/${selectedItem.id}/itinerary-days/${subFormConfig.initialValues.id}`,
-          formData,
+          payload,
           token
         );
       }
@@ -707,6 +775,34 @@ const ResourcePage = ({
         open: true,
         title: "Error",
         message: error.message || "Failed to save details",
+        type: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Regenerate / Retry Itinerary Days
+  const handleRegenerateDays = async () => {
+    if (!selectedItem || !selectedItem.id) return;
+    setActionLoading(true);
+    try {
+      const res = await createData(`/safari/${selectedItem.id}/regenerate-days`, {}, token);
+      const days = res?.data || (Array.isArray(res) ? res : []);
+      setSubData((prev) => ({ ...prev, days }));
+      setAlertModal({
+        open: true,
+        title: "Days Synchronized",
+        message: "Safari itinerary days have been successfully generated and synchronized.",
+        type: "success",
+      });
+      loadSubDataForView(selectedItem);
+      loadData();
+    } catch (err) {
+      setAlertModal({
+        open: true,
+        title: "Synchronization Failed",
+        message: err.message || "Failed to generate itinerary days",
         type: "error",
       });
     } finally {
@@ -778,6 +874,68 @@ const ResourcePage = ({
         open: true,
         title: "Verification Failed",
         message: error.message || "Failed to verify property",
+        type: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // User Status Toggle (Activate / Deactivate)
+  const handleToggleUserStatus = async (targetUser) => {
+    const newStatus = targetUser.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    const actionLabel = newStatus === "ACTIVE" ? "activate" : "deactivate";
+    if (!window.confirm(`Are you sure you want to ${actionLabel} ${targetUser.firstName} ${targetUser.lastName}?`)) return;
+
+    setActionLoading(true);
+    try {
+      await apiRequest(`/api/users/user/${targetUser.id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({ status: newStatus }),
+      }, token);
+
+      setSelectedItem((prev) => ({ ...prev, status: newStatus }));
+      setAlertModal({
+        open: true,
+        title: "Status Updated",
+        message: `User status changed to ${newStatus}.`,
+        type: "success",
+      });
+      loadData();
+    } catch (err) {
+      setAlertModal({
+        open: true,
+        title: "Status Update Failed",
+        message: err.message || "Failed to update user status.",
+        type: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // User Password Reset on behalf of user
+  const handleResetUserPassword = async (targetUser) => {
+    if (!window.confirm(`Trigger secure password reset for ${targetUser.email}?`)) return;
+
+    setActionLoading(true);
+    try {
+      const res = await apiRequest(`/api/users/user/${targetUser.id}/reset-password`, {
+        method: "POST",
+      }, token);
+
+      setAlertModal({
+        open: true,
+        title: "Password Reset Generated",
+        message: `Temporary credentials created for ${targetUser.email}:\nPassword: ${res.temporaryPassword}\nExpires: ${res.expiresAt ? new Date(res.expiresAt).toLocaleTimeString() : "in 1 hour"}.`,
+        type: "success",
+      });
+      loadData();
+    } catch (err) {
+      setAlertModal({
+        open: true,
+        title: "Reset Failed",
+        message: err.message || "Failed to trigger password reset.",
         type: "error",
       });
     } finally {
@@ -879,18 +1037,27 @@ const ResourcePage = ({
           onAddRequirement={handleAddRequirement}
           onEditRequirement={handleEditRequirement}
           onDeleteRequirement={handleDeleteRequirement}
+          onRegenerateDays={handleRegenerateDays}
           onAddGuest={() => {
+            const targetClient = resource === "safaris" ? (selectedItem.client || { id: selectedItem.clientId }) : selectedItem;
+            const targetClientId = targetClient?.id || selectedItem.clientId || selectedItem.id;
+            const clientName = targetClient?.firstName ? `${targetClient.firstName} ${targetClient.lastName || ""}`.trim() : (selectedItem.firstName || "Client");
             setSubFormConfig({
               type: "guest",
-              title: `Add Guest to ${selectedItem.firstName}`,
+              clientId: targetClientId,
+              title: `Add Guest to ${clientName}`,
               initialValues: {},
             });
             setViewMode("sub-form");
           }}
           onAddFlight={() => {
+            const targetClient = resource === "safaris" ? (selectedItem.client || { id: selectedItem.clientId }) : selectedItem;
+            const targetClientId = targetClient?.id || selectedItem.clientId || selectedItem.id;
+            const clientName = targetClient?.firstName ? `${targetClient.firstName} ${targetClient.lastName || ""}`.trim() : (selectedItem.firstName || "Client");
             setSubFormConfig({
               type: "flight",
-              title: `Add Flight for ${selectedItem.firstName}`,
+              clientId: targetClientId,
+              title: `Add Flight for ${clientName}`,
               initialValues: {},
             });
             setViewMode("sub-form");
@@ -900,6 +1067,8 @@ const ResourcePage = ({
           onSendBooking={handleSendBooking}
           onConfirmBookingSuccess={handleConfirmBookingSuccess}
           onDeclineBooking={handleDeclineBooking}
+          onToggleUserStatus={handleToggleUserStatus}
+          onResetUserPassword={handleResetUserPassword}
         />
       )}
 

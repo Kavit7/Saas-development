@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -38,21 +39,21 @@ public class SafariController {
     private final SafariServiceImpl safariServiceImpl;
 
     @PostMapping("{clientId}/create")
-    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','SUPER_ADMIN')")
     public ResponseEntity<?> createClientSafari(@PathVariable UUID clientId, @RequestBody SafariRequest safariRequest) {
         SafariResponse safari = safariServiceImpl.createClientSafari(clientId, safariRequest);
         return ResponseEntity.ok(Map.of("message", "Safari Successfully created", "data", safari));
     }
     
     @GetMapping("/{safariId}/itineraryDays")
-    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
     public ResponseEntity<?> getSafariItinerary(@PathVariable UUID safariId) {
         List<ItineraryDayResponse> itinerary = safariServiceImpl.getItineraryDaySafari(safariId);
         return ResponseEntity.ok(Map.of("message", "Itinerary day Successfully Loaded", "data", itinerary));
     }
 
     @PutMapping("/{safariId}/update/itinenaryDays")
-    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','SUPER_ADMIN')")
     public ResponseEntity<?> updateSafariItenaryDay(
             @PathVariable UUID safariId,
             @RequestBody ItineraryUpdateRequest request) {
@@ -64,7 +65,7 @@ public class SafariController {
     }
 
     @PutMapping("/{safariId}/itinerary-days/{dayId}")
-    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
     public ResponseEntity<?> updateItineraryDay(
             @PathVariable UUID safariId,
             @PathVariable UUID dayId,
@@ -76,7 +77,7 @@ public class SafariController {
     }
 
     @DeleteMapping("/{safariId}/itinerary-days/{dayId}")
-    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON')")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','SUPER_ADMIN')")
     public ResponseEntity<?> deleteItineraryDay(
             @PathVariable UUID safariId,
             @PathVariable UUID dayId) {
@@ -87,8 +88,28 @@ public class SafariController {
         );
     }
 
+    @PostMapping("/{safariId}/regenerate-days")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','SUPER_ADMIN')")
+    public ResponseEntity<?> regenerateItineraryDays(@PathVariable UUID safariId) {
+        List<ItineraryDayResponse> days = safariServiceImpl.regenerateItineraryDays(safariId);
+        return ResponseEntity.ok(
+                Map.of("message", "Itinerary days synchronized and generated successfully", "data", days)
+        );
+    }
+
+    @PatchMapping("/{safariId}/status")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
+    public ResponseEntity<?> updateSafariStatus(
+            @PathVariable UUID safariId,
+            @RequestParam SafariStatus status) {
+        SafariResponse updatedSafari = safariServiceImpl.updateSafariStatus(safariId, status);
+        return ResponseEntity.ok(
+                Map.of("message", "Safari status updated to " + status, "data", updatedSafari)
+        );
+    }
+
     @GetMapping("/company")
-    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER')")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
     public ResponseEntity<?> getAllSafari(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,

@@ -102,6 +102,23 @@ const ClientSubdataView = ({
     );
   }
 
+  const formatDateTime = (val) => {
+    if (!val) return "—";
+    try {
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return String(val).slice(0, 16).replace("T", " ");
+      return d.toLocaleString([], {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return String(val).slice(0, 16).replace("T", " ");
+    }
+  };
+
   // Flights view
   return (
     <div className="space-y-4">
@@ -163,8 +180,8 @@ const ClientSubdataView = ({
                   <td className="px-4 py-3 font-semibold text-slate-900">{f.airline}</td>
                   <td className="px-4 py-3 font-mono font-medium">{f.flightNumber}</td>
                   <td className="px-4 py-3">{f.airport}</td>
-                  <td className="px-4 py-3">{f.arrivalDatetime ? String(f.arrivalDatetime).slice(0, 16).replace("T", " ") : "—"}</td>
-                  <td className="px-4 py-3">{f.departureDatetime ? String(f.departureDatetime).slice(0, 16).replace("T", " ") : "—"}</td>
+                  <td className="px-4 py-3">{formatDateTime(f.arrivalDatetime)}</td>
+                  <td className="px-4 py-3">{formatDateTime(f.departureDatetime)}</td>
                 </tr>
               ))}
             </tbody>

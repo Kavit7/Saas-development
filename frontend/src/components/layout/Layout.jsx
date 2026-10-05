@@ -6,8 +6,14 @@ import Header from "../others/Header";
 import { useAuth } from "../../hooks/useAuth";
 
 const Layout = () => {
-  const { hasAccess } = useAuth();
+  const { hasAccess, user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const role = String(user?.role_name || user?.role || "")
+    .toUpperCase()
+    .replace(/^ROLE_/, "")
+    .trim();
+  const isSuperAdmin = role === "SUPER_ADMIN" || role === "PLATFORM_ADMIN";
 
   useEffect(() => {
     const handleKey = (event) => {
@@ -34,13 +40,27 @@ const Layout = () => {
       >
         <div className="mb-3 flex items-center justify-between">
           <div className="flex items-center font-serif">
-            <span className="mr-2 rounded-[15px] bg-white p-1 text-5xl text-black">
-              SS
-            </span>
-            <div className="grid grid-cols">
-              <p className="font-bold tracking-[1.5px]">Safari Sales</p>
-              <p className="text-sm text-white/70">Operations</p>
-            </div>
+            {isSuperAdmin ? (
+              <>
+                <span className="mr-2.5 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-tr from-amber-400 via-amber-200 to-white text-base font-black text-[#101B82] shadow-sm font-sans">
+                  PA
+                </span>
+                <div className="grid">
+                  <p className="font-bold tracking-wide text-sm text-white">Platform Admin</p>
+                  <p className="text-[11px] uppercase tracking-wider text-indigo-200/80 font-mono">SaaS Control</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <span className="mr-2 rounded-[15px] bg-white p-1 text-5xl text-black">
+                  SS
+                </span>
+                <div className="grid grid-cols">
+                  <p className="font-bold tracking-[1.5px]">Safari Sales</p>
+                  <p className="text-sm text-white/70">Operations</p>
+                </div>
+              </>
+            )}
           </div>
 
           <button
@@ -65,9 +85,13 @@ const Layout = () => {
           </button>
         </div>
 
-        <div className="mt-6 h-px w-full bg-white/15" />
+        <div className="mt-4 h-px w-full bg-white/15" />
 
-        <nav className="mt-6 flex flex-1 flex-col space-y-2">
+        <div className="mt-4 text-[10px] font-bold uppercase tracking-wider text-indigo-200/60 font-sans px-3">
+          {isSuperAdmin ? "Platform Management" : "System Navigation"}
+        </div>
+
+        <nav className="mt-2 flex flex-1 flex-col space-y-1.5 font-sans">
           {Object.entries(resources)
             .filter(([, filter]) => hasAccess(filter.roles))
             .map(([key, config]) => (
@@ -78,15 +102,15 @@ const Layout = () => {
               >
                 {({ isActive }) => (
                   <div
-                    className={`flex items-center gap-3 rounded-[10px] px-4 py-2.5 text-sm font-semibold transition ${
+                    className={`flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
                       isActive
-                        ? "bg-white text-[#101B82] shadow-sm"
-                        : "text-white/90 hover:bg-white/15 hover:text-white"
+                        ? "bg-white text-[#101B82] shadow-sm font-bold"
+                        : "text-white/80 hover:bg-white/10 hover:text-white"
                     }`}
                   >
                     <span className="flex items-center justify-center">
                       {config.icon && (
-                        <config.icon size={20} aria-hidden="true" />
+                        <config.icon size={18} aria-hidden="true" />
                       )}
                     </span>
                     <span>{config.label ?? config.title ?? key}</span>

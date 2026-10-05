@@ -31,4 +31,10 @@ public interface AccommodationBookingRepository extends JpaRepository<Accommodat
 
     @Query("SELECT b FROM AccommodationBooking b WHERE b.accommodationRequirement.safari.id = :safariId ORDER BY b.checkIn ASC")
     List<AccommodationBooking> findBySafariId(@Param("safariId") UUID safariId);
+
+    @Query("SELECT COUNT(b) FROM AccommodationBooking b WHERE b.accommodationRequirement.safari.client.company.id = :companyId")
+    long countByCompanyId(@Param("companyId") UUID companyId);
+
+    @Query("SELECT b FROM AccommodationBooking b WHERE b.accommodationRequirement.safari.client.company.id = :companyId ORDER BY b.createdAt DESC")
+    List<AccommodationBooking> findAllByCompanyId(@Param("companyId") UUID companyId);
 }

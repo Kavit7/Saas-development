@@ -82,4 +82,54 @@ public class CompanyController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/my-company")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'RESERVATION_MANAGER', 'SALES_PERSON', 'GUIDE')")
+    public ResponseEntity<?> getMyCompany(Authentication auth) {
+        try {
+            CompanyResponse company = companyService.getMyCompany(auth);
+            return ResponseEntity.ok(Map.of("message", "Company details loaded", "data", company));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/my-company/change-plan")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<?> changeMyCompanyPlan(@RequestBody Map<String, String> body, Authentication auth) {
+        try {
+            String planIdentifier = body.getOrDefault("plan", body.get("planId"));
+            if (planIdentifier == null || planIdentifier.trim().isEmpty()) {
+                planIdentifier = body.get("subscription_plan");
+            }
+            if (planIdentifier == null || planIdentifier.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Please select a plan to switch to."));
+            }
+            CompanyResponse updated = companyService.changeCompanyPlan(null, planIdentifier, auth);
+            return ResponseEntity.ok(Map.of("message", "Company plan updated successfully", "data", updated));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{companyId}/change-plan")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public ResponseEntity<?> changeCompanyPlanBySuperAdmin(
+            @PathVariable UUID companyId,
+            @RequestBody Map<String, String> body,
+            Authentication auth) {
+        try {
+            String planIdentifier = body.getOrDefault("plan", body.get("planId"));
+            if (planIdentifier == null || planIdentifier.trim().isEmpty()) {
+                planIdentifier = body.get("subscription_plan");
+            }
+            if (planIdentifier == null || planIdentifier.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Please select a plan to switch to."));
+            }
+            CompanyResponse updated = companyService.changeCompanyPlan(companyId, planIdentifier, auth);
+            return ResponseEntity.ok(Map.of("message", "Company plan updated successfully", "data", updated));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
 }

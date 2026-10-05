@@ -115,6 +115,7 @@ const ResourceDetailView = ({
   onEditRequirement,
   onDeleteRequirement,
   onBookLodge,
+  onRegenerateDays,
   // Client actions
   onAddGuest,
   onAddFlight,
@@ -124,6 +125,9 @@ const ResourceDetailView = ({
   onSendBooking,
   onConfirmBookingSuccess,
   onDeclineBooking,
+  // User actions
+  onToggleUserStatus,
+  onResetUserPassword,
 }) => {
   const canUpdate = can("update", permissions);
   const canCreate = can("create", permissions);
@@ -433,10 +437,13 @@ const ResourceDetailView = ({
           days={subData?.days || []}
           requirements={subData?.requirements || []}
           bookings={subData?.bookings || []}
+          safariStatus={item?.status}
           canUpdate={canUpdate}
           canCreate={canCreate}
           canDelete={canDelete}
           canBook={canBookLodge}
+          actionLoading={actionLoading}
+          onRegenerateDays={onRegenerateDays}
           onEditDay={onEditDay}
           onAddRequirement={onAddRequirement}
           onEditRequirement={onEditRequirement}
@@ -479,6 +486,42 @@ const ResourceDetailView = ({
               onConfirmSuccess={onConfirmBookingSuccess}
               onDecline={onDeclineBooking}
             />
+          )}
+
+          {resource === "users" && (canUpdate || normalizedRole === "ADMIN" || normalizedRole === "SUPER_ADMIN") && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl border border-slate-200 bg-white shadow-xs">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={20} className="text-[#101B82]" weight="duotone" />
+                  <h4 className="text-sm font-bold text-slate-800 font-serif-title">Account Access & Security Control</h4>
+                </div>
+                <p className="text-xs text-slate-500 font-sans">
+                  Manage operational access status for this user or generate a temporary password reset.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  disabled={actionLoading}
+                  onClick={() => onToggleUserStatus?.(item)}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold border transition shadow-2xs ${
+                    item.status === "ACTIVE"
+                      ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  }`}
+                >
+                  <span>{item.status === "ACTIVE" ? "Deactivate User" : "Activate User"}</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={actionLoading}
+                  onClick={() => onResetUserPassword?.(item)}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#101B82] text-white hover:bg-[#0d176f] transition shadow-2xs active:scale-95"
+                >
+                  <span>Reset Password</span>
+                </button>
+              </div>
+            </div>
           )}
 
           <OverviewCardsView fields={fields} item={item} />

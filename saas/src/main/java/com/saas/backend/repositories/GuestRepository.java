@@ -14,6 +14,7 @@ import com.saas.backend.models.Guest;
 public interface GuestRepository extends JpaRepository<Guest,UUID>,JpaSpecificationExecutor<Guest> {
     boolean existsByClient_IdAndFirstNameAndLastName(UUID id,String fname,String lastName);
     List<Guest> findAllByClientId(UUID id);
+    List<Guest> findByClientId(UUID clientId);
     Long countByClientId(UUID clientId);
 
 }
