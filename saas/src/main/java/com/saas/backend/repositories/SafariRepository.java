@@ -17,6 +17,7 @@ import com.saas.backend.models.Safari;
 public interface SafariRepository extends JpaRepository<Safari,UUID>, JpaSpecificationExecutor<Safari>{
     Page<Safari> findAll(Specification<Safari> specification, Pageable pageable);
     java.util.List<Safari> findAllByClient_Company_Id(UUID companyId);
+    long countByClient_Company_Id(UUID companyId);
     java.util.List<Safari> findAllBySalesPerson_Id(UUID salesPersonId);
     boolean existsByReferenceNumber(String referenceNumber);
 }

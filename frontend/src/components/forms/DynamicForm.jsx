@@ -13,7 +13,22 @@ const DynamicForm = ({
   useEffect(() => {
     const data = {};
     fields.forEach((f) => {
-      data[f.name] = initialValues[f.name] ?? f.defaultValue ?? "";
+      let val = initialValues[f.name] ?? f.defaultValue ?? "";
+      if (val && f.type === "datetime-local") {
+        const d = new Date(val);
+        if (!isNaN(d.getTime())) {
+          const pad = (n) => String(n).padStart(2, "0");
+          val = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+      } else if (val && f.type === "date") {
+        if (typeof val === "string" && val.length > 10 && val.includes("T")) {
+          val = val.substring(0, 10);
+        } else if (Array.isArray(val) && val.length >= 3) {
+          const [y, m, d] = val;
+          val = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+        }
+      }
+      data[f.name] = val;
     });
     setFormData(data);
   }, [fields, initialValues]);

@@ -15,5 +15,6 @@ public interface AccommodationRequirementRepository extends JpaRepository<Accomm
     Optional<AccommodationRequirement> findByItineraryDayId(UUID itineraryId);
 
     List<AccommodationRequirement> findBySafariId(UUID safariId);
+    List<AccommodationRequirement> findAllBySafari_Client_Company_Id(UUID companyId);
     boolean existsByItineraryDay(ItineraryDay itineraryDay);
 }

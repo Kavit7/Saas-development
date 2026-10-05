@@ -140,13 +140,24 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getUserById(UUID id, Authentication auth) {
         try {
-            boolean isAdmin = getUserAuthority(auth);
-            boolean isOwner = userRepository.findByEmail(auth.getName()).orElseThrow().getId().equals(id);
-            if (!isAdmin && !isOwner) {
-                throw new AccessDeniedException("You have no Permision to view this Resource");
+            boolean isSuperAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+            User currentUser = userRepository.findByEmail(auth.getName()).orElse(null);
+            User targetUser = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+            boolean isMe = currentUser != null && currentUser.getId().equals(id);
+            boolean isSameCompanyStaff = false;
+            if (currentUser != null && currentUser.getRole() != null) {
+                String role = currentUser.getRole().getName().toUpperCase();
+                if ((role.contains("ADMIN") || role.contains("RESERVATION") || role.contains("SALE") || role.contains("GUIDE"))
+                        && currentUser.getCompany() != null && targetUser.getCompany() != null) {
+                    isSameCompanyStaff = currentUser.getCompany().getId().equals(targetUser.getCompany().getId());
+                }
             }
-            User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found with that id"));
-            return mapToResponse(user);
+
+            if (!isSuperAdmin && !isMe && !isSameCompanyStaff) {
+                throw new AccessDeniedException("You have no permission to view this resource");
+            }
+            return mapToResponse(targetUser);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
@@ -155,20 +166,113 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse updateUserStatus(UUID id, UserStatusRequest status, Authentication auth) {
         try {
-            User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-            boolean isMe = userRepository.findByEmail(auth.getName()).orElseThrow().getId().equals(user.getId());
-            if (isMe) {
-                throw new AccessDeniedException("You Forbidden To Change Your Own status");
+            boolean isSuperAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+            User currentUser = userRepository.findByEmail(auth.getName()).orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+            User targetUser = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+            if (currentUser.getId().equals(targetUser.getId())) {
+                throw new AccessDeniedException("You are forbidden to change your own status");
             }
-            user.setStatus(status.getStatus());
-            userRepository.save(user);
-            return mapToResponse(user);
+
+            if (!isSuperAdmin) {
+                if (currentUser.getCompany() == null || targetUser.getCompany() == null ||
+                        !currentUser.getCompany().getId().equals(targetUser.getCompany().getId())) {
+                    throw new AccessDeniedException("You cannot change the status of a user from another company");
+                }
+            }
+
+            targetUser.setStatus(status.getStatus());
+            userRepository.save(targetUser);
+            return mapToResponse(targetUser);
         } catch (Exception e) {
             throw new RuntimeException("Error: " + e.getMessage());
         }
     }
 
-    private boolean getUserAuthority(Authentication auth) {
-        return auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+    @Override
+    public UserResponse updateUser(UUID id, UserRequest request, Authentication auth) {
+        try {
+            boolean isSuperAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+            User currentUser = userRepository.findByEmail(auth.getName()).orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+            User targetUser = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+            if (!isSuperAdmin) {
+                if (currentUser.getCompany() == null || targetUser.getCompany() == null ||
+                        !currentUser.getCompany().getId().equals(targetUser.getCompany().getId())) {
+                    throw new AccessDeniedException("You cannot update a user from another company");
+                }
+            }
+
+            if (request.getFirstName() != null && !request.getFirstName().trim().isEmpty()) {
+                targetUser.setFirstName(request.getFirstName().trim());
+            }
+            if (request.getLastName() != null && !request.getLastName().trim().isEmpty()) {
+                targetUser.setLastName(request.getLastName().trim());
+            }
+            if (request.getPhone() != null) {
+                targetUser.setPhone(request.getPhone().trim());
+            }
+            if (request.getGender() != null) {
+                targetUser.setGender(request.getGender());
+            }
+            if (request.getRoleName() != null && !request.getRoleName().trim().isEmpty()) {
+                String reqRoleName = request.getRoleName().trim();
+                Role role = roleRepository.findByNameIgnoreCase(reqRoleName)
+                        .or(() -> reqRoleName.toUpperCase().startsWith("ROLE_")
+                                ? roleRepository.findByNameIgnoreCase(reqRoleName.substring(5))
+                                : roleRepository.findByNameIgnoreCase("ROLE_" + reqRoleName))
+                        .orElse(null);
+                if (role != null) {
+                    targetUser.setRole(role);
+                }
+            }
+            if (request.getPassword() != null && !request.getPassword().trim().isEmpty()) {
+                targetUser.setPasswordHash(passwordEncoder.encode(request.getPassword().trim()));
+            }
+
+            userRepository.save(targetUser);
+            return mapToResponse(targetUser);
+        } catch (Exception e) {
+            throw new RuntimeException("Error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public java.util.Map<String, Object> triggerPasswordResetForUser(UUID id, Authentication auth) {
+        try {
+            boolean isSuperAdmin = auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN"));
+            User currentUser = userRepository.findByEmail(auth.getName()).orElseThrow(() -> new RuntimeException("Authenticated user not found"));
+            User targetUser = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+            if (!isSuperAdmin) {
+                if (currentUser.getCompany() == null || targetUser.getCompany() == null ||
+                        !currentUser.getCompany().getId().equals(targetUser.getCompany().getId())) {
+                    throw new AccessDeniedException("You cannot trigger password reset for a user in another company");
+                }
+            }
+
+            String tempPassword = "Temp@" + UUID.randomUUID().toString().substring(0, 8) + "!";
+            String token = UUID.randomUUID().toString();
+
+            targetUser.setPasswordResetToken(token);
+            targetUser.setPasswordExpire(java.time.OffsetDateTime.now().plusHours(1));
+            targetUser.setPasswordHash(passwordEncoder.encode(tempPassword));
+
+            if (targetUser.getStatus() != UserStatus.ACTIVE) {
+                targetUser.setStatus(UserStatus.ACTIVE);
+            }
+
+            userRepository.save(targetUser);
+
+            return java.util.Map.of(
+                    "message", "Password reset successfully triggered for " + targetUser.getEmail(),
+                    "email", targetUser.getEmail(),
+                    "temporaryPassword", tempPassword,
+                    "resetToken", token,
+                    "expiresAt", targetUser.getPasswordExpire().toString()
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("Error: " + e.getMessage());
+        }
     }
 }

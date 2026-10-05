@@ -70,6 +70,33 @@ const SubFormView = ({
     return <Compass size={24} weight="duotone" />;
   };
 
+  const toIsoStringOrNull = (val) => {
+    if (!val) return null;
+    if (typeof val === "string") {
+      const trimmed = val.trim();
+      if (!trimmed) return null;
+      const d = new Date(trimmed);
+      return isNaN(d.getTime()) ? null : d.toISOString();
+    }
+    if (val instanceof Date) {
+      return isNaN(val.getTime()) ? null : val.toISOString();
+    }
+    return null;
+  };
+
+  const handleFormSubmit = (data) => {
+    if (type === "flight") {
+      const formatted = {
+        ...data,
+        arrivalDatetime: toIsoStringOrNull(data.arrivalDatetime),
+        departureDatetime: toIsoStringOrNull(data.departureDatetime),
+      };
+      onSubmit?.(formatted);
+    } else {
+      onSubmit?.(data);
+    }
+  };
+
   return (
     <div className="space-y-5 animate-in fade-in duration-200 font-sans">
       {/* Top Navigation Bar */}
@@ -119,7 +146,7 @@ const SubFormView = ({
         <DynamicForm
           fields={getFields()}
           initialValues={initialValues}
-          onSubmit={onSubmit}
+          onSubmit={handleFormSubmit}
           onCancel={onCancel}
           submitLabel={
             type === "guest"

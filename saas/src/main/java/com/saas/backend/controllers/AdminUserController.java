@@ -59,7 +59,7 @@ public class AdminUserController {
     }
 
     @GetMapping("get-user/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN','SALES_PERSON', 'RESERVATION_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','SALES_PERSON', 'RESERVATION_MANAGER')")
     public ResponseEntity<?> getUserById(@PathVariable UUID id, Authentication auth) {
         try {
             UserResponse user = userServiceImpl.getUserById(id, auth);
@@ -70,11 +70,33 @@ public class AdminUserController {
     }
 
     @PatchMapping("/user/{id}/status")
-    @PreAuthorize ("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
     public ResponseEntity<?> updateStatus(@PathVariable UUID id, @RequestBody UserStatusRequest request, Authentication auth) {
         try {
             UserResponse user = userServiceImpl.updateUserStatus(id, request, auth);
-            return ResponseEntity.ok(Map.of("message", "Status updated", "data", user));
+            return ResponseEntity.ok(Map.of("message", "Status updated successfully", "data", user));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/user/{id}")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public ResponseEntity<?> updateUser(@PathVariable UUID id, @RequestBody UserRequest request, Authentication auth) {
+        try {
+            UserResponse user = userServiceImpl.updateUser(id, request, auth);
+            return ResponseEntity.ok(Map.of("message", "User updated successfully", "data", user));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/user/{id}/reset-password")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public ResponseEntity<?> resetPassword(@PathVariable UUID id, Authentication auth) {
+        try {
+            Map<String, Object> result = userServiceImpl.triggerPasswordResetForUser(id, auth);
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

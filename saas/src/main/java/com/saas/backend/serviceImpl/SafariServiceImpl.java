@@ -37,6 +37,13 @@ import com.saas.backend.response.SafariResponse;
 import com.saas.backend.service.SafariService;
 import com.saas.backend.specification.SafariSpecification;
 
+import com.saas.backend.models.AccomodationRequirmentStatus;
+import com.saas.backend.models.AccommodationBooking;
+import com.saas.backend.models.AccommodationRequirement;
+import com.saas.backend.models.BookingStatus;
+import com.saas.backend.repositories.AccommodationBookingRepository;
+import com.saas.backend.repositories.AccommodationRequirementRepository;
+
 import lombok.RequiredArgsConstructor;
 
 @Service 
@@ -48,6 +55,8 @@ public class SafariServiceImpl implements SafariService {
     private final ItineraryDayRepository itineraryDayRepository;
     private final GuestRepository guestRepository;
     private final UserRepository userRepository;
+    private final AccommodationRequirementRepository accommodationRequirementRepository;
+    private final AccommodationBookingRepository accommodationBookingRepository;
 
     private SafariResponse mapToSafariResponse(Safari safari) {
         if (safari == null) return null;
@@ -87,15 +96,29 @@ public class SafariServiceImpl implements SafariService {
     public SafariResponse createClientSafari(UUID clientId, SafariRequest request) {
         Client client = clientRepository.findById(clientId).orElseThrow(() -> new ResourceNotFoundException("Client not found"));
         companyAccessValidator.validate(client.getCompany().getId());
-          
-        Long count = guestRepository.countByClientId(client.getId());
 
-        if (count == 0) {
-            throw new ResourceNotFoundException("this client has no guests");
+        if (request.getStartDate() == null || request.getEndDate() == null) {
+            throw new IllegalArgumentException("Safari start date and end date are required");
         }
-        if (request.getNumberOfPassengers() < 1 || request.getNumberOfPassengers() > count) {
-            throw new ResourceNotFoundException("Number of passenger must range between 1 and " + count);
+        if (request.getEndDate().isBefore(request.getStartDate())) {
+            throw new IllegalArgumentException("Safari end date cannot be before start date");
         }
+
+        // Auto-seed lead guest if client has no guests yet so operations can proceed immediately
+        Long count = guestRepository.countByClientId(client.getId());
+        if (count == null || count == 0) {
+            com.saas.backend.models.Guest primaryGuest = com.saas.backend.models.Guest.builder()
+                    .client(client)
+                    .firstName(client.getFirstName())
+                    .lastName(client.getLastName())
+                    .gender(client.getGender())
+                    .nationality(client.getNationality())
+                    .build();
+            guestRepository.save(primaryGuest);
+        }
+
+        int passengers = (request.getNumberOfPassengers() != null && request.getNumberOfPassengers() > 0)
+                ? request.getNumberOfPassengers() : 1;
          
         Safari safari = new Safari();
         safari.setClient(client);
@@ -115,7 +138,7 @@ public class SafariServiceImpl implements SafariService {
         safari.setStartDate(request.getStartDate());
         safari.setEndDate(request.getEndDate());
         safari.setReferenceNumber(generateReference());
-        safari.setNumberOfPassengers(request.getNumberOfPassengers());
+        safari.setNumberOfPassengers(passengers);
         safari.setStatus(SafariStatus.DRAFT);
         safari.setNotes(request.getNotes());
 
@@ -126,6 +149,8 @@ public class SafariServiceImpl implements SafariService {
     }
 
     private void generateItineraryDay(Safari safari) {
+        if (safari.getStartDate() == null || safari.getEndDate() == null) return;
+
         int dayNumber = 1;
         LocalDate date = safari.getStartDate();
 
@@ -155,14 +180,27 @@ public class SafariServiceImpl implements SafariService {
     @Override
     public List<ItineraryDayResponse> getItineraryDaySafari(UUID safariId) {
         Safari safari = safariRepository.findById(safariId).orElseThrow(() -> new ResourceNotFoundException("Safari not found"));
-        List<ItineraryDay> itineraryDay = itineraryDayRepository.findBySafariId(safari.getId());
-        return itineraryDay.stream().map(this::mapToItineraryDayResponse).collect(Collectors.toList());
+        if (safari.getClient() != null && safari.getClient().getCompany() != null) {
+            companyAccessValidator.validate(safari.getClient().getCompany().getId());
+        }
+        List<ItineraryDay> itineraryDays = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safari.getId());
+
+        // Self-heal: If days were never generated (e.g. legacy/seeded safaris), generate them automatically now
+        if (itineraryDays.isEmpty() && safari.getStartDate() != null && safari.getEndDate() != null) {
+            generateItineraryDay(safari);
+            itineraryDays = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safari.getId());
+        }
+
+        return itineraryDays.stream().map(this::mapToItineraryDayResponse).collect(Collectors.toList());
     }
 
     @Transactional 
     @Override
     public void updateSafariItenaryDay(UUID safariId, ItineraryUpdateRequest request) {
-        safariRepository.findById(safariId).orElseThrow(() -> new ResourceNotFoundException("Safari not found"));
+        Safari safari = safariRepository.findById(safariId).orElseThrow(() -> new ResourceNotFoundException("Safari not found"));
+        if (safari.getClient() != null && safari.getClient().getCompany() != null) {
+            companyAccessValidator.validate(safari.getClient().getCompany().getId());
+        }
 
         for (ItineraryDayUpdateRequest dayRequest : request.getDays()) {
             ItineraryDay day = itineraryDayRepository.findByIdAndSafariId(dayRequest.getDayId(), safariId)
@@ -172,6 +210,7 @@ public class SafariServiceImpl implements SafariService {
             day.setNotes(dayRequest.getNotes());
             itineraryDayRepository.save(day);
         }
+        recalculateAndSaveSafariStatus(safari);
     } 
 
     @Transactional
@@ -179,6 +218,9 @@ public class SafariServiceImpl implements SafariService {
     public void deleteItineraryDay(UUID safariId, UUID dayId) {
         Safari safari = safariRepository.findById(safariId)
                 .orElseThrow(() -> new ResourceNotFoundException("Safari not found"));
+        if (safari.getClient() != null && safari.getClient().getCompany() != null) {
+            companyAccessValidator.validate(safari.getClient().getCompany().getId());
+        }
 
         ItineraryDay day = itineraryDayRepository
                 .findByIdAndSafariId(dayId, safariId)
@@ -204,13 +246,17 @@ public class SafariServiceImpl implements SafariService {
 
         safari.setEndDate(date.minusDays(1));
         safariRepository.save(safari);
+        recalculateAndSaveSafariStatus(safari);
     }
 
     @Transactional
     @Override
     public void updateItineraryDay(UUID safariId, UUID dayId, ItineraryRequest request) {
-        safariRepository.findById(safariId)
+        Safari safari = safariRepository.findById(safariId)
                 .orElseThrow(() -> new ResourceNotFoundException("Safari not found"));
+        if (safari.getClient() != null && safari.getClient().getCompany() != null) {
+            companyAccessValidator.validate(safari.getClient().getCompany().getId());
+        }
 
         ItineraryDay day = itineraryDayRepository
                 .findByIdAndSafariId(dayId, safariId)
@@ -227,6 +273,7 @@ public class SafariServiceImpl implements SafariService {
         }
 
         itineraryDayRepository.save(day);
+        recalculateAndSaveSafariStatus(safari);
     }
 
     @Override
@@ -273,5 +320,191 @@ public class SafariServiceImpl implements SafariService {
         }
 
         return safariRepository.findAll(specification, pageable).map(this::mapToSafariResponse);
+    }
+
+    @Transactional
+    @Override
+    public SafariStatus recalculateAndSaveSafariStatus(Safari safari) {
+        if (safari == null) return null;
+        if (safari.getStatus() == SafariStatus.CANCELLED) {
+            return SafariStatus.CANCELLED;
+        }
+
+        List<ItineraryDay> days = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safari.getId());
+        if (days.isEmpty()) {
+            safari.setStatus(SafariStatus.DRAFT);
+            safariRepository.save(safari);
+            return SafariStatus.DRAFT;
+        }
+
+        boolean allDestinationsSet = days.stream().allMatch(d -> 
+            d.getDestination() != null 
+            && !d.getDestination().trim().isEmpty() 
+            && !d.getDestination().trim().equalsIgnoreCase("Destination not set")
+            && !d.getDestination().trim().equalsIgnoreCase("Destination pending configuration")
+        );
+
+        if (!allDestinationsSet) {
+            safari.setStatus(SafariStatus.DRAFT);
+            safariRepository.save(safari);
+            return SafariStatus.DRAFT;
+        }
+
+        // Check if all itinerary days have completed bookings
+        List<AccommodationRequirement> requirements = accommodationRequirementRepository.findBySafariId(safari.getId());
+        List<AccommodationBooking> bookings = accommodationBookingRepository.findBySafariId(safari.getId());
+
+        boolean allDaysBooked = days.stream().allMatch(day -> {
+            boolean reqCompleted = requirements.stream().anyMatch(r -> 
+                r.getItineraryDay() != null 
+                && r.getItineraryDay().getId().equals(day.getId()) 
+                && (r.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.COMPLETED)
+            );
+
+            boolean bookingConfirmed = bookings.stream().anyMatch(b ->
+                b.getStatus() == BookingStatus.CONFIRMED && (
+                    (b.getAccommodationRequirement() != null 
+                     && b.getAccommodationRequirement().getItineraryDay() != null 
+                     && b.getAccommodationRequirement().getItineraryDay().getId().equals(day.getId()))
+                    || (b.getCheckIn() != null && day.getDate() != null && b.getCheckIn().equals(day.getDate()))
+                )
+            );
+
+            return reqCompleted || bookingConfirmed;
+        });
+
+        SafariStatus newStatus;
+        if (allDaysBooked) {
+            newStatus = SafariStatus.COMPLETED;
+        } else {
+            newStatus = SafariStatus.CONFIRMED;
+        }
+
+        safari.setStatus(newStatus);
+        safariRepository.save(safari);
+        return newStatus;
+    }
+
+    @Transactional
+    @Override
+    public List<ItineraryDayResponse> regenerateItineraryDays(UUID safariId) {
+        Safari safari = safariRepository.findById(safariId)
+                .orElseThrow(() -> new ResourceNotFoundException("Safari not found"));
+        if (safari.getClient() != null && safari.getClient().getCompany() != null) {
+            companyAccessValidator.validate(safari.getClient().getCompany().getId());
+        }
+
+        if (safari.getStartDate() == null || safari.getEndDate() == null) {
+            throw new IllegalArgumentException("Cannot generate itinerary days: Safari start date and end date are required");
+        }
+
+        List<ItineraryDay> existingDays = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safari.getId());
+        if (existingDays.isEmpty()) {
+            generateItineraryDay(safari);
+        } else {
+            // Fill in any missing dates from start to end date
+            LocalDate cur = safari.getStartDate();
+            int expectedDayNum = 1;
+            while (!cur.isAfter(safari.getEndDate())) {
+                final LocalDate dayDate = cur;
+                boolean exists = existingDays.stream().anyMatch(d -> d.getDate() != null && d.getDate().equals(dayDate));
+                if (!exists) {
+                    ItineraryDay newDay = ItineraryDay.builder()
+                            .safari(safari)
+                            .dayNumber(expectedDayNum)
+                            .date(dayDate)
+                            .destination(null)
+                            .build();
+                    itineraryDayRepository.save(newDay);
+                }
+                cur = cur.plusDays(1);
+                expectedDayNum++;
+            }
+
+            // Renumber all days sequentially
+            List<ItineraryDay> allDays = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safari.getId());
+            int num = 1;
+            for (ItineraryDay d : allDays) {
+                d.setDayNumber(num++);
+                itineraryDayRepository.save(d);
+            }
+        }
+
+        recalculateAndSaveSafariStatus(safari);
+        List<ItineraryDay> finalDays = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safari.getId());
+        return finalDays.stream().map(this::mapToItineraryDayResponse).collect(Collectors.toList());
+    }
+
+    @Transactional
+    @Override
+    public SafariResponse updateSafariStatus(UUID safariId, SafariStatus requestedStatus) {
+        Safari safari = safariRepository.findById(safariId)
+                .orElseThrow(() -> new ResourceNotFoundException("Safari not found"));
+        if (safari.getClient() != null && safari.getClient().getCompany() != null) {
+            companyAccessValidator.validate(safari.getClient().getCompany().getId());
+        }
+
+        List<ItineraryDay> days = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safari.getId());
+
+        if (requestedStatus == SafariStatus.CONFIRMED) {
+            if (days.isEmpty()) {
+                throw new IllegalArgumentException("Cannot confirm safari: No itinerary days exist.");
+            }
+            boolean allDestinationsSet = days.stream().allMatch(d -> 
+                d.getDestination() != null 
+                && !d.getDestination().trim().isEmpty() 
+                && !d.getDestination().trim().equalsIgnoreCase("Destination not set")
+                && !d.getDestination().trim().equalsIgnoreCase("Destination pending configuration")
+            );
+            if (!allDestinationsSet) {
+                throw new IllegalArgumentException("Cannot confirm safari: All itinerary days must have destinations configured.");
+            }
+            safari.setStatus(SafariStatus.CONFIRMED);
+        } else if (requestedStatus == SafariStatus.COMPLETED) {
+            if (days.isEmpty()) {
+                throw new IllegalArgumentException("Cannot complete safari: No itinerary days exist.");
+            }
+            boolean allDestinationsSet = days.stream().allMatch(d -> 
+                d.getDestination() != null 
+                && !d.getDestination().trim().isEmpty() 
+                && !d.getDestination().trim().equalsIgnoreCase("Destination not set")
+                && !d.getDestination().trim().equalsIgnoreCase("Destination pending configuration")
+            );
+            if (!allDestinationsSet) {
+                throw new IllegalArgumentException("Cannot complete safari: All itinerary days must have destinations configured.");
+            }
+
+            List<AccommodationRequirement> requirements = accommodationRequirementRepository.findBySafariId(safari.getId());
+            List<AccommodationBooking> bookings = accommodationBookingRepository.findBySafariId(safari.getId());
+
+            boolean allDaysBooked = days.stream().allMatch(day -> {
+                boolean reqCompleted = requirements.stream().anyMatch(r -> 
+                    r.getItineraryDay() != null 
+                    && r.getItineraryDay().getId().equals(day.getId()) 
+                    && (r.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.COMPLETED)
+                );
+
+                boolean bookingConfirmed = bookings.stream().anyMatch(b ->
+                    b.getStatus() == BookingStatus.CONFIRMED && (
+                        (b.getAccommodationRequirement() != null 
+                         && b.getAccommodationRequirement().getItineraryDay() != null 
+                         && b.getAccommodationRequirement().getItineraryDay().getId().equals(day.getId()))
+                        || (b.getCheckIn() != null && day.getDate() != null && b.getCheckIn().equals(day.getDate()))
+                    )
+                );
+
+                return reqCompleted || bookingConfirmed;
+            });
+
+            if (!allDaysBooked) {
+                throw new IllegalArgumentException("Cannot complete safari: All itinerary days must have confirmed accommodation bookings.");
+            }
+            safari.setStatus(SafariStatus.COMPLETED);
+        } else {
+            safari.setStatus(requestedStatus);
+        }
+
+        safariRepository.save(safari);
+        return mapToSafariResponse(safari);
     }
 }
