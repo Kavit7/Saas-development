@@ -170,7 +170,7 @@ public class GuestServiceImpl implements GuestService, OccasionService {
             List<GuestRequirement> guestRequirement = guestRequirementRepository.findAllByGuestId(guestId);
 
             if (guestRequirement.isEmpty()) {
-                throw new RuntimeException("No requirment found to this guest");
+                return java.util.Collections.emptyList();
             }
 
             return guestRequirement.stream().map(this::mapToGuestRequirementResponse).collect(Collectors.toList());

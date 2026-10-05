@@ -18,5 +18,5 @@ public interface PropertyRepository extends JpaRepository<Property,UUID> ,JpaSpe
     boolean existsByName(String name);
     boolean existsByNameAndIdNot(String name, UUID id);
     long countByVerificationStatus(com.saas.backend.models.VerificationStatus verificationStatus);
-    Page<Property> findAll(Specification specification, Pageable pageable);
+    Page<Property> findAll(Specification<Property> specification, Pageable pageable);
 }

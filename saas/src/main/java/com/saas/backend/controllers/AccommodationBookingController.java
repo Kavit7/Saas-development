@@ -3,6 +3,7 @@ package com.saas.backend.controllers;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,10 +12,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.saas.backend.dto.AccommodationBookingRequest;
 import com.saas.backend.dto.ConfirmBookingRequest;
+import com.saas.backend.models.BookingStatus;
 import com.saas.backend.response.AccommodationBookingResponse;
 import com.saas.backend.service.AccommodationBookingService;
 
@@ -38,11 +41,31 @@ public class AccommodationBookingController {
     private final AccommodationBookingService accommodationBookingService;
 
     /**
-     * Lists all accommodation bookings in the system.
+     * Lists accommodation bookings with pagination, search, status filtering, and multi-tenant security.
      */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'RESERVATION_MANAGER', 'SALES_PERSON', 'SUPER_ADMIN')")
-    @Operation(summary = "Get all accommodation bookings")
+    @Operation(summary = "Get accommodation bookings with pagination and filters")
+    public ResponseEntity<Page<AccommodationBookingResponse>> getBookings(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String direction,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) BookingStatus status
+    ) {
+        Page<AccommodationBookingResponse> bookings = accommodationBookingService.getBookings(
+                page, size, sortBy, direction, search, status
+        );
+        return ResponseEntity.ok(bookings);
+    }
+
+    /**
+     * Non-paginated endpoint for full list retrieval.
+     */
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESERVATION_MANAGER', 'SALES_PERSON', 'SUPER_ADMIN')")
+    @Operation(summary = "Get all accommodation bookings (non-paginated)")
     public ResponseEntity<List<AccommodationBookingResponse>> getAllBookings() {
         List<AccommodationBookingResponse> bookings = accommodationBookingService.getAllBookings();
         return ResponseEntity.ok(bookings);

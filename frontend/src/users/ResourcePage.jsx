@@ -83,7 +83,7 @@ const ResourcePage = ({
 
   // Active Selected Item for Detail View
   const [selectedItem, setSelectedItem] = useState(null);
-  const [subData, setSubData] = useState({ guests: [], flights: [], days: [], requirements: [] });
+  const [subData, setSubData] = useState({ guests: [], flights: [], days: [], requirements: [], bookings: [] });
   const [activeTab, setActiveTab] = useState("overview");
 
   // Form Configurations
@@ -271,17 +271,23 @@ const ResourcePage = ({
           flights: flightsRes.status === "fulfilled" ? flightsRes.value?.data || flightsRes.value || [] : [],
           days: [],
           requirements: [],
+          bookings: [],
         });
       } else if (resource === "safaris") {
-        const [daysRes, reqsRes] = await Promise.allSettled([
+        const clientId = item.clientId || item.client?.id;
+        const [daysRes, reqsRes, bookingsRes, guestsRes, flightsRes] = await Promise.allSettled([
           getAllData(`/safari/${item.id}/itineraryDays`, token),
           getAllData(`/api/v1/accommodation-requirements/safari/${item.id}`, token),
+          getAllData(`/accommodation-bookings/by-safari/${item.id}`, token),
+          clientId ? getAllData(`/client/${clientId}/guests`, token) : Promise.resolve([]),
+          clientId ? getAllData(`/client/${clientId}/flight-details`, token) : Promise.resolve([]),
         ]);
         setSubData({
           days: daysRes.status === "fulfilled" ? daysRes.value?.data || daysRes.value || [] : [],
           requirements: reqsRes.status === "fulfilled" ? reqsRes.value?.data || reqsRes.value || [] : [],
-          guests: [],
-          flights: [],
+          bookings: bookingsRes.status === "fulfilled" ? bookingsRes.value?.data || bookingsRes.value || [] : [],
+          guests: guestsRes.status === "fulfilled" ? guestsRes.value?.data || guestsRes.value || [] : [],
+          flights: flightsRes.status === "fulfilled" ? flightsRes.value?.data || flightsRes.value || [] : [],
         });
       }
     } catch (err) {
@@ -552,6 +558,38 @@ const ResourcePage = ({
 
   // Accommodation Booking Handlers
   const handleBookLodge = (req, day) => {
+    const normalizedRole = String(user?.role_name || user?.role || "").toUpperCase().replace(/^ROLE_/, "").trim();
+    const isSalesPerson = ["SALES_PERSON", "SALE", "SALES", "SALESPERSON"].includes(normalizedRole);
+
+    if (isSalesPerson) {
+      setAlertModal({
+        open: true,
+        title: "Access Restricted",
+        message: "Sales personnel are not authorized to allocate lodges or generate accommodation bookings. Please contact your Reservation Manager.",
+        type: "error",
+      });
+      return;
+    }
+
+    const isReqConfirmed = req && (
+      String(req.status || "").toUpperCase() === "COMPLETED" ||
+      String(req.status || "").toUpperCase() === "CONFIRMED"
+    );
+    const existingConfirmedBooking = (subData?.bookings || []).find((b) =>
+      req && String(b.requirementId) === String(req.id) &&
+      String(b.status || "").toUpperCase() === "CONFIRMED"
+    );
+
+    if (isReqConfirmed || existingConfirmedBooking) {
+      setAlertModal({
+        open: true,
+        title: "Booking Already Confirmed",
+        message: `This accommodation requirement is already booked and confirmed${existingConfirmedBooking?.propertyName ? ` with '${existingConfirmedBooking.propertyName}'` : ""}.`,
+        type: "info",
+      });
+      return;
+    }
+
     setBookingModal({
       open: true,
       requirement: req,

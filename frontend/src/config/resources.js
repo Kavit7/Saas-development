@@ -28,9 +28,9 @@ export const resources = {
     singular: "Client",
     icon: UsersThree,
     endpoint: "/clients",
-    roles: [ADMIN, SALE],
+    roles: [SUPER_ADMIN, ADMIN, RM, SALE],
     permissions: {
-      view: [ADMIN, SALE],
+      view: [SUPER_ADMIN, ADMIN, RM, SALE],
       create: [ADMIN, SALE],
       update: [ADMIN, SALE],
       delete: [ADMIN],
@@ -42,8 +42,9 @@ export const resources = {
           key: "status",
           label: "Status",
           type: "select",
-          defaultValue: "ACTIVE",
+          defaultValue: "",
           options: [
+            { label: "All Statuses", value: "" },
             { label: "Active", value: "ACTIVE" },
             { label: "Inactive", value: "INACTIVE" },
           ],

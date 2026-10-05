@@ -23,5 +23,5 @@ public interface ClientRepository extends JpaRepository<Client,UUID>,JpaSpecific
  long countByCompany_Id(UUID companyId);
  long countBySalesPersonId(UUID userId);
 
- Page<Client> findAll(Specification specification,Pageable pageable);
+ Page<Client> findAll(Specification<Client> specification, Pageable pageable);
 } 

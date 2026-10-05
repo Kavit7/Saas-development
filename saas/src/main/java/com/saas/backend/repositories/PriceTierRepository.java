@@ -13,5 +13,5 @@ import com.saas.backend.models.PriceTier;
 public interface PriceTierRepository extends JpaRepository<PriceTier,UUID> {
     
     boolean existsByNameAndCurrencyIgnoreCase(String name,String currency);
-    
+    java.util.Optional<PriceTier> findByNameIgnoreCase(String name);
 }

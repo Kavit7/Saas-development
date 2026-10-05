@@ -128,11 +128,25 @@ const ResourceDetailView = ({
   const canUpdate = can("update", permissions);
   const canCreate = can("create", permissions);
   const canDelete = can("delete", permissions);
+
+  const normalizedRole = String(user?.role_name || user?.role || "").toUpperCase().replace(/^ROLE_/, "").trim();
+  const isSalesPerson = ["SALES_PERSON", "SALE", "SALES", "SALESPERSON"].includes(normalizedRole);
+
   const canVerify =
     can("verify", permissions) ||
-    user?.role_name === "SUPER_ADMIN" ||
-    user?.role_name === "ADMIN" ||
-    user?.role_name === "RESERVATION_MANAGER";
+    normalizedRole === "SUPER_ADMIN" ||
+    normalizedRole === "ADMIN" ||
+    normalizedRole === "RESERVATION_MANAGER";
+
+  const canBookLodge =
+    !isSalesPerson &&
+    (normalizedRole === "ADMIN" ||
+      normalizedRole === "SUPER_ADMIN" ||
+      normalizedRole === "PLATFORM_ADMIN" ||
+      normalizedRole === "RESERVATION_MANAGER" ||
+      normalizedRole === "RM" ||
+      normalizedRole === "RESERVATION" ||
+      normalizedRole === "RESERVATIONS");
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200 font-sans">
@@ -418,10 +432,11 @@ const ResourceDetailView = ({
         <SafariItineraryView
           days={subData?.days || []}
           requirements={subData?.requirements || []}
+          bookings={subData?.bookings || []}
           canUpdate={canUpdate}
           canCreate={canCreate}
           canDelete={canDelete}
-          canBook={canCreate || canUpdate || user?.role_name === "ADMIN" || user?.role_name === "RESERVATION_MANAGER"}
+          canBook={canBookLodge}
           onEditDay={onEditDay}
           onAddRequirement={onAddRequirement}
           onEditRequirement={onEditRequirement}
@@ -430,13 +445,14 @@ const ResourceDetailView = ({
         />
       )}
 
-      {resource === "clients" && (activeTab === "guests" || activeTab === "flights") && (
+      {(resource === "clients" || resource === "safaris") && (activeTab === "guests" || activeTab === "flights") && (
         <ClientSubdataView
           activeTab={activeTab}
-          client={item}
+          client={resource === "safaris" ? (item.client || item) : item}
           guests={subData?.guests || []}
           flights={subData?.flights || []}
           canCreate={canCreate}
+          canManage={!isSalesPerson || canUpdate || canCreate}
           onAddGuest={onAddGuest}
           onAddFlight={onAddFlight}
         />
@@ -457,7 +473,7 @@ const ResourceDetailView = ({
           {resource === "accommodation-bookings" && (
             <BookingActionBanner
               booking={item}
-              canManage={canUpdate || canCreate || user?.role_name === "ADMIN" || user?.role_name === "RESERVATION_MANAGER"}
+              canManage={!isSalesPerson && (canUpdate || canCreate || normalizedRole === "ADMIN" || normalizedRole === "RESERVATION_MANAGER" || normalizedRole === "SUPER_ADMIN")}
               loading={actionLoading}
               onSend={onSendBooking}
               onConfirmSuccess={onConfirmBookingSuccess}

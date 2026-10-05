@@ -70,7 +70,8 @@ public class EmailResponseDetectionServiceImpl
     private boolean containsConfirmedKeywords(
             String content) {
 
-        return content.contains("reservation confirmed")
+        return content.contains("Accommodation confirmed")
+                || content.contains("booking confirmed")
                 || content.contains("booking confirmed")
                 || content.contains("request confirmed")
                 || content.contains("reservation is confirmed")
