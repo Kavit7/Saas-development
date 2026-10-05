@@ -41,6 +41,8 @@ import com.saas.backend.service.AccommodationBookingService;
 import com.saas.backend.service.BookingFollowUpService;
 import com.saas.backend.service.EmailService;
 import com.saas.backend.service.NotificationService;
+import com.saas.backend.models.ItineraryDay;
+import com.saas.backend.repositories.ItineraryDayRepository;
 import com.saas.backend.specification.AccommodationBookingSpecification;
 
 import lombok.RequiredArgsConstructor;
@@ -66,6 +68,7 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
     private final NotificationService notificationService;
     private final SafariRepository safariRepository;
     private final InvoiceRepository invoiceRepository;
+    private final ItineraryDayRepository itineraryDayRepository;
 
     private void validateBookingCompanyAccess(AccommodationBooking booking) {
         if (booking != null &&
@@ -264,7 +267,20 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
             );
         }
 
-        log.info("Created draft accommodation booking {} for property '{}'", referenceNumber, property.getName());
+        // Auto-dispatch booking request email with guest and room requirements if property email exists
+        if (property.getContactEmail() != null && !property.getContactEmail().isBlank()) {
+            try {
+                emailService.sendBookingRequest(booking);
+                booking.setStatus(BookingStatus.PROVISIONAL);
+                booking.setRequestedAt(OffsetDateTime.now());
+                booking = accommodationBookingRepository.save(booking);
+                log.info("Automatically dispatched booking request email with guest requirements to property '{}' ({})", property.getName(), property.getContactEmail());
+            } catch (Exception e) {
+                log.warn("Live email auto-dispatch note (SMTP offline or warning): {}", e.getMessage());
+            }
+        }
+
+        log.info("Created accommodation booking {} for property '{}'", referenceNumber, property.getName());
         return mapToResponse(booking);
     }
 
@@ -376,25 +392,16 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         booking = accommodationBookingRepository.save(booking);
 
         // Requirement is now satisfied and completed
+        // Requirement is now satisfied and completed
         AccommodationRequirement requirement = booking.getAccommodationRequirement();
         if (requirement != null) {
             requirement.setAccomodationRequirmentStatus(AccomodationRequirmentStatus.COMPLETED);
             accommodationRequirementRepository.saveAndFlush(requirement);
 
-            // If all requirements for this safari are completed, progress Safari to CONFIRMED
+            // Update parent Safari lifecycle status
             Safari safari = requirement.getSafari();
             if (safari != null) {
-                List<AccommodationRequirement> allReqs = accommodationRequirementRepository.findBySafariId(safari.getId());
-                boolean allCompleted = !allReqs.isEmpty() && allReqs.stream()
-                        .allMatch(r -> r.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.COMPLETED);
-                if (allCompleted) {
-                    safari.setStatus(SafariStatus.CONFIRMED);
-                    safariRepository.saveAndFlush(safari);
-                    log.info("All requirements completed! Transitioned Safari {} to CONFIRMED", safari.getReferenceNumber());
-                } else if (safari.getStatus() == SafariStatus.DRAFT) {
-                    safari.setStatus(SafariStatus.IN_PROGRESS);
-                    safariRepository.saveAndFlush(safari);
-                }
+                updateSafariLifecycleStatus(safari);
             }
         }
 
@@ -431,13 +438,7 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
 
             Safari safari = requirement.getSafari();
             if (safari != null) {
-                List<AccommodationRequirement> allReqs = accommodationRequirementRepository.findBySafariId(safari.getId());
-                boolean allCompleted = !allReqs.isEmpty() && allReqs.stream()
-                        .allMatch(r -> r.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.COMPLETED);
-                if (allCompleted) {
-                    safari.setStatus(SafariStatus.CONFIRMED);
-                    safariRepository.saveAndFlush(safari);
-                }
+                updateSafariLifecycleStatus(safari);
             }
         }
 
@@ -582,5 +583,56 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         } catch (Exception e) {
             log.warn("Could not auto-generate invoice for booking {}: {}", booking.getReferenceNumber(), e.getMessage());
         }
+    }
+
+    private void updateSafariLifecycleStatus(Safari safari) {
+        if (safari == null || safari.getStatus() == SafariStatus.CANCELLED) return;
+
+        List<ItineraryDay> days = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safari.getId());
+        if (days.isEmpty()) return;
+
+        boolean allDestinationsSet = days.stream().allMatch(d -> 
+            d.getDestination() != null 
+            && !d.getDestination().trim().isEmpty() 
+            && !d.getDestination().trim().equalsIgnoreCase("Destination not set")
+            && !d.getDestination().trim().equalsIgnoreCase("Destination pending configuration")
+        );
+
+        if (!allDestinationsSet) {
+            safari.setStatus(SafariStatus.DRAFT);
+            safariRepository.saveAndFlush(safari);
+            return;
+        }
+
+        List<AccommodationRequirement> requirements = accommodationRequirementRepository.findBySafariId(safari.getId());
+        List<AccommodationBooking> bookings = accommodationBookingRepository.findBySafariId(safari.getId());
+
+        boolean allDaysBooked = days.stream().allMatch(day -> {
+            boolean reqCompleted = requirements.stream().anyMatch(r -> 
+                r.getItineraryDay() != null 
+                && r.getItineraryDay().getId().equals(day.getId()) 
+                && (r.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.COMPLETED)
+            );
+
+            boolean bookingConfirmed = bookings.stream().anyMatch(b ->
+                b.getStatus() == BookingStatus.CONFIRMED && (
+                    (b.getAccommodationRequirement() != null 
+                     && b.getAccommodationRequirement().getItineraryDay() != null 
+                     && b.getAccommodationRequirement().getItineraryDay().getId().equals(day.getId()))
+                    || (b.getCheckIn() != null && day.getDate() != null && b.getCheckIn().equals(day.getDate()))
+                )
+            );
+
+            return reqCompleted || bookingConfirmed;
+        });
+
+        if (allDaysBooked) {
+            safari.setStatus(SafariStatus.COMPLETED);
+            log.info("All itinerary day bookings completed! Transitioned Safari {} to COMPLETED", safari.getReferenceNumber());
+        } else {
+            safari.setStatus(SafariStatus.CONFIRMED);
+            log.info("Safari {} confirmed with all day destinations set", safari.getReferenceNumber());
+        }
+        safariRepository.saveAndFlush(safari);
     }
 }

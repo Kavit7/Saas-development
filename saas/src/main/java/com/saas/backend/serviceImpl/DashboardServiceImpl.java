@@ -155,11 +155,16 @@ public class DashboardServiceImpl implements DashboardService {
         String name = user != null ? (user.getFirstName() + " " + user.getLastName()) : "Company Administrator";
         String companyName = (user != null && user.getCompany() != null) ? user.getCompany().getName() : "Safari Operations";
 
-        List<Safari> safaris = safariRepository.findAll();
-        long totalClients = clientRepository.count();
-        long totalStaff = userRepository.count();
+        Company company = user != null ? user.getCompany() : null;
+        UUID companyId = company != null ? company.getId() : null;
+
+        List<Safari> safaris = companyId != null
+                ? safariRepository.findAllByClient_Company_Id(companyId)
+                : safariRepository.findAll();
+        long totalClients = companyId != null ? clientRepository.countByCompany_Id(companyId) : clientRepository.count();
+        long totalStaff = company != null ? userRepository.countByCompany(company) : userRepository.count();
         long totalProperties = propertyRepository.count();
-        long totalBookings = accommodationBookingRepository.count();
+        long totalBookings = companyId != null ? accommodationBookingRepository.countByCompanyId(companyId) : accommodationBookingRepository.count();
 
         long confirmedSafaris = safaris.stream().filter(s -> s.getStatus() == SafariStatus.CONFIRMED).count();
         long draftSafaris = safaris.stream().filter(s -> s.getStatus() == SafariStatus.DRAFT).count();
@@ -291,10 +296,16 @@ public class DashboardServiceImpl implements DashboardService {
     private DashboardStatsResponse buildReservationManagerDashboard(String email) {
         User user = userRepository.findByEmail(email).orElse(null);
         String name = user != null ? (user.getFirstName() + " " + user.getLastName()) : "Reservation Manager";
-        String companyName = (user != null && user.getCompany() != null) ? user.getCompany().getName() : "Reservations Desk";
+        Company company = user != null ? user.getCompany() : null;
+        String companyName = company != null ? company.getName() : "Reservations Desk";
+        UUID companyId = company != null ? company.getId() : null;
 
-        List<AccommodationRequirement> requirements = accommodationRequirementRepository.findAll();
-        List<AccommodationBooking> bookings = accommodationBookingRepository.findAll();
+        List<AccommodationRequirement> requirements = companyId != null
+                ? accommodationRequirementRepository.findAllBySafari_Client_Company_Id(companyId)
+                : accommodationRequirementRepository.findAll();
+        List<AccommodationBooking> bookings = companyId != null
+                ? accommodationBookingRepository.findAllByCompanyId(companyId)
+                : accommodationBookingRepository.findAll();
 
         long totalReqs = requirements.size();
         long pendingReqs = requirements.stream().filter(r -> r.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.PENDING).count();
@@ -389,7 +400,12 @@ public class DashboardServiceImpl implements DashboardService {
         String name = user != null ? (user.getFirstName() + " " + user.getLastName()) : "Field Safari Guide";
         String companyName = (user != null && user.getCompany() != null) ? user.getCompany().getName() : "Safari Expedition Unit";
 
-        List<Safari> safaris = safariRepository.findAll();
+        Company company = user != null ? user.getCompany() : null;
+        UUID companyId = company != null ? company.getId() : null;
+
+        List<Safari> safaris = companyId != null
+                ? safariRepository.findAllByClient_Company_Id(companyId)
+                : safariRepository.findAll();
         List<Safari> upcomingSafaris = safaris.stream()
                 .filter(s -> s.getStatus() == SafariStatus.CONFIRMED || s.getStatus() == SafariStatus.DRAFT)
                 .sorted(Comparator.comparing(Safari::getStartDate, Comparator.nullsLast(Comparator.naturalOrder())))

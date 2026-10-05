@@ -14,6 +14,9 @@ import com.saas.backend.models.ItineraryDay;
 @Repository 
 public interface ItineraryDayRepository extends JpaRepository<ItineraryDay,UUID> {
     List<ItineraryDay> findBySafariId(UUID safarId);
-   Optional< ItineraryDay>findByIdAndSafariId(UUID itineraryId, UUID safariId);
-   List<ItineraryDay> findBySafariIdOrderByDayNumberAsc(UUID safariId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT d FROM ItineraryDay d WHERE d.id = :dayId AND d.safari.id = :safariId")
+    Optional<ItineraryDay> findByIdAndSafariId(@org.springframework.data.repository.query.Param("dayId") UUID dayId, @org.springframework.data.repository.query.Param("safariId") UUID safariId);
+
+    List<ItineraryDay> findBySafariIdOrderByDayNumberAsc(UUID safariId);
 }

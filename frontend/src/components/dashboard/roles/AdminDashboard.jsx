@@ -1,4 +1,12 @@
-import { Compass, UsersThree, CurrencyDollar, UserGear, Buildings, Plus } from "@phosphor-icons/react";
+import {
+  Compass,
+  UsersThree,
+  CalendarCheck,
+  UserGear,
+  Buildings,
+  ShieldCheck,
+  Lifebuoy,
+} from "@phosphor-icons/react";
 import StatCard from "../common/StatCard";
 import TrendAreaChart from "../charts/TrendAreaChart";
 import DonutStatusChart from "../charts/DonutStatusChart";
@@ -7,8 +15,8 @@ import RecentActivityTable from "../common/RecentActivityTable";
 
 /**
  * AdminDashboard Component
- * Tailored for Company Administrators and Directors.
- * Provides a command center for company booking volumes, estimated revenue, staff efficiency, and safaris.
+ * Tailored for Company Administrators and Operations Directors.
+ * Provides a command center for company safari expeditions, client pipeline, lodge bookings, staff, and audit trails.
  */
 const AdminDashboard = ({ stats }) => {
   const kpis = stats?.kpis || {};
@@ -44,57 +52,74 @@ const AdminDashboard = ({ stats }) => {
       color: "#059669",
     },
     {
-      label: "Company Users",
-      description: "Manage sales & guide staff",
+      label: "Company Staff",
+      description: "Manage sales, RMs & guides",
       to: "/users",
       icon: <UserGear size={20} weight="duotone" />,
       color: "#4F46E5",
     },
     {
-      label: "Accommodations",
-      description: "Review lodges & price tiers",
-      to: "/properties",
-      icon: <Buildings size={20} weight="duotone" />,
+      label: "Lodge Bookings",
+      description: "Track room reservations",
+      to: "/accommodation-bookings",
+      icon: <CalendarCheck size={20} weight="duotone" />,
       color: "#D97706",
     },
+    {
+      label: "Partner Lodges",
+      description: "Review properties & price tiers",
+      to: "/properties",
+      icon: <Buildings size={20} weight="duotone" />,
+      color: "#0284C7",
+    },
+    {
+      label: "Support Tickets",
+      description: "Review operational issues",
+      to: "/support-tickets",
+      icon: <Lifebuoy size={20} weight="duotone" />,
+      color: "#DC2626",
+    },
+    {
+      label: "Audit Logs",
+      description: "Inspect data change history",
+      to: "/audit-logs",
+      icon: <ShieldCheck size={20} weight="duotone" />,
+      color: "#475569",
+    },
   ];
-
-  const revenueDisplay = kpis.estimatedRevenue != null
-    ? `$${Number(kpis.estimatedRevenue).toLocaleString()}`
-    : "$124,500";
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* 1. Executive KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          title="Estimated Revenue"
-          value={revenueDisplay}
-          subtitle="Confirmed bookings value"
-          icon={<CurrencyDollar size={24} weight="duotone" />}
-          trend="+15.3%"
-          trendDirection="up"
-          iconBg="bg-emerald-50"
-          iconColor="text-emerald-700"
-        />
-
-        <StatCard
           title="Total Safaris"
           value={Number(kpis.totalSafaris || 0).toLocaleString()}
           subtitle={`${kpis.confirmedSafaris || 0} confirmed expeditions`}
           icon={<Compass size={24} weight="duotone" />}
-          trend="+9.4%"
+          trend={`${kpis.totalSafaris || 0} active`}
           trendDirection="up"
           iconBg="bg-indigo-50"
           iconColor="text-[#101B82]"
         />
 
         <StatCard
+          title="Lodge Bookings"
+          value={Number(kpis.totalBookings || 0).toLocaleString()}
+          subtitle="Confirmed & provisional rooms"
+          icon={<CalendarCheck size={24} weight="duotone" />}
+          trend="Operational"
+          trendDirection="up"
+          iconBg="bg-emerald-50"
+          iconColor="text-emerald-700"
+        />
+
+        <StatCard
           title="Total Clients"
           value={Number(kpis.totalClients || 0).toLocaleString()}
-          subtitle="Guest database accounts"
+          subtitle="Guest database profiles"
           icon={<UsersThree size={24} weight="duotone" />}
-          trend="+12.0%"
+          trend="Registered"
           trendDirection="up"
           iconBg="bg-blue-50"
           iconColor="text-blue-600"
@@ -105,7 +130,7 @@ const AdminDashboard = ({ stats }) => {
           value={Number(kpis.totalStaff || 0).toLocaleString()}
           subtitle="Active sales, RMs & guides"
           icon={<UserGear size={24} weight="duotone" />}
-          trend="All Active"
+          trend="Company Team"
           trendDirection="up"
           iconBg="bg-amber-50"
           iconColor="text-amber-600"

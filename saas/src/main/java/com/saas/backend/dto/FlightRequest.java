@@ -6,7 +6,10 @@ import com.saas.backend.models.FlightType;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
 @Data 
+@NoArgsConstructor
 @AllArgsConstructor 
 public class FlightRequest {
     private FlightType flightType;
