@@ -1,11 +1,13 @@
 package com.saas.backend.controllers;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,7 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.saas.backend.dto.PropertyRequest;
 import com.saas.backend.models.VerificationStatus;
+import com.saas.backend.response.AmenityResponse;
 import com.saas.backend.response.PropertyResponse;
+import com.saas.backend.response.TagResponse;
 import com.saas.backend.service.PropertyService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -118,5 +122,65 @@ public class PropertyController {
         propertyService.PropertyVerification(propertyId);
 
         return ResponseEntity.noContent().build();
+    }
+
+    // --- Property Amenities Endpoints ---
+
+    @GetMapping("/{propertyId}/amenities")
+    @Operation(summary = "Get amenities for a property")
+    public ResponseEntity<List<AmenityResponse>> getPropertyAmenities(
+            @PathVariable UUID propertyId) {
+        List<AmenityResponse> amenities = propertyService.getPropertyAmenities(propertyId);
+        return ResponseEntity.ok(amenities);
+    }
+
+    @PostMapping("/{propertyId}/amenities")
+    @Operation(summary = "Add amenities to a property")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','RESERVATION_MANAGER')")
+    public ResponseEntity<PropertyResponse> addAmenitiesToProperty(
+            @PathVariable UUID propertyId,
+            @RequestBody List<UUID> amenityIds) {
+        PropertyResponse response = propertyService.addAmenitiesToProperty(propertyId, amenityIds);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{propertyId}/amenities/{amenityId}")
+    @Operation(summary = "Remove an amenity from a property")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','RESERVATION_MANAGER')")
+    public ResponseEntity<PropertyResponse> removeAmenityFromProperty(
+            @PathVariable UUID propertyId,
+            @PathVariable UUID amenityId) {
+        PropertyResponse response = propertyService.removeAmenityFromProperty(propertyId, amenityId);
+        return ResponseEntity.ok(response);
+    }
+
+    // --- Property Tags Endpoints ---
+
+    @GetMapping("/{propertyId}/tags")
+    @Operation(summary = "Get tags for a property")
+    public ResponseEntity<List<TagResponse>> getPropertyTags(
+            @PathVariable UUID propertyId) {
+        List<TagResponse> tags = propertyService.getPropertyTags(propertyId);
+        return ResponseEntity.ok(tags);
+    }
+
+    @PostMapping("/{propertyId}/tags")
+    @Operation(summary = "Add tags to a property")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','RESERVATION_MANAGER')")
+    public ResponseEntity<PropertyResponse> addTagsToProperty(
+            @PathVariable UUID propertyId,
+            @RequestBody List<UUID> tagIds) {
+        PropertyResponse response = propertyService.addTagsToProperty(propertyId, tagIds);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{propertyId}/tags/{tagId}")
+    @Operation(summary = "Remove a tag from a property")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN','RESERVATION_MANAGER')")
+    public ResponseEntity<PropertyResponse> removeTagFromProperty(
+            @PathVariable UUID propertyId,
+            @PathVariable UUID tagId) {
+        PropertyResponse response = propertyService.removeTagFromProperty(propertyId, tagId);
+        return ResponseEntity.ok(response);
     }
 }

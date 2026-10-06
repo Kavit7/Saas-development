@@ -14,6 +14,7 @@ import {
 import SafariItineraryView from "./SafariItineraryView";
 import ClientSubdataView from "./ClientSubdataView";
 import PropertyVerificationView from "./PropertyVerificationView";
+import PropertyAmenitiesTagsSection from "./PropertyAmenitiesTagsSection";
 import BookingActionBanner from "./BookingActionBanner";
 import OverviewCardsView from "./OverviewCardsView";
 
@@ -91,6 +92,15 @@ const getItemSubtitle = (item, res) => {
     if (item.email) parts.push(item.email);
     return parts.join(" • ");
   }
+  if (res === "tags") {
+    const parts = [];
+    if (item.tagType) parts.push(`Type: ${item.tagType.replace("_", " ")}`);
+    if (item.createdBy) parts.push(`Created by: ${item.createdBy}`);
+    return parts.join(" • ");
+  }
+  if (res === "amenities") {
+    return item.description || "System Amenity";
+  }
   return "";
 };
 
@@ -119,8 +129,14 @@ const ResourceDetailView = ({
   // Client actions
   onAddGuest,
   onAddFlight,
-  // Property actions
+  // Property actions & data
   onVerifyProperty,
+  allAmenities = [],
+  allTags = [],
+  onAddPropertyAmenity,
+  onRemovePropertyAmenity,
+  onAddPropertyTag,
+  onRemovePropertyTag,
   // Booking actions
   onSendBooking,
   onConfirmBookingSuccess,
@@ -469,12 +485,25 @@ const ResourceDetailView = ({
         (resource !== "safaris" && resource !== "clients")) && (
         <div className="space-y-5">
           {resource === "properties" && (
-            <PropertyVerificationView
-              property={item}
-              canVerify={canVerify}
-              loading={actionLoading}
-              onVerify={onVerifyProperty}
-            />
+            <>
+              <PropertyVerificationView
+                property={item}
+                canVerify={canVerify}
+                loading={actionLoading}
+                onVerify={onVerifyProperty}
+              />
+              <PropertyAmenitiesTagsSection
+                property={item}
+                allAmenities={allAmenities}
+                allTags={allTags}
+                canManage={canUpdate || canCreate || canVerify}
+                onAddAmenities={onAddPropertyAmenity}
+                onRemoveAmenity={onRemovePropertyAmenity}
+                onAddTags={onAddPropertyTag}
+                onRemoveTag={onRemovePropertyTag}
+                loading={actionLoading}
+              />
+            </>
           )}
 
           {resource === "accommodation-bookings" && (

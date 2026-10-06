@@ -474,6 +474,15 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         notificationService.notifyBookingDeclined(booking);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Map<String, String> getBookingEmailPreview(UUID bookingId) {
+        AccommodationBooking booking = accommodationBookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking Not found: " + bookingId));
+        validateBookingCompanyAccess(booking);
+        return emailService.generateBookingEmailPreview(booking);
+    }
+
     private AccommodationBookingResponse mapToResponse(AccommodationBooking booking) {
         String propName = booking.getProperty() != null ? booking.getProperty().getName() : "Unknown Property";
         UUID propId = booking.getProperty() != null ? booking.getProperty().getId() : null;
