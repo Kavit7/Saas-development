@@ -141,9 +141,11 @@ const ResourcePage = ({
     const fetchOptions = async () => {
       try {
         if (resource === "properties") {
-          const [catRes, tierRes] = await Promise.allSettled([
+          const [catRes, tierRes, amenRes, tagRes] = await Promise.allSettled([
             getAllData("/property-category", token),
             getAllData("/price-tier", token),
+            getAllData("/amenities", token),
+            getAllData("/tags", token),
           ]);
           setDynamicOptions({
             categoryId: (catRes.status === "fulfilled" ? catRes.value?.data || catRes.value || [] : []).map((c) => ({
@@ -152,6 +154,17 @@ const ResourcePage = ({
             })),
             priceId: (tierRes.status === "fulfilled" ? tierRes.value?.data || tierRes.value || [] : []).map((t) => ({
               label: `${t.name} (${t.currency} ${t.minPrice} - ${t.maxPrice})`,
+              value: t.id,
+            })),
+            amenityIds: (amenRes.status === "fulfilled" ? amenRes.value?.data || amenRes.value || [] : []).map((a) => ({
+              label: a.name,
+              description: a.description,
+              value: a.id,
+            })),
+            tagIds: (tagRes.status === "fulfilled" ? tagRes.value?.data || tagRes.value || [] : []).map((t) => ({
+              label: `${t.name}${t.tagType ? ` (${t.tagType.replace("_", " ")})` : ""}`,
+              description: t.description,
+              tagType: t.tagType,
               value: t.id,
             })),
           });
@@ -329,6 +342,16 @@ const ResourcePage = ({
           const computedStatus = allBooked ? "COMPLETED" : allDestSet ? "CONFIRMED" : "DRAFT";
           setSelectedItem((prev) => (prev ? { ...prev, status: computedStatus } : prev));
         }
+      } else if (resource === "properties") {
+        try {
+          const propRes = await getAllData(`/properties/${item.id}`, token);
+          if (propRes) {
+            const detailedProp = propRes?.data || propRes;
+            setSelectedItem(detailedProp);
+          }
+        } catch (e) {
+          console.warn("Could not reload detailed property:", e);
+        }
       }
     } catch (err) {
       console.error("Failed to load subdata:", err);
@@ -350,9 +373,18 @@ const ResourcePage = ({
       setViewMode("detail");
       loadSubDataForView(item);
     } else if (actionKey === "update") {
+      let initialValues = { ...item };
+      if (resource === "properties") {
+        initialValues.amenityIds = Array.isArray(item.amenities)
+          ? item.amenities.map((a) => a.id)
+          : item.amenityIds || [];
+        initialValues.tagIds = Array.isArray(item.tags)
+          ? item.tags.map((t) => t.id)
+          : item.tagIds || [];
+      }
       setFormConfig({
         mode: "edit",
-        initialValues: item,
+        initialValues: initialValues,
         title: `Edit ${singularName}`,
       });
       setViewMode("form");
@@ -881,6 +913,109 @@ const ResourcePage = ({
     }
   };
 
+  // Property Amenities & Tags Handlers
+  const handleAddPropertyAmenity = async (amenityIds) => {
+    if (!selectedItem) return;
+    setActionLoading(true);
+    try {
+      const res = await apiRequest(`/properties/${selectedItem.id}/amenities`, {
+        method: "POST",
+        body: JSON.stringify(Array.isArray(amenityIds) ? amenityIds : [amenityIds]),
+      }, token);
+      const updated = res?.data || res;
+      setSelectedItem(updated);
+      setAlertModal({
+        open: true,
+        title: "Amenities Added",
+        message: "Property amenities updated successfully.",
+        type: "success",
+      });
+      loadData();
+    } catch (error) {
+      setAlertModal({
+        open: true,
+        title: "Action Failed",
+        message: error.message || "Failed to add amenities",
+        type: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRemovePropertyAmenity = async (amenityId) => {
+    if (!selectedItem) return;
+    setActionLoading(true);
+    try {
+      const res = await apiRequest(`/properties/${selectedItem.id}/amenities/${amenityId}`, {
+        method: "DELETE",
+      }, token);
+      const updated = res?.data || res;
+      setSelectedItem(updated);
+      loadData();
+    } catch (error) {
+      setAlertModal({
+        open: true,
+        title: "Action Failed",
+        message: error.message || "Failed to remove amenity",
+        type: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleAddPropertyTag = async (tagIds) => {
+    if (!selectedItem) return;
+    setActionLoading(true);
+    try {
+      const res = await apiRequest(`/properties/${selectedItem.id}/tags`, {
+        method: "POST",
+        body: JSON.stringify(Array.isArray(tagIds) ? tagIds : [tagIds]),
+      }, token);
+      const updated = res?.data || res;
+      setSelectedItem(updated);
+      setAlertModal({
+        open: true,
+        title: "Tags Added",
+        message: "Property tags updated successfully.",
+        type: "success",
+      });
+      loadData();
+    } catch (error) {
+      setAlertModal({
+        open: true,
+        title: "Action Failed",
+        message: error.message || "Failed to add tags",
+        type: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleRemovePropertyTag = async (tagId) => {
+    if (!selectedItem) return;
+    setActionLoading(true);
+    try {
+      const res = await apiRequest(`/properties/${selectedItem.id}/tags/${tagId}`, {
+        method: "DELETE",
+      }, token);
+      const updated = res?.data || res;
+      setSelectedItem(updated);
+      loadData();
+    } catch (error) {
+      setAlertModal({
+        open: true,
+        title: "Action Failed",
+        message: error.message || "Failed to remove tag",
+        type: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // User Status Toggle (Activate / Deactivate)
   const handleToggleUserStatus = async (targetUser) => {
     const newStatus = targetUser.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
@@ -1019,9 +1154,18 @@ const ResourcePage = ({
           }}
           onRefresh={() => loadSubDataForView(selectedItem)}
           onEdit={() => {
+            let initialValues = { ...selectedItem };
+            if (resource === "properties") {
+              initialValues.amenityIds = Array.isArray(selectedItem.amenities)
+                ? selectedItem.amenities.map((a) => a.id)
+                : selectedItem.amenityIds || [];
+              initialValues.tagIds = Array.isArray(selectedItem.tags)
+                ? selectedItem.tags.map((t) => t.id)
+                : selectedItem.tagIds || [];
+            }
             setFormConfig({
               mode: "edit",
-              initialValues: selectedItem,
+              initialValues: initialValues,
               title: `Edit ${singularName}`,
             });
             setViewMode("form");
@@ -1063,6 +1207,12 @@ const ResourcePage = ({
             setViewMode("sub-form");
           }}
           onVerifyProperty={handleVerifyProperty}
+          allAmenities={dynamicOptions.amenityIds || []}
+          allTags={dynamicOptions.tagIds || []}
+          onAddPropertyAmenity={handleAddPropertyAmenity}
+          onRemovePropertyAmenity={handleRemovePropertyAmenity}
+          onAddPropertyTag={handleAddPropertyTag}
+          onRemovePropertyTag={handleRemovePropertyTag}
           onBookLodge={handleBookLodge}
           onSendBooking={handleSendBooking}
           onConfirmBookingSuccess={handleConfirmBookingSuccess}

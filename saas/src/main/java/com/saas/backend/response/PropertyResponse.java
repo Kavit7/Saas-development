@@ -1,6 +1,7 @@
 package com.saas.backend.response;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import com.saas.backend.models.VerificationStatus;
@@ -36,6 +37,8 @@ public class PropertyResponse {
     private String verifiedBy;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
+    private List<AmenityResponse> amenities;
+    private List<TagResponse> tags;
 
     public PropertyResponse(UUID id, String name, String createdBy) {
         this.id = id;

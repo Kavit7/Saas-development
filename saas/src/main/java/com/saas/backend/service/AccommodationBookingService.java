@@ -78,4 +78,10 @@ public interface AccommodationBookingService {
      * Handles automated inbound email declines.
      */
     void processEmailDecline(AccommodationBooking booking, IncomingMailMessage email);
+
+    /**
+     * Generates a preview of the email (subject, html, plain text, recipient) that will be sent to the lodge.
+     */
+    java.util.Map<String, String> getBookingEmailPreview(java.util.UUID bookingId);
 }
+

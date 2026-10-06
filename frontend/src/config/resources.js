@@ -15,6 +15,8 @@ import {
   CreditCard,
   ShieldCheck,
   Lifebuoy,
+  Sparkle,
+  Bookmarks,
 } from "@phosphor-icons/react";
 import MailboxView from "../components/views/MailboxView";
 import CompanyPlanView from "../platformAdmin/CompanyPlanView";
@@ -373,6 +375,24 @@ export const resources = {
         type: "textarea",
         showInTable: false,
       },
+      {
+        name: "amenityIds",
+        label: "Property Amenities",
+        type: "multiselect",
+        dynamicOptions: "amenityIds",
+        placeholder: "Select amenities (e.g. Wi-Fi, Pool, Spa)...",
+        showInTable: false,
+        fullWidth: true,
+      },
+      {
+        name: "tagIds",
+        label: "Property Tags & Highlights",
+        type: "multiselect",
+        dynamicOptions: "tagIds",
+        placeholder: "Select tags (e.g. Luxury Safari, Migration Frontline)...",
+        showInTable: false,
+        fullWidth: true,
+      },
     ],
   },
   "accommodation-bookings": {
@@ -600,6 +620,92 @@ export const resources = {
         label: "Room Type Name",
         type: "text",
         required: true,
+        showInTable: true,
+      },
+    ],
+  },
+  amenities: {
+    title: "Amenities",
+    singular: "Amenity",
+    icon: Sparkle,
+    endpoint: "/amenities",
+    roles: [SUPER_ADMIN, ADMIN, RM],
+    permissions: {
+      view: [SUPER_ADMIN, ADMIN, RM],
+      create: [SUPER_ADMIN, ADMIN, RM],
+      update: [SUPER_ADMIN, ADMIN, RM],
+      delete: [SUPER_ADMIN, ADMIN],
+    },
+    table: {
+      searchable: true,
+      actions: [
+        { key: "view", label: "View" },
+        { key: "update", label: "Edit" },
+        { key: "delete", label: "Delete" },
+      ],
+    },
+    fields: [
+      {
+        name: "name",
+        label: "Amenity Name",
+        type: "text",
+        required: true,
+        showInTable: true,
+      },
+      {
+        name: "description",
+        label: "Description",
+        type: "textarea",
+        showInTable: true,
+      },
+    ],
+  },
+  tags: {
+    title: "Property Tags",
+    singular: "Tag",
+    icon: Bookmarks,
+    endpoint: "/tags",
+    roles: [SUPER_ADMIN, ADMIN, RM],
+    permissions: {
+      view: [SUPER_ADMIN, ADMIN, RM],
+      create: [SUPER_ADMIN, ADMIN, RM],
+      update: [SUPER_ADMIN, ADMIN, RM],
+      delete: [SUPER_ADMIN, ADMIN],
+    },
+    table: {
+      searchable: true,
+      actions: [
+        { key: "view", label: "View" },
+        { key: "update", label: "Edit" },
+        { key: "delete", label: "Delete" },
+      ],
+    },
+    fields: [
+      {
+        name: "name",
+        label: "Tag Name",
+        type: "text",
+        required: true,
+        showInTable: true,
+      },
+      {
+        name: "tagType",
+        label: "Tag Type",
+        type: "select",
+        required: true,
+        showInTable: true,
+        options: [
+          { label: "Property Style / Facility", value: "PROPERTY" },
+          { label: "Vibe & Atmosphere", value: "VIBE" },
+          { label: "Occasion", value: "OCCASION" },
+          { label: "Traveler Type", value: "TRAVELER_TYPE" },
+          { label: "Special Need", value: "SPECIAL_NEED" },
+        ],
+      },
+      {
+        name: "description",
+        label: "Description",
+        type: "textarea",
         showInTable: true,
       },
     ],

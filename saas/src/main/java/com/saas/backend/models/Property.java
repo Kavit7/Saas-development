@@ -1,10 +1,18 @@
 package com.saas.backend.models;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.*;
 
-
-@Entity @Table(name="properties")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Entity 
+@Table(name="properties")
+@Getter 
+@Setter 
+@NoArgsConstructor 
+@AllArgsConstructor 
+@Builder
 public class Property extends BaseEntity {
     @Column(nullable=false) private String name;
     @Column(nullable=false, unique=true) private String slug;
@@ -31,4 +39,12 @@ public class Property extends BaseEntity {
     private java.time.OffsetDateTime verifiedAt;
     @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="verified_by")
     private User verifiedBy;
+
+    @OneToMany(mappedBy="property", cascade=CascadeType.ALL, orphanRemoval=true)
+    @Builder.Default
+    private List<PropertyAmenity> amenities = new ArrayList<>();
+
+    @OneToMany(mappedBy="property", cascade=CascadeType.ALL, orphanRemoval=true)
+    @Builder.Default
+    private List<PropertyTag> tags = new ArrayList<>();
 }

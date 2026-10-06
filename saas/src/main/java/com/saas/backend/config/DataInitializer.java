@@ -34,6 +34,10 @@ public class DataInitializer implements CommandLineRunner {
     private final PropertyCategoryRepository propertyCategoryRepository;
     private final PriceTierRepository priceTierRepository;
     private final PropertyRepository propertyRepository;
+    private final AmenityRepository amenityRepository;
+    private final PropertyAmenityRepository propertyAmenityRepository;
+    private final TagRepository tagRepository;
+    private final PropertyTagRepository propertyTagRepository;
     private final ClientRepository clientRepository;
     private final SafariRepository safariRepository;
     private final PasswordEncoder passwordEncoder;
@@ -280,6 +284,55 @@ public class DataInitializer implements CommandLineRunner {
                 propertyRepository.save(prop2);
             }
 
+            // Amenities & Tags
+            Amenity wifi = getOrCreateAmenity("High-Speed Wi-Fi", "Complimentary wireless internet access");
+            Amenity pool = getOrCreateAmenity("Swimming Pool", "Outdoor swimming pool with relaxation sun deck");
+            Amenity dining = getOrCreateAmenity("Restaurant & Fine Dining", "Multi-cuisine bush dining and authentic local cuisine");
+            Amenity bar = getOrCreateAmenity("Bar & Lounge", "Fully stocked bar with premium wines and spirits");
+            Amenity spa = getOrCreateAmenity("Spa & Wellness", "Holistic safari massage and wellness treatments");
+            Amenity solar = getOrCreateAmenity("24/7 Solar Electricity", "Eco-friendly uninterrupted power with charging stations");
+            Amenity ensuite = getOrCreateAmenity("En-suite Bathroom", "Private flush toilet and hot water shower/bathtub");
+            Amenity gameVehicles = getOrCreateAmenity("Game Drive Vehicles", "Custom 4x4 open-roof safari cruisers with binoculars");
+            Amenity ac = getOrCreateAmenity("Air Conditioning / Fans", "Climate controlled guest suites and tented rooms");
+            Amenity airportShuttle = getOrCreateAmenity("Airstrip Shuttle Transfer", "Complimentary pickup from nearest bush airstrip");
+
+            Tag tagLuxury = getOrCreateTag("Luxury Safari", TagType.PROPERTY, "5-star ultra-luxury hospitality and service", salesPerson);
+            Tag tagMigration = getOrCreateTag("Frontline Migration", TagType.PROPERTY, "Located right along the wildebeest migration corridor", salesPerson);
+            Tag tagRomantic = getOrCreateTag("Romantic & Honeymoon", TagType.OCCASION, "Ideal for honeymooners, couples, and anniversaries", salesPerson);
+            Tag tagFamily = getOrCreateTag("Family Friendly", TagType.TRAVELER_TYPE, "Safe and welcoming facilities with inter-connecting rooms for families", salesPerson);
+            Tag tagBigFive = getOrCreateTag("Big Five Habitat", TagType.VIBE, "High probability of spotting lions, leopards, rhinos, elephants, buffalos", salesPerson);
+            Tag tagPhotographic = getOrCreateTag("Photographic Safari", TagType.VIBE, "Special photography hides, charging stations, and lighting conditions", salesPerson);
+            Tag tagEco = getOrCreateTag("Eco-Friendly & Sustainable", TagType.PROPERTY, "Zero single-use plastic, solar-powered, community-partnered", salesPerson);
+
+            // Link Amenities and Tags to Serengeti Serena Safari Lodge
+            propertyRepository.findByName("Serengeti Serena Safari Lodge").ifPresent(prop -> {
+                linkAmenityIfMissing(prop, wifi);
+                linkAmenityIfMissing(prop, pool);
+                linkAmenityIfMissing(prop, dining);
+                linkAmenityIfMissing(prop, bar);
+                linkAmenityIfMissing(prop, ensuite);
+                linkAmenityIfMissing(prop, solar);
+                linkAmenityIfMissing(prop, gameVehicles);
+
+                linkTagIfMissing(prop, tagLuxury, salesPerson);
+                linkTagIfMissing(prop, tagMigration, salesPerson);
+                linkTagIfMissing(prop, tagBigFive, salesPerson);
+            });
+
+            // Link Amenities and Tags to Ngorongoro Crater Lodge
+            propertyRepository.findByName("Ngorongoro Crater Lodge").ifPresent(prop -> {
+                linkAmenityIfMissing(prop, wifi);
+                linkAmenityIfMissing(prop, dining);
+                linkAmenityIfMissing(prop, bar);
+                linkAmenityIfMissing(prop, spa);
+                linkAmenityIfMissing(prop, ensuite);
+                linkAmenityIfMissing(prop, solar);
+
+                linkTagIfMissing(prop, tagLuxury, salesPerson);
+                linkTagIfMissing(prop, tagRomantic, salesPerson);
+                linkTagIfMissing(prop, tagPhotographic, salesPerson);
+            });
+
             // Clients
             Client client1 = null;
             if (!clientRepository.existsByCompanyIdAndEmail(company.getId(), "johnathan.davis@example.com")) {
@@ -334,6 +387,43 @@ public class DataInitializer implements CommandLineRunner {
             }
         } catch (Exception e) {
             log.warn("Operational sample data seeding skipped or partially applied: {}", e.getMessage());
+        }
+    }
+
+    private Amenity getOrCreateAmenity(String name, String description) {
+        return amenityRepository.findByNameIgnoreCase(name)
+                .orElseGet(() -> amenityRepository.save(Amenity.builder()
+                        .name(name)
+                        .description(description)
+                        .build()));
+    }
+
+    private Tag getOrCreateTag(String name, TagType type, String description, User createdBy) {
+        return tagRepository.findByNameIgnoreCase(name)
+                .orElseGet(() -> tagRepository.save(Tag.builder()
+                        .name(name)
+                        .tagType(type)
+                        .description(description)
+                        .createdBy(createdBy)
+                        .build()));
+    }
+
+    private void linkAmenityIfMissing(Property property, Amenity amenity) {
+        if (!propertyAmenityRepository.existsByPropertyAndAmenity(property, amenity)) {
+            propertyAmenityRepository.save(PropertyAmenity.builder()
+                    .property(property)
+                    .amenity(amenity)
+                    .build());
+        }
+    }
+
+    private void linkTagIfMissing(Property property, Tag tag, User user) {
+        if (!propertyTagRepository.existsByPropertyAndTag(property, tag)) {
+            propertyTagRepository.save(PropertyTag.builder()
+                    .property(property)
+                    .tag(tag)
+                    .createdBy(user)
+                    .build());
         }
     }
 }

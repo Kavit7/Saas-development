@@ -5,14 +5,16 @@ import {
   XCircle, 
   ShieldCheck, 
   Bed, 
-  ArrowsClockwise 
+  ArrowsClockwise,
+  Eye
 } from "@phosphor-icons/react";
 import ConfirmBookingModal from "../bookings/ConfirmBookingModal";
+import BookingEmailPreviewModal from "../bookings/BookingEmailPreviewModal";
 
 /**
  * BookingActionBanner Component
  * Renders executive status transitions and action controls directly on the
- * booking detail page so reservation managers can dispatch, confirm, or decline bookings.
+ * booking detail page so reservation managers can preview, dispatch, confirm, or decline bookings.
  */
 const BookingActionBanner = ({
   booking,
@@ -23,6 +25,7 @@ const BookingActionBanner = ({
   onDecline,
 }) => {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
 
   if (!booking) return null;
 
@@ -81,6 +84,16 @@ const BookingActionBanner = ({
 
         {canManage && (
           <div className="flex flex-wrap items-center gap-2.5 self-end sm:self-auto">
+            {/* Preview Email button */}
+            <button
+              type="button"
+              onClick={() => setPreviewModalOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3.5 py-2.5 text-xs font-bold text-[#101B82] hover:bg-indigo-100 transition active:scale-95 shadow-2xs"
+            >
+              <Eye size={15} weight="bold" />
+              <span>Preview Email</span>
+            </button>
+
             {/* DRAFT -> Send */}
             {isDraft && (
               <button
@@ -138,6 +151,14 @@ const BookingActionBanner = ({
         onClose={() => setConfirmModalOpen(false)}
         booking={booking}
         onSuccess={onConfirmSuccess}
+      />
+
+      <BookingEmailPreviewModal
+        open={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        booking={booking}
+        onSend={onSend}
+        sending={loading}
       />
     </>
   );

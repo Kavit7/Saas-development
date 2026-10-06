@@ -1,5 +1,7 @@
 package com.saas.backend.service;
 
+import java.util.Map;
+
 import com.saas.backend.models.AccommodationBooking;
 
 public interface EmailService {
@@ -9,6 +11,10 @@ public interface EmailService {
     );
 
     void sendBookingReminder(
+            AccommodationBooking booking
+    );
+
+    Map<String, String> generateBookingEmailPreview(
             AccommodationBooking booking
     );
 }
