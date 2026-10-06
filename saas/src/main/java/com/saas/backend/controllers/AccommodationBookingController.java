@@ -1,6 +1,7 @@
 package com.saas.backend.controllers;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -117,6 +118,7 @@ public class AccommodationBookingController {
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
+    
     /**
      * Sends booking request email to the property (DRAFT -> PROVISIONAL).
      */
@@ -126,6 +128,17 @@ public class AccommodationBookingController {
     public ResponseEntity<AccommodationBookingResponse> sendBookingRequest(@PathVariable UUID bookingId) {
         AccommodationBookingResponse response = accommodationBookingService.sendBookingRequest(bookingId);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Generates a preview of the booking request email that will be sent to the property.
+     */
+    @GetMapping("/{bookingId}/preview")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESERVATION_MANAGER')")
+    @Operation(summary = "Preview accommodation booking email")
+    public ResponseEntity<Map<String, String>> getBookingEmailPreview(@PathVariable UUID bookingId) {
+        Map<String, String> preview = accommodationBookingService.getBookingEmailPreview(bookingId);
+        return ResponseEntity.ok(preview);
     }
 
     /**

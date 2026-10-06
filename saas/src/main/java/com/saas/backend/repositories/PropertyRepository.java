@@ -1,5 +1,6 @@
 package com.saas.backend.repositories;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.domain.Page;
@@ -15,6 +16,7 @@ import com.saas.backend.models.Property;
 
 @Repository 
 public interface PropertyRepository extends JpaRepository<Property,UUID> ,JpaSpecificationExecutor<Property> {
+    Optional<Property> findByName(String name);
     boolean existsByName(String name);
     boolean existsByNameAndIdNot(String name, UUID id);
     long countByVerificationStatus(com.saas.backend.models.VerificationStatus verificationStatus);

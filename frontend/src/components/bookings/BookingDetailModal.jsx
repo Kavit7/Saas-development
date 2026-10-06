@@ -9,11 +9,13 @@ import {
   MapPin, 
   Compass, 
   User,
-  Note
+  Note,
+  Eye
 } from "@phosphor-icons/react";
 import { apiRequest } from "../../api/api";
 import { useAuth } from "../../hooks/useAuth";
 import ConfirmBookingModal from "./ConfirmBookingModal";
+import BookingEmailPreviewModal from "./BookingEmailPreviewModal";
 
 /**
  * BookingDetailModal Component
@@ -29,6 +31,7 @@ const BookingDetailModal = ({
   const { token, hasAccess } = useAuth();
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+  const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [error, setError] = useState(null);
 
   if (!open || !booking) return null;
@@ -203,6 +206,16 @@ const BookingDetailModal = ({
 
             {canManage && (
               <div className="flex items-center gap-2">
+                {/* Preview Email button */}
+                <button
+                  type="button"
+                  onClick={() => setPreviewModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-indigo-200 bg-indigo-50/70 text-[#101B82] text-xs font-bold hover:bg-indigo-100 transition active:scale-95 shadow-2xs"
+                >
+                  <Eye size={15} weight="bold" />
+                  <span>Preview Email</span>
+                </button>
+
                 {/* 1. If DRAFT -> Can Send to Lodge */}
                 {booking.status === "DRAFT" && (
                   <button
@@ -255,6 +268,15 @@ const BookingDetailModal = ({
           if (onUpdated) onUpdated(updated);
           onClose();
         }}
+      />
+
+      {/* Email Preview Modal */}
+      <BookingEmailPreviewModal
+        open={previewModalOpen}
+        onClose={() => setPreviewModalOpen(false)}
+        booking={booking}
+        onSend={handleSendToLodge}
+        sending={actionLoading}
       />
     </>
   );
