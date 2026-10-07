@@ -29,9 +29,9 @@ const SalesDashboard = ({ stats }) => {
   ];
 
   const targetBars = [
-    { label: "Monthly Safari Target", value: Number(kpis.confirmedBookings || 14), target: 20, color: "#101B82" },
+    { label: "Monthly Safari Target", value: Number(kpis.confirmedBookings || 14), target: 20, color: "#264624" },
     { label: "Client Onboarding Quota", value: Number(kpis.myClients || 18), target: 25, color: "#059669" },
-    { label: "Passengers Booked", value: Number(kpis.totalPassengersBooked || 34), target: 45, color: "#4F46E5" },
+    { label: "Passengers Booked", value: Number(kpis.totalPassengersBooked || 34), target: 45, color: "#7A5229" },
   ];
 
   const quickShortcuts = [
@@ -40,7 +40,7 @@ const SalesDashboard = ({ stats }) => {
       description: "Draft a new safari for an inquiry",
       to: "/safaris",
       icon: <Compass size={20} weight="duotone" />,
-      color: "#101B82",
+      color: "#264624",
     },
     {
       label: "Add New Client",
@@ -69,8 +69,8 @@ const SalesDashboard = ({ stats }) => {
           icon={<Compass size={24} weight="duotone" />}
           trend="+18.2%"
           trendDirection="up"
-          iconBg="bg-indigo-50"
-          iconColor="text-[#101B82]"
+          iconBg="bg-[#264624]/10"
+          iconColor="text-[#264624]"
         />
 
         <StatCard
@@ -114,7 +114,7 @@ const SalesDashboard = ({ stats }) => {
             data={trendData}
             title="My Booking Performance"
             subtitle="Monthly closed safari files over the last 6 months"
-            color="#101B82"
+            color="#264624"
             valueSuffix="safaris"
           />
         </div>

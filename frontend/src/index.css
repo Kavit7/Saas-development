@@ -1,19 +1,32 @@
 @import "tailwindcss";
 
+@theme {
+  --color-safari-green: #264624;
+  --color-safari-green-dark: #1b331a;
+  --color-safari-green-light: #345c31;
+  --color-safari-earth: #7A5229;
+  --color-safari-earth-dark: #5c3d1e;
+  --color-safari-earth-light: #8C6239;
+  --color-safari-sand: #EDE7DC;
+  --color-safari-khaki: #F5F2EB;
+  --color-safari-ivory: #FAF8F5;
+}
+
 :root {
-  font-family: "Lora", "Playfair Display", Georgia, Cambria, "Times New Roman", Times, serif;
+  font-family: 'Calibri Light', Calibri, 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   line-height: 1.6;
-  font-weight: 400;
-  color: #0f172a;
-  background: #ffffff;
+  font-weight: 300;
+  color: #2D241E;
+  background: #FFFFFF;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-h1, h2, h3, h4, .font-serif-title {
-  font-family: "Playfair Display", "Lora", Georgia, serif;
+h1, h2, h3, h4, .font-serif-title, .font-title {
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: bold;
 }
 
 html,
@@ -27,7 +40,8 @@ body,
 body {
   min-height: 100vh;
   overflow-x: hidden;
-  background: #f7f7fb;
+  background: #F7F5F0;
+  color: #2D241E;
 }
 
 * {
@@ -53,10 +67,10 @@ svg {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(16, 27, 130, 0.25);
+  background: rgba(38, 70, 36, 0.35);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(16, 27, 130, 0.05);
+  background: rgba(122, 82, 41, 0.08);
 }

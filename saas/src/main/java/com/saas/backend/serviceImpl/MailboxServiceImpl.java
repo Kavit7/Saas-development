@@ -9,12 +9,15 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.saas.backend.AccessHelper.CurrentUserChecker;
 import com.saas.backend.dto.InvoiceCreateRequest;
 import com.saas.backend.Exception.ResourceNotFoundException;
 import com.saas.backend.models.AccommodationBooking;
 import com.saas.backend.models.IncomingEmail;
 import com.saas.backend.models.Invoice;
 import com.saas.backend.models.InvoiceStatus;
+import com.saas.backend.models.Safari;
+import com.saas.backend.models.User;
 import com.saas.backend.repositories.AccommodationBookingRepository;
 import com.saas.backend.repositories.IncomingEmailRepository;
 import com.saas.backend.repositories.InvoiceRepository;
@@ -35,15 +38,29 @@ public class MailboxServiceImpl implements MailboxService {
     private final InvoiceRepository invoiceRepository;
     private final AccommodationBookingRepository bookingRepository;
     private final IncomingEmailService incomingEmailService;
+    private final CurrentUserChecker currentUserChecker;
 
     @Override
     @Transactional(readOnly = true)
     public List<MailboxEmailResponse> getAllEmails(UUID bookingId) {
+        User currentUser = currentUserChecker.checkCurrentUser();
+        boolean isSuperAdmin = currentUser != null && currentUser.getRole() != null &&
+                "SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName().replace("ROLE_", "").trim());
+
         List<IncomingEmail> emails;
-        if (bookingId != null) {
-            emails = incomingEmailRepository.findByBookingIdOrderByReceivedAtDesc(bookingId);
+        if (!isSuperAdmin && currentUser != null && currentUser.getCompany() != null) {
+            UUID companyId = currentUser.getCompany().getId();
+            if (bookingId != null) {
+                emails = incomingEmailRepository.findByBookingIdAndCompanyIdOrderByReceivedAtDesc(bookingId, companyId);
+            } else {
+                emails = incomingEmailRepository.findByCompanyIdOrderByReceivedAtDesc(companyId);
+            }
         } else {
-            emails = incomingEmailRepository.findAllByOrderByReceivedAtDesc();
+            if (bookingId != null) {
+                emails = incomingEmailRepository.findByBookingIdOrderByReceivedAtDesc(bookingId);
+            } else {
+                emails = incomingEmailRepository.findAllByOrderByReceivedAtDesc();
+            }
         }
         return emails.stream().map(this::mapToEmailResponse).collect(Collectors.toList());
     }
@@ -70,15 +87,33 @@ public class MailboxServiceImpl implements MailboxService {
     @Override
     @Transactional(readOnly = true)
     public List<InvoiceResponse> getAllInvoices(InvoiceStatus status, UUID bookingId) {
+        User currentUser = currentUserChecker.checkCurrentUser();
+        boolean isSuperAdmin = currentUser != null && currentUser.getRole() != null &&
+                "SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName().replace("ROLE_", "").trim());
+
         List<Invoice> invoices;
-        if (bookingId != null) {
-            invoices = invoiceRepository.findByAccommodationBookingId(bookingId)
-                    .map(List::of)
-                    .orElseGet(List::of);
-        } else if (status != null) {
-            invoices = invoiceRepository.findByStatusOrderByIssuedAtDesc(status);
+        if (!isSuperAdmin && currentUser != null && currentUser.getCompany() != null) {
+            UUID companyId = currentUser.getCompany().getId();
+            if (bookingId != null) {
+                invoices = invoiceRepository.findByAccommodationBookingId(bookingId)
+                        .filter(inv -> matchesCompany(inv, companyId))
+                        .map(List::of)
+                        .orElseGet(List::of);
+            } else if (status != null) {
+                invoices = invoiceRepository.findByCompanyIdAndStatusOrderByIssuedAtDesc(companyId, status);
+            } else {
+                invoices = invoiceRepository.findByCompanyIdOrderByIssuedAtDesc(companyId);
+            }
         } else {
-            invoices = invoiceRepository.findAllByOrderByIssuedAtDesc();
+            if (bookingId != null) {
+                invoices = invoiceRepository.findByAccommodationBookingId(bookingId)
+                        .map(List::of)
+                        .orElseGet(List::of);
+            } else if (status != null) {
+                invoices = invoiceRepository.findByStatusOrderByIssuedAtDesc(status);
+            } else {
+                invoices = invoiceRepository.findAllByOrderByIssuedAtDesc();
+            }
         }
         return invoices.stream().map(this::mapToInvoiceResponse).collect(Collectors.toList());
     }
@@ -96,6 +131,16 @@ public class MailboxServiceImpl implements MailboxService {
     public InvoiceResponse createInvoice(InvoiceCreateRequest request) {
         AccommodationBooking booking = bookingRepository.findById(request.getBookingId())
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + request.getBookingId()));
+
+        User currentUser = currentUserChecker.checkCurrentUser();
+        boolean isSuperAdmin = currentUser != null && currentUser.getRole() != null &&
+                "SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName().replace("ROLE_", "").trim());
+
+        if (!isSuperAdmin && currentUser != null && currentUser.getCompany() != null) {
+            if (!matchesCompanyBooking(booking, currentUser.getCompany().getId())) {
+                throw new SecurityException("You do not have permission to create an invoice for a booking outside your company.");
+            }
+        }
 
         if (invoiceRepository.existsByAccommodationBookingId(booking.getId())) {
             throw new IllegalArgumentException("An invoice already exists for this booking");
@@ -123,6 +168,18 @@ public class MailboxServiceImpl implements MailboxService {
         return mapToInvoiceResponse(invoice);
     }
 
+    private boolean matchesCompany(Invoice inv, UUID companyId) {
+        if (inv == null || inv.getAccommodationBooking() == null) return false;
+        return matchesCompanyBooking(inv.getAccommodationBooking(), companyId);
+    }
+
+    private boolean matchesCompanyBooking(AccommodationBooking b, UUID companyId) {
+        if (b == null || b.getAccommodationRequirement() == null || b.getAccommodationRequirement().getSafari() == null) return false;
+        Safari s = b.getAccommodationRequirement().getSafari();
+        if (s.getClient() == null || s.getClient().getCompany() == null) return false;
+        return companyId.equals(s.getClient().getCompany().getId());
+    }
+
     @Override
     @Transactional
     public InvoiceResponse updateInvoiceStatus(UUID id, InvoiceStatus status) {
@@ -138,6 +195,8 @@ public class MailboxServiceImpl implements MailboxService {
     private MailboxEmailResponse mapToEmailResponse(IncomingEmail email) {
         UUID bookingId = null;
         String bookingRef = null;
+        String bookingStatus = null;
+        String confirmationNumber = null;
         String propName = null;
         String safariRef = null;
         String clientName = null;
@@ -146,6 +205,8 @@ public class MailboxServiceImpl implements MailboxService {
             AccommodationBooking b = email.getBooking();
             bookingId = b.getId();
             bookingRef = b.getReferenceNumber();
+            bookingStatus = b.getStatus() != null ? b.getStatus().name() : null;
+            confirmationNumber = b.getConfirmationNumber();
             if (b.getProperty() != null) {
                 propName = b.getProperty().getName();
             }
@@ -169,6 +230,8 @@ public class MailboxServiceImpl implements MailboxService {
                 .processed(email.isProcessed())
                 .bookingId(bookingId)
                 .bookingReference(bookingRef)
+                .bookingStatus(bookingStatus)
+                .confirmationNumber(confirmationNumber)
                 .propertyName(propName)
                 .safariReference(safariRef)
                 .clientName(clientName)

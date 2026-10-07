@@ -28,17 +28,17 @@ const QuickActions = ({
           <Link
             key={idx}
             to={act.to}
-            className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:border-[#101B82]/30 hover:shadow-xs transition-all group"
+            className="flex items-center justify-between p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:border-[#264624]/30 hover:shadow-xs transition-all group"
           >
             <div className="flex items-center gap-3">
               <div
                 className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white border border-slate-200/90 shadow-2xs group-hover:scale-105 transition-transform"
-                style={{ color: act.color || "#101B82" }}
+                style={{ color: act.color || "#264624" }}
               >
                 {act.icon}
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-900 group-hover:text-[#101B82] transition-colors">
+                <h4 className="text-xs font-bold text-slate-900 group-hover:text-[#264624] transition-colors">
                   {act.label}
                 </h4>
                 <p className="text-[11px] text-slate-500 mt-0.5 line-clamp-1">
@@ -50,7 +50,7 @@ const QuickActions = ({
             <ArrowRight
               size={14}
               weight="bold"
-              className="text-slate-400 group-hover:text-[#101B82] group-hover:translate-x-0.5 transition-all shrink-0 ml-2"
+              className="text-slate-400 group-hover:text-[#264624] group-hover:translate-x-0.5 transition-all shrink-0 ml-2"
             />
           </Link>
         ))}

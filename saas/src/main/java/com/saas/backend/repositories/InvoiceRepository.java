@@ -18,4 +18,17 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
     boolean existsByInvoiceNumber(String invoiceNumber);
     List<Invoice> findAllByOrderByIssuedAtDesc();
     List<Invoice> findByStatusOrderByIssuedAtDesc(InvoiceStatus status);
+
+    @org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i " +
+           "WHERE i.accommodationBooking.accommodationRequirement.safari.client.company.id = :companyId " +
+           "ORDER BY i.issuedAt DESC")
+    List<Invoice> findByCompanyIdOrderByIssuedAtDesc(@org.springframework.data.repository.query.Param("companyId") UUID companyId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT i FROM Invoice i " +
+           "WHERE i.accommodationBooking.accommodationRequirement.safari.client.company.id = :companyId " +
+           "AND i.status = :status " +
+           "ORDER BY i.issuedAt DESC")
+    List<Invoice> findByCompanyIdAndStatusOrderByIssuedAtDesc(
+           @org.springframework.data.repository.query.Param("companyId") UUID companyId,
+           @org.springframework.data.repository.query.Param("status") InvoiceStatus status);
 }

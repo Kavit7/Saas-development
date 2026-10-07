@@ -23,7 +23,7 @@ const getTagTypeBadgeClass = (type) => {
     case "SPECIAL_NEED":
       return "bg-amber-50 text-amber-700 border-amber-200";
     default:
-      return "bg-indigo-50 text-[#101B82] border-indigo-200";
+      return "bg-indigo-50 text-[#264624] border-indigo-200";
   }
 };
 
@@ -125,7 +125,7 @@ const PropertyAmenitiesTagsSection = ({
                   setShowAddAmenityModal(true);
                 }}
                 disabled={loading || submittingAction}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#101B82] text-white hover:bg-[#0c1566] transition active:scale-95 shadow-2xs disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#264624] text-white hover:bg-[#1b331a] transition active:scale-95 shadow-2xs disabled:opacity-50"
               >
                 <Plus size={14} weight="bold" />
                 <span>Assign Amenities</span>
@@ -148,7 +148,7 @@ const PropertyAmenitiesTagsSection = ({
                       setSelectedAmenityIds([]);
                       setShowAddAmenityModal(true);
                     }}
-                    className="mt-2 text-xs font-semibold text-[#101B82] hover:underline"
+                    className="mt-2 text-xs font-semibold text-[#264624] hover:underline"
                   >
                     + Assign amenities now
                   </button>
@@ -203,7 +203,7 @@ const PropertyAmenitiesTagsSection = ({
         <div>
           <div className="flex items-center justify-between pb-4 border-b border-slate-100">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-[#101B82] border border-indigo-200/80">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-indigo-50 text-[#264624] border border-indigo-200/80">
                 <Bookmarks size={20} weight="fill" />
               </div>
               <div>
@@ -225,7 +225,7 @@ const PropertyAmenitiesTagsSection = ({
                   setShowAddTagModal(true);
                 }}
                 disabled={loading || submittingAction}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#101B82] text-white hover:bg-[#0d176f] transition active:scale-95 shadow-2xs disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#264624] text-white hover:bg-[#1b331a] transition active:scale-95 shadow-2xs disabled:opacity-50"
               >
                 <Plus size={14} weight="bold" />
                 <span>Assign Tags</span>
@@ -248,7 +248,7 @@ const PropertyAmenitiesTagsSection = ({
                       setSelectedTagIds([]);
                       setShowAddTagModal(true);
                     }}
-                    className="mt-2 text-xs font-semibold text-[#101B82] hover:underline"
+                    className="mt-2 text-xs font-semibold text-[#264624] hover:underline"
                   >
                     + Assign tags now
                   </button>
@@ -329,7 +329,7 @@ const PropertyAmenitiesTagsSection = ({
                       onClick={() => handleToggleAmenity(id)}
                       className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition ${
                         isChecked
-                          ? "border-[#101B82] bg-[#101B82]/5"
+                          ? "border-[#264624] bg-[#264624]/5"
                           : "border-slate-200 hover:border-slate-300 bg-white"
                       }`}
                     >
@@ -346,7 +346,7 @@ const PropertyAmenitiesTagsSection = ({
                       <div
                         className={`flex h-5 w-5 items-center justify-center rounded border ${
                           isChecked
-                            ? "bg-[#101B82] border-[#101B82] text-white"
+                            ? "bg-[#264624] border-[#264624] text-white"
                             : "border-slate-300 bg-white"
                         }`}
                       >
@@ -370,7 +370,7 @@ const PropertyAmenitiesTagsSection = ({
                 type="button"
                 onClick={submitAddAmenities}
                 disabled={submittingAction || selectedAmenityIds.length === 0}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#101B82] text-white hover:bg-[#0c1566] transition disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#264624] text-white hover:bg-[#1b331a] transition disabled:opacity-50"
               >
                 <span>{submittingAction ? "Assigning..." : `Assign (${selectedAmenityIds.length})`}</span>
               </button>
@@ -385,7 +385,7 @@ const PropertyAmenitiesTagsSection = ({
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
-                <Bookmarks size={20} className="text-[#101B82]" weight="fill" />
+                <Bookmarks size={20} className="text-[#264624]" weight="fill" />
                 <h4 className="text-base font-bold text-slate-900 font-serif-title">
                   Assign Tags to {property?.name}
                 </h4>
@@ -419,7 +419,7 @@ const PropertyAmenitiesTagsSection = ({
                       onClick={() => handleToggleTag(id)}
                       className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition ${
                         isChecked
-                          ? "border-[#101B82] bg-[#101B82]/5"
+                          ? "border-[#264624] bg-[#264624]/5"
                           : "border-slate-200 hover:border-slate-300 bg-white"
                       }`}
                     >
@@ -436,7 +436,7 @@ const PropertyAmenitiesTagsSection = ({
                       <div
                         className={`flex h-5 w-5 items-center justify-center rounded border ${
                           isChecked
-                            ? "bg-[#101B82] border-[#101B82] text-white"
+                            ? "bg-[#264624] border-[#264624] text-white"
                             : "border-slate-300 bg-white"
                         }`}
                       >
@@ -460,7 +460,7 @@ const PropertyAmenitiesTagsSection = ({
                 type="button"
                 onClick={submitAddTags}
                 disabled={submittingAction || selectedTagIds.length === 0}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#101B82] text-white hover:bg-[#0c1566] transition disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#264624] text-white hover:bg-[#1b331a] transition disabled:opacity-50"
               >
                 <span>{submittingAction ? "Assigning..." : `Assign (${selectedTagIds.length})`}</span>
               </button>

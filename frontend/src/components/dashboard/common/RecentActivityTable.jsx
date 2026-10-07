@@ -12,7 +12,7 @@ const getStatusBadge = (status) => {
   if (s.includes("CANCEL") || s.includes("INACTIVE") || s.includes("REJECT")) {
     return "bg-rose-50 text-rose-700 border-rose-200/90";
   }
-  return "bg-indigo-50 text-[#101B82] border-indigo-200/90";
+  return "bg-[#264624]/10 text-[#264624] border-[#264624]/30";
 };
 
 /**
@@ -43,7 +43,7 @@ const RecentActivityTable = ({
         {viewAllLink && (
           <Link
             to={viewAllLink}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#101B82] hover:text-[#0c145e] hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#264624] hover:text-[#1b331a] hover:underline"
           >
             <span>View All Records</span>
             <ArrowRight size={13} weight="bold" />

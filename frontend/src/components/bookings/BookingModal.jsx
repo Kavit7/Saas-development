@@ -12,6 +12,8 @@ const BookingModal = ({
   open,
   onClose,
   requirement,
+  day,
+  days = [],
   safari,
   onSuccess,
 }) => {
@@ -30,6 +32,28 @@ const BookingModal = ({
   const [checkOut, setCheckOut] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Resolve the itinerary day
+  const resolvedDay =
+    day ||
+    (Array.isArray(days) && requirement?.itineraryDayId
+      ? days.find((d) => String(d.id) === String(requirement.itineraryDayId))
+      : null);
+
+  // Auto-advance checkout when check-in changes
+  const handleCheckInChange = (newVal) => {
+    setCheckIn(newVal);
+    if (newVal) {
+      const d = new Date(newVal);
+      if (!isNaN(d.getTime())) {
+        d.setDate(d.getDate() + 1);
+        const nextDayStr = d.toISOString().substring(0, 10);
+        if (!checkOut || checkOut <= newVal) {
+          setCheckOut(nextDayStr);
+        }
+      }
+    }
+  };
+
   // Populate initial dates and load properties
   useEffect(() => {
     if (!open || isSalesPerson) return;
@@ -38,8 +62,35 @@ const BookingModal = ({
     setSelectedPropertyId("");
     setNotes(requirement?.specialRequests || "");
 
-    // Default dates
-    const initialCheckIn = requirement?.itineraryDay?.date || safari?.startDate || new Date().toISOString().substring(0, 10);
+    // Prioritized check-in date calculation:
+    // 1. day.date passed from itinerary view
+    // 2. requirement.itineraryDayDate from backend response
+    // 3. requirement.itineraryDay.date
+    // 4. Calculated safari start date + (dayNumber - 1)
+    // 5. Safari start date
+    // 6. Current date
+    let initialCheckIn = "";
+    if (resolvedDay?.date) {
+      initialCheckIn =
+        typeof resolvedDay.date === "string"
+          ? resolvedDay.date.substring(0, 10)
+          : new Date(resolvedDay.date).toISOString().substring(0, 10);
+    } else if (requirement?.itineraryDayDate) {
+      initialCheckIn = String(requirement.itineraryDayDate).substring(0, 10);
+    } else if (requirement?.itineraryDay?.date) {
+      initialCheckIn = String(requirement.itineraryDay.date).substring(0, 10);
+    } else if (requirement?.date) {
+      initialCheckIn = String(requirement.date).substring(0, 10);
+    } else if (safari?.startDate && resolvedDay?.dayNumber && resolvedDay.dayNumber > 1) {
+      const d = new Date(safari.startDate);
+      d.setDate(d.getDate() + (resolvedDay.dayNumber - 1));
+      initialCheckIn = d.toISOString().substring(0, 10);
+    } else if (safari?.startDate) {
+      initialCheckIn = String(safari.startDate).substring(0, 10);
+    } else {
+      initialCheckIn = new Date().toISOString().substring(0, 10);
+    }
+
     setCheckIn(initialCheckIn);
 
     // Default checkout: +1 day
@@ -129,7 +180,7 @@ const BookingModal = ({
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/50">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 text-[#101B82] flex items-center justify-center font-bold">
+            <div className="w-8 h-8 rounded-lg bg-[#264624]/10 text-[#264624] flex items-center justify-center font-bold">
               <Bed size={18} weight="duotone" />
             </div>
             <div>
@@ -137,7 +188,10 @@ const BookingModal = ({
                 Allocate & Book Lodge
               </h3>
               <p className="text-xs text-slate-500">
-                Destination: {requirement?.destination || "Safari Circuit"} ({requirement?.numberOfRooms || requirement?.numberOfrooms || 1} Room(s))
+                {resolvedDay?.dayNumber ? `Day ${resolvedDay.dayNumber}` : ""}
+                {resolvedDay?.date ? ` (${resolvedDay.date})` : ""}
+                {resolvedDay ? " • " : ""}
+                {requirement?.destination || resolvedDay?.destination || "Safari Circuit"} ({requirement?.numberOfRooms || requirement?.numberOfrooms || 1} Room(s))
               </p>
             </div>
           </div>
@@ -173,7 +227,7 @@ const BookingModal = ({
                 value={selectedPropertyId}
                 onChange={(e) => setSelectedPropertyId(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium focus:border-[#101B82] focus:ring-1 focus:ring-[#101B82] outline-hidden transition shadow-2xs"
+                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-800 font-medium focus:border-[#264624] focus:ring-1 focus:ring-[#264624] outline-hidden transition shadow-2xs"
               >
                 <option value="">
                   {properties.length === 0
@@ -196,7 +250,7 @@ const BookingModal = ({
             {/* Selected Property Preview Badge */}
             {selectedProperty && (
               <div className="mt-2.5 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3 text-xs text-slate-700">
-                <div className="flex items-center justify-between font-bold text-[#101B82]">
+                <div className="flex items-center justify-between font-bold text-[#264624]">
                   <span className="flex items-center gap-1.5">
                     <Buildings size={16} weight="duotone" />
                     {selectedProperty.name}
@@ -255,9 +309,9 @@ const BookingModal = ({
               <input
                 type="date"
                 value={checkIn}
-                onChange={(e) => setCheckIn(e.target.value)}
+                onChange={(e) => handleCheckInChange(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 font-medium focus:border-[#101B82] focus:ring-1 focus:ring-[#101B82] outline-hidden transition shadow-2xs"
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 font-medium focus:border-[#264624] focus:ring-1 focus:ring-[#264624] outline-hidden transition shadow-2xs"
               />
             </div>
 
@@ -270,7 +324,7 @@ const BookingModal = ({
                 value={checkOut}
                 onChange={(e) => setCheckOut(e.target.value)}
                 required
-                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 font-medium focus:border-[#101B82] focus:ring-1 focus:ring-[#101B82] outline-hidden transition shadow-2xs"
+                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 font-medium focus:border-[#264624] focus:ring-1 focus:ring-[#264624] outline-hidden transition shadow-2xs"
               />
             </div>
           </div>
@@ -285,7 +339,7 @@ const BookingModal = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="e.g., Full Board, 2 vegetarian meals, honeymoon amenities requested"
-              className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-[#101B82] focus:ring-1 focus:ring-[#101B82] outline-hidden transition shadow-2xs resize-none"
+              className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 placeholder-slate-400 focus:border-[#264624] focus:ring-1 focus:ring-[#264624] outline-hidden transition shadow-2xs resize-none"
             />
           </div>
 
@@ -301,7 +355,7 @@ const BookingModal = ({
             <button
               type="submit"
               disabled={submitting || properties.length === 0}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#101B82] text-white text-xs font-bold hover:bg-[#0c145e] transition active:scale-95 shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#264624] text-white text-xs font-bold hover:bg-[#1b331a] transition active:scale-95 shadow-xs disabled:opacity-50"
             >
               <CalendarCheck size={16} weight="bold" />
               <span>{submitting ? "Booking Lodge..." : "Allocate & Create Booking"}</span>

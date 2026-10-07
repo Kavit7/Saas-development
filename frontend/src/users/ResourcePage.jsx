@@ -1228,7 +1228,7 @@ const ResourcePage = ({
           {/* Top Header & Search Bar */}
           <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-xl font-bold text-[#101B82] sm:text-2xl tracking-tight font-serif-title">
+              <h1 className="text-xl font-bold text-[#264624] sm:text-2xl tracking-tight font-title">
                 {title}
               </h1>
               <p className="text-xs text-slate-500 font-sans mt-0.5">
@@ -1246,7 +1246,7 @@ const ResourcePage = ({
                     setPage(0);
                   }}
                   placeholder="Search records..."
-                  className="rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-sm text-slate-800 outline-none transition focus:border-[#101B82] focus:bg-white sm:w-56"
+                  className="rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-sm text-slate-800 outline-none transition focus:border-[#264624] focus:bg-white sm:w-56"
                 />
               )}
 
@@ -1258,7 +1258,7 @@ const ResourcePage = ({
                     setStatusFilter(e.target.value);
                     setPage(0);
                   }}
-                  className="rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-sm text-slate-800 outline-none transition focus:border-[#101B82] focus:bg-white"
+                  className="rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-sm text-slate-800 outline-none transition focus:border-[#264624] focus:bg-white"
                 >
                   {(filter.options || []).map((opt) => (
                     <option key={opt.value} value={opt.value}>
@@ -1279,7 +1279,7 @@ const ResourcePage = ({
                     });
                     setViewMode("form");
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#101B82] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0d176f]"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#264624] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1b331a]"
                 >
                   <Plus size={16} weight="bold" />
                   <span>Create {singularName}</span>
@@ -1314,7 +1314,7 @@ const ResourcePage = ({
                 Previous
               </button>
 
-              <span className="rounded-xl bg-[#101B82]/5 px-3 py-1.5 text-sm font-semibold text-[#101B82]">
+              <span className="rounded-xl bg-[#264624]/10 px-3 py-1.5 text-sm font-semibold text-[#264624]">
                 Page {pageInfo.number + 1} / {pageInfo.totalPages || 1}
               </span>
 
@@ -1354,6 +1354,8 @@ const ResourcePage = ({
       <BookingModal
         open={bookingModal.open}
         requirement={bookingModal.requirement}
+        day={bookingModal.day}
+        days={subData?.days || []}
         safari={selectedItem}
         onClose={() => setBookingModal({ open: false, requirement: null, day: null })}
         onSuccess={handleBookingSuccess}

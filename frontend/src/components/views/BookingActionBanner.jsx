@@ -39,7 +39,7 @@ const BookingActionBanner = ({
     if (isConfirmed) return "bg-emerald-50 text-emerald-700 border-emerald-200";
     if (isProvisional) return "bg-amber-50 text-amber-700 border-amber-200";
     if (isCancelled) return "bg-rose-50 text-rose-700 border-rose-200";
-    return "bg-indigo-50 text-[#101B82] border-indigo-200";
+    return "bg-[#264624]/10 text-[#264624] border-[#264624]/20";
   };
 
   return (
@@ -54,7 +54,7 @@ const BookingActionBanner = ({
                 ? "bg-amber-50 text-amber-600 border-amber-200"
                 : isCancelled
                 ? "bg-rose-50 text-rose-600 border-rose-200"
-                : "bg-indigo-50 text-[#101B82] border-indigo-200"
+                : "bg-[#264624]/10 text-[#264624] border-[#264624]/20"
             }`}
           >
             <Bed size={26} weight="duotone" />
@@ -88,7 +88,7 @@ const BookingActionBanner = ({
             <button
               type="button"
               onClick={() => setPreviewModalOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-indigo-200 bg-indigo-50/70 px-3.5 py-2.5 text-xs font-bold text-[#101B82] hover:bg-indigo-100 transition active:scale-95 shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#264624]/20 bg-[#264624]/10 px-3.5 py-2.5 text-xs font-bold text-[#264624] hover:bg-[#264624]/15 transition active:scale-95 shadow-2xs"
             >
               <Eye size={15} weight="bold" />
               <span>Preview Email</span>
@@ -100,7 +100,7 @@ const BookingActionBanner = ({
                 type="button"
                 onClick={onSend}
                 disabled={loading}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-[#101B82] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#0c145e] transition active:scale-95 shadow-2xs disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#264624] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#1b331a] transition active:scale-95 shadow-2xs disabled:opacity-50"
               >
                 {loading ? (
                   <ArrowsClockwise size={15} className="animate-spin" />

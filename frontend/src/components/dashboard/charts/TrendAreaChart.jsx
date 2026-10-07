@@ -8,7 +8,7 @@ import { useState } from "react";
  * @param {Array<{label: string, value: number, secondaryValue?: number}>} data - Array of monthly points
  * @param {string} title - Chart title
  * @param {string} subtitle - Explanatory caption
- * @param {string} color - Primary stroke and gradient theme ("#101B82", "#059669", "#D97706", etc.)
+ * @param {string} color - Primary stroke and gradient theme ("#264624", "#059669", "#D97706", etc.)
  * @param {string} valuePrefix - Optional prefix (e.g. "$")
  * @param {string} valueSuffix - Optional suffix (e.g. "safaris", "bookings")
  */
@@ -16,7 +16,7 @@ const TrendAreaChart = ({
   data = [],
   title = "Performance Trend",
   subtitle = "Monthly progression over the last 6 months",
-  color = "#101B82",
+  color = "#264624",
   valuePrefix = "",
   valueSuffix = "",
 }) => {

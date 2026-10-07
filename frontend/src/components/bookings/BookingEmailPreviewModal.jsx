@@ -74,7 +74,7 @@ const BookingEmailPreviewModal = ({
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4 bg-slate-50/80">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 text-[#101B82] flex items-center justify-center">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-200 text-[#264624] flex items-center justify-center">
               <EnvelopeSimple size={20} weight="duotone" />
             </div>
             <div>
@@ -100,7 +100,7 @@ const BookingEmailPreviewModal = ({
                 onClick={() => setActiveTab("html")}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
                   activeTab === "html"
-                    ? "bg-white text-[#101B82] shadow-xs font-bold"
+                    ? "bg-white text-[#264624] shadow-xs font-bold"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -112,7 +112,7 @@ const BookingEmailPreviewModal = ({
                 onClick={() => setActiveTab("plain")}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
                   activeTab === "plain"
-                    ? "bg-white text-[#101B82] shadow-xs font-bold"
+                    ? "bg-white text-[#264624] shadow-xs font-bold"
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
@@ -159,7 +159,7 @@ const BookingEmailPreviewModal = ({
               onClick={() => setActiveTab("html")}
               className={`flex-1 py-1.5 rounded-lg text-center transition ${
                 activeTab === "html"
-                  ? "bg-white text-[#101B82] shadow-xs font-bold"
+                  ? "bg-white text-[#264624] shadow-xs font-bold"
                   : "text-slate-600"
               }`}
             >
@@ -170,7 +170,7 @@ const BookingEmailPreviewModal = ({
               onClick={() => setActiveTab("plain")}
               className={`flex-1 py-1.5 rounded-lg text-center transition ${
                 activeTab === "plain"
-                  ? "bg-white text-[#101B82] shadow-xs font-bold"
+                  ? "bg-white text-[#264624] shadow-xs font-bold"
                   : "text-slate-600"
               }`}
             >
@@ -183,7 +183,7 @@ const BookingEmailPreviewModal = ({
         <div className="flex-1 overflow-y-auto bg-slate-200/40 p-4 sm:p-6 min-h-[380px] flex flex-col justify-center items-center">
           {loading && (
             <div className="flex flex-col items-center justify-center py-12 text-slate-500 gap-3">
-              <ArrowsClockwise size={32} className="animate-spin text-[#101B82]" />
+              <ArrowsClockwise size={32} className="animate-spin text-[#264624]" />
               <p className="text-xs font-medium">Generating email layout preview...</p>
             </div>
           )}
@@ -236,7 +236,7 @@ const BookingEmailPreviewModal = ({
                 onClose();
               }}
               disabled={sending || loading}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#101B82] text-white text-xs font-bold hover:bg-[#0c145e] transition active:scale-95 shadow-xs disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#264624] text-white text-xs font-bold hover:bg-[#1e381c] transition active:scale-95 shadow-xs disabled:opacity-50"
             >
               {sending ? (
                 <ArrowsClockwise size={16} className="animate-spin" />

@@ -22,8 +22,8 @@ const SuperAdminDashboard = ({ stats }) => {
   ];
 
   const planDist = stats?.statusDistribution || [
-    { label: "Enterprise Tier", count: 18, percentage: 48, color: "#101B82" },
-    { label: "Professional Tier", count: 13, percentage: 34, color: "#4F46E5" },
+    { label: "Enterprise Tier", count: 18, percentage: 48, color: "#264624" },
+    { label: "Professional Tier", count: 13, percentage: 34, color: "#7A5229" },
     { label: "Starter Tier", count: 7, percentage: 18, color: "#06B6D4" },
   ];
 
@@ -33,7 +33,7 @@ const SuperAdminDashboard = ({ stats }) => {
       description: "Provision a new tenant organization",
       to: "/companies",
       icon: <Buildings size={20} weight="duotone" />,
-      color: "#101B82",
+      color: "#264624",
     },
     {
       label: "System Properties",
@@ -47,7 +47,7 @@ const SuperAdminDashboard = ({ stats }) => {
       description: "Audit platform and company staff",
       to: "/users",
       icon: <UsersThree size={20} weight="duotone" />,
-      color: "#4F46E5",
+      color: "#7A5229",
     },
   ];
 
@@ -62,8 +62,8 @@ const SuperAdminDashboard = ({ stats }) => {
           icon={<Buildings size={24} weight="duotone" />}
           trend="+18.5%"
           trendDirection="up"
-          iconBg="bg-indigo-50"
-          iconColor="text-[#101B82]"
+          iconBg="bg-[#264624]/10"
+          iconColor="text-[#264624]"
         />
 
         <StatCard
@@ -107,7 +107,7 @@ const SuperAdminDashboard = ({ stats }) => {
             data={trendData}
             title="Tenant Onboarding Trend"
             subtitle="Growth in registered tour operator companies over the last 6 months"
-            color="#101B82"
+            color="#264624"
             valueSuffix="companies"
           />
         </div>

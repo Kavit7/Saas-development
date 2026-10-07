@@ -8,4 +8,9 @@ public interface EmailResponseDetectionService {
             String subject,
             String body
     );
+
+    com.saas.backend.dto.EmailAnalysisResult analyzeEmailResponse(
+            String subject,
+            String body
+    );
 }

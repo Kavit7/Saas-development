@@ -45,7 +45,7 @@ const GuideDashboard = ({ stats }) => {
   // Field Readiness & Compliance Benchmarks
   const readinessMetrics = [
     { label: "Vehicle Inspection & Safety Check", value: 100, target: 100, color: "#059669" },
-    { label: "Daily Itinerary Briefing Complete", value: 92, target: 100, color: "#101B82" },
+    { label: "Daily Itinerary Briefing Complete", value: 92, target: 100, color: "#264624" },
     { label: "Guest Manifest & Park Permits Verified", value: 96, target: 100, color: "#D97706" },
   ];
 
@@ -56,7 +56,7 @@ const GuideDashboard = ({ stats }) => {
       description: "View upcoming expedition routes and schedules",
       to: "/safaris",
       icon: <Compass size={20} weight="duotone" />,
-      color: "#101B82",
+      color: "#264624",
     },
     {
       label: "Expedition Itinerary Days",
@@ -81,7 +81,7 @@ const GuideDashboard = ({ stats }) => {
       accessor: "title",
       render: (item) => (
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-50 text-[#101B82] flex items-center justify-center font-bold text-xs">
+          <div className="w-8 h-8 rounded-lg bg-[#264624]/10 text-[#264624] flex items-center justify-center font-bold text-xs">
             <Compass size={16} weight="duotone" />
           </div>
           <div>
@@ -139,8 +139,8 @@ const GuideDashboard = ({ stats }) => {
           icon={<Compass size={24} weight="duotone" />}
           trend="Upcoming"
           trendDirection="up"
-          iconBg="bg-indigo-50"
-          iconColor="text-[#101B82]"
+          iconBg="bg-[#264624]/10"
+          iconColor="text-[#264624]"
         />
 
         <StatCard
@@ -185,7 +185,7 @@ const GuideDashboard = ({ stats }) => {
             subtitle="Monthly days spent guiding groups through national parks"
             data={trendData}
             dataKey="value"
-            color="#101B82"
+            color="#264624"
             valuePrefix=""
           />
         </div>

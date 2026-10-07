@@ -69,4 +69,11 @@ public AuthenticationProvider platformAdminAuthenticationProvider() {
   public PasswordEncoder passwordEncoder(){
     return new BCryptPasswordEncoder();
   }
+
+  @Bean
+  public com.fasterxml.jackson.databind.ObjectMapper objectMapper() {
+    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+    mapper.findAndRegisterModules();
+    return mapper;
+  }
 }

@@ -80,7 +80,7 @@ const Header = ({ onMenuClick }) => {
       <div className="flex min-w-0 max-w-[60%] items-center gap-2 sm:gap-3">
         <button
           onClick={onMenuClick}
-          className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[#211917]/10 text-[#101B82] transition hover:bg-[#101B82]/10 md:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-[10px] border border-[#211917]/10 text-[#264624] transition hover:bg-[#264624]/10 md:hidden"
           aria-label="Open menu"
         >
           <svg
@@ -100,7 +100,7 @@ const Header = ({ onMenuClick }) => {
         </button>
 
         <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-[#101B82] sm:text-lg">
+          <p className="truncate text-sm font-bold text-[#264624] sm:text-lg">
             Safari Sales
           </p>
 
@@ -117,7 +117,7 @@ const Header = ({ onMenuClick }) => {
         <div className="relative">
           <button
             onClick={() => toggle("notifications")}
-            className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#211917]/10 text-[#101B82] transition hover:bg-[#101B82]/10"
+            className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#211917]/10 text-[#264624] transition hover:bg-[#264624]/10"
             aria-label="Notifications"
           >
             <svg
@@ -150,7 +150,7 @@ const Header = ({ onMenuClick }) => {
                 {unreadCount > 0 && (
                   <button
                     onClick={handleReadAll}
-                    className="shrink-0 text-xs font-semibold text-[#101B82] hover:underline"
+                    className="shrink-0 text-xs font-semibold text-[#264624] hover:underline"
                   >
                     Mark all as read
                   </button>
@@ -167,13 +167,13 @@ const Header = ({ onMenuClick }) => {
                     <button
                       key={notification.id}
                       onClick={() => handleRead(notification.id)}
-                      className={`flex w-full items-start gap-3 border-b border-[#211917]/5 px-4 py-3 text-left transition hover:bg-[#101B82]/5 ${
-                        notification.read ? "" : "bg-[#101B82]/5"
+                      className={`flex w-full items-start gap-3 border-b border-[#211917]/5 px-4 py-3 text-left transition hover:bg-[#264624]/5 ${
+                        notification.read ? "" : "bg-[#264624]/5"
                       }`}
                     >
                       <span
                         className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                          notification.read ? "bg-transparent" : "bg-[#101B82]"
+                          notification.read ? "bg-transparent" : "bg-[#264624]"
                         }`}
                       />
 
@@ -199,9 +199,9 @@ const Header = ({ onMenuClick }) => {
         <div className="relative">
           <button
             onClick={() => toggle("profile")}
-            className="flex items-center gap-2 rounded-full border border-[#211917]/10 py-1 pl-1 pr-1 transition hover:bg-[#101B82]/10 sm:gap-3 sm:pr-4"
+            className="flex items-center gap-2 rounded-full border border-[#211917]/10 py-1 pl-1 pr-1 transition hover:bg-[#264624]/10 sm:gap-3 sm:pr-4"
           >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#101B82] text-sm font-bold text-white">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#264624] text-sm font-bold text-white">
               {displayName.charAt(0).toUpperCase()}
             </span>
 
@@ -213,7 +213,7 @@ const Header = ({ onMenuClick }) => {
           {openMenu === "profile" && (
             <div className="absolute right-0 z-50 mt-3 w-[calc(100vw-24px)] max-w-64 overflow-hidden rounded-[12px] border border-[#211917]/10 bg-white shadow-lg sm:w-64">
               <div className="flex items-center gap-3 border-b border-[#211917]/10 px-4 py-4">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#101B82] text-lg font-bold text-white">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#264624] text-lg font-bold text-white">
                   {displayName.charAt(0).toUpperCase()}
                 </span>
 
@@ -229,7 +229,7 @@ const Header = ({ onMenuClick }) => {
                   )}
 
                   {user?.role && (
-                    <span className="mt-1 inline-block max-w-full truncate rounded-full bg-[#101B82]/10 px-2 py-0.5 text-[11px] font-semibold capitalize text-[#101B82]">
+                    <span className="mt-1 inline-block max-w-full truncate rounded-full bg-[#264624]/10 px-2 py-0.5 text-[11px] font-semibold capitalize text-[#264624]">
                       {String(user.role).replace(/_/g, " ").toLowerCase()}
                     </span>
                   )}

@@ -10,7 +10,23 @@ public interface IncomingEmailRepository extends JpaRepository<IncomingEmail,UUI
 
     boolean existsByMessageId(String messageId);
 
+    java.util.Optional<IncomingEmail> findByMessageId(String messageId);
+
+    java.util.List<IncomingEmail> findByProcessedFalse();
+
     java.util.List<IncomingEmail> findAllByOrderByReceivedAtDesc();
 
     java.util.List<IncomingEmail> findByBookingIdOrderByReceivedAtDesc(UUID bookingId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT e FROM IncomingEmail e " +
+           "WHERE e.booking.accommodationRequirement.safari.client.company.id = :companyId " +
+           "ORDER BY e.receivedAt DESC")
+    java.util.List<IncomingEmail> findByCompanyIdOrderByReceivedAtDesc(@org.springframework.data.repository.query.Param("companyId") UUID companyId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT e FROM IncomingEmail e " +
+           "WHERE e.booking.id = :bookingId AND e.booking.accommodationRequirement.safari.client.company.id = :companyId " +
+           "ORDER BY e.receivedAt DESC")
+    java.util.List<IncomingEmail> findByBookingIdAndCompanyIdOrderByReceivedAtDesc(
+           @org.springframework.data.repository.query.Param("bookingId") UUID bookingId,
+           @org.springframework.data.repository.query.Param("companyId") UUID companyId);
 }

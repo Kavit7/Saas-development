@@ -30,5 +30,25 @@ public class InvoiceResponse {
     private InvoiceStatus status;
     private String fileName;
     private String filePath;
+    private String fileType;
     private OffsetDateTime issuedAt;
+
+    // Banking & Payment Plan Details (from JSONB)
+    private String paymentDetailsJson;
+    private com.saas.backend.dto.BankDetailsDto bankDetails;
+    private java.util.List<com.saas.backend.dto.PaymentPlanItemDto> paymentPlan;
+    private Double confidenceScore;
+    private String extractionNotes;
+
+    // Human-in-the-loop Verification
+    private Boolean verified;
+    private UUID verifiedById;
+    private String verifiedByName;
+    private OffsetDateTime verifiedAt;
+    private String verificationNotes;
+
+    // AI Detection status and manual fallback
+    private Boolean aiExtracted;
+    private Boolean needsManualReview;
+    private String extractionError;
 }

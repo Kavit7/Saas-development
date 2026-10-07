@@ -94,7 +94,7 @@ const BookingDetailModal = ({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 bg-slate-50/50">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 text-[#101B82] flex items-center justify-center font-bold">
+              <div className="w-8 h-8 rounded-lg bg-[#264624]/10 text-[#264624] flex items-center justify-center font-bold">
                 <Bed size={18} weight="duotone" />
               </div>
               <div>
@@ -142,7 +142,7 @@ const BookingDetailModal = ({
                   Destination
                 </span>
                 <span className="mt-1 block font-bold text-slate-900 text-sm font-serif-title flex items-center gap-1">
-                  <MapPin size={14} className="text-[#101B82]" weight="fill" />
+                  <MapPin size={14} className="text-[#264624]" weight="fill" />
                   {booking.destination || "Circuit"}
                 </span>
               </div>
@@ -210,7 +210,7 @@ const BookingDetailModal = ({
                 <button
                   type="button"
                   onClick={() => setPreviewModalOpen(true)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-indigo-200 bg-indigo-50/70 text-[#101B82] text-xs font-bold hover:bg-indigo-100 transition active:scale-95 shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#264624]/20 bg-[#264624]/10 text-[#264624] text-xs font-bold hover:bg-[#264624]/15 transition active:scale-95 shadow-2xs"
                 >
                   <Eye size={15} weight="bold" />
                   <span>Preview Email</span>
@@ -222,7 +222,7 @@ const BookingDetailModal = ({
                     type="button"
                     onClick={handleSendToLodge}
                     disabled={actionLoading}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#101B82] text-white text-xs font-bold hover:bg-[#0c145e] transition active:scale-95 shadow-xs disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#264624] text-white text-xs font-bold hover:bg-[#1b331a] transition active:scale-95 shadow-xs disabled:opacity-50"
                   >
                     <PaperPlaneTilt size={15} weight="bold" />
                     <span>{actionLoading ? "Sending..." : "Send Request to Lodge"}</span>

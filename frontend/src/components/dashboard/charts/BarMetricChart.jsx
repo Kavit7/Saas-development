@@ -25,7 +25,7 @@ const BarMetricChart = ({
       <div className="space-y-4 my-auto">
         {items.map((item, idx) => {
           const valPct = Math.min(Math.round((item.value / maxVal) * 100), 100);
-          const barColor = item.color || "#101B82";
+          const barColor = item.color || "#264624";
 
           return (
             <div key={idx} className="space-y-1.5">
