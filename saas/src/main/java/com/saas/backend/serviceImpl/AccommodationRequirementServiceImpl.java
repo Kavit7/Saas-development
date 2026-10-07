@@ -282,6 +282,8 @@ public AccommodationRequirementResponse updateAccommodationRequirement(
                 .id(requirement.getId())
                 .safariId(requirement.getSafari() != null ? requirement.getSafari().getId() : null)
                 .itineraryDayId(requirement.getItineraryDay() != null ? requirement.getItineraryDay().getId() : null)
+                .itineraryDayDate(requirement.getItineraryDay() != null ? requirement.getItineraryDay().getDate() : null)
+                .dayNumber(requirement.getItineraryDay() != null ? requirement.getItineraryDay().getDayNumber() : null)
                 .destination(requirement.getDestination())
                 .categoryId(requirement.getRequiredCategory() != null ? requirement.getRequiredCategory().getId() : null)
                 .categoryName(requirement.getRequiredCategory() != null ? requirement.getRequiredCategory().getName() : null)

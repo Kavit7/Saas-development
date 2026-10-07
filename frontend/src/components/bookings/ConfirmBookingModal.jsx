@@ -101,7 +101,7 @@ const ConfirmBookingModal = ({
               placeholder="e.g. LODGE-RES-98214"
               required
               autoFocus
-              className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 font-semibold focus:border-[#101B82] focus:ring-1 focus:ring-[#101B82] outline-hidden transition shadow-2xs"
+              className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 font-semibold focus:border-[#264624] focus:ring-1 focus:ring-[#264624] outline-hidden transition shadow-2xs"
             />
             <p className="text-[11px] text-slate-400 mt-1">
               Enter the official voucher or confirmation reference provided by the lodge.

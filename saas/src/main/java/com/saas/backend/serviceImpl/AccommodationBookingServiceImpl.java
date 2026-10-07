@@ -162,7 +162,7 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true) 
     public List<AccommodationBookingResponse> getBookingsBySafari(UUID safariId) {
         Safari safari = safariRepository.findById(safariId)
                 .orElseThrow(() -> new ResourceNotFoundException("Safari not found: " + safariId));
@@ -219,7 +219,7 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         try {
             reservationManager = checker.checkCurrentUser();
         } catch (Exception e) {
-            log.warn("Could not resolve current reservation manager from context, saving booking without explicit user link");
+            log.warn("Could not resolve current reservation manager from  context, saving booking without explicit user link");
         }
 
         String referenceNumber = generateReferenceNumber();
@@ -422,11 +422,14 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
 
     @Override
     @Transactional
-    public void processEmailConfirmation(AccommodationBooking detachedBooking, IncomingMailMessage email) {
+    public void processEmailConfirmation(AccommodationBooking detachedBooking, IncomingMailMessage email, String confirmationNumber) {
         AccommodationBooking booking = accommodationBookingRepository.findById(detachedBooking.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Booking Not found: " + detachedBooking.getId()));
 
         booking.setStatus(BookingStatus.CONFIRMED);
+        if (confirmationNumber != null && !confirmationNumber.isBlank()) {
+            booking.setConfirmationNumber(confirmationNumber.trim());
+        }
         booking.setRespondedAt(OffsetDateTime.now());
         booking.setConfirmedAt(OffsetDateTime.now());
         accommodationBookingRepository.save(booking);
@@ -472,6 +475,24 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         }
 
         notificationService.notifyBookingDeclined(booking);
+    }
+
+    @Override
+    @Transactional
+    public void markForManualReview(AccommodationBooking detachedBooking, IncomingMailMessage email, String reviewReason) {
+        AccommodationBooking booking = accommodationBookingRepository.findById(detachedBooking.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Booking Not found: " + detachedBooking.getId()));
+
+        String reasonStr = (reviewReason != null && !reviewReason.isBlank()) ? reviewReason : "Lodge response requires manual verification";
+        String existingNotes = booking.getNotes() != null ? booking.getNotes() : "";
+        if (!existingNotes.contains("[MANUAL REVIEW REQUIRED]")) {
+            String updatedNotes = (existingNotes.isBlank() ? "" : existingNotes + "\n") + "[MANUAL REVIEW REQUIRED]: " + reasonStr;
+            booking.setNotes(updatedNotes);
+        }
+        booking.setRespondedAt(OffsetDateTime.now());
+        accommodationBookingRepository.save(booking);
+
+        notificationService.notifyManualReviewRequired(booking, reasonStr);
     }
 
     @Override

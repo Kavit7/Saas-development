@@ -72,12 +72,17 @@ public interface AccommodationBookingService {
     /**
      * Handles automated inbound email confirmations.
      */
-    void processEmailConfirmation(AccommodationBooking booking, IncomingMailMessage email);
+    void processEmailConfirmation(AccommodationBooking booking, IncomingMailMessage email, String confirmationNumber);
 
     /**
      * Handles automated inbound email declines.
      */
     void processEmailDecline(AccommodationBooking booking, IncomingMailMessage email);
+
+    /**
+     * Flags a booking for manual human review when AI / inbound email detection is ambiguous.
+     */
+    void markForManualReview(AccommodationBooking booking, IncomingMailMessage email, String reviewReason);
 
     /**
      * Generates a preview of the email (subject, html, plain text, recipient) that will be sent to the lodge.

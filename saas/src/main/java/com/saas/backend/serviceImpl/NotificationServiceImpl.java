@@ -170,6 +170,28 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    public void notifyManualReviewRequired(AccommodationBooking booking, String reason) {
+        String propName = booking.getProperty() != null ? booking.getProperty().getName() : "Lodge";
+        String refNo = booking.getReferenceNumber() != null ? booking.getReferenceNumber() : "REF";
+
+        User rm = booking.getReservationManager();
+        if (rm != null) {
+            saveNotification(
+                    rm,
+                    "MANUAL_REVIEW_REQUIRED",
+                    "Action Needed: Verify Lodge Response",
+                    String.format("Inbound email from '%s' for booking %s requires manual verification (%s). Please review the email and confirm or decline manually.",
+                            propName, refNo, reason != null ? reason : "Automated detection ambiguous"),
+                    Priority.HIGH,
+                    "AccommodationBooking",
+                    booking.getId()
+            );
+        }
+        log.info("Dispatched in-app manual review alert for booking: {}", refNo);
+    }
+
+    @Override
+    @Transactional
     public void notifyFollowUp(AccommodationBooking booking) {
         String propName = booking.getProperty() != null ? booking.getProperty().getName() : "Lodge";
         String refNo = booking.getReferenceNumber() != null ? booking.getReferenceNumber() : "REF";

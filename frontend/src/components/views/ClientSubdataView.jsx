@@ -26,7 +26,7 @@ const ClientSubdataView = ({
             <button
               type="button"
               onClick={onAddGuest}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#101B82] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0d176f] transition shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#264624] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1b331a] transition shadow-2xs"
             >
               <Plus size={14} weight="bold" />
               <span>Add Guest</span>
@@ -76,7 +76,7 @@ const ClientSubdataView = ({
                           setSelectedGuestForReqs(g);
                           setReqsModalOpen(true);
                         }}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-indigo-200/80 bg-indigo-50/70 text-[#101B82] text-xs font-bold hover:bg-indigo-100 hover:border-indigo-300 transition active:scale-95 shadow-2xs"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#264624]/20 bg-[#264624]/10 text-[#264624] text-xs font-bold hover:bg-[#264624]/15 transition active:scale-95 shadow-2xs"
                       >
                         <FirstAid size={14} weight="duotone" />
                         <span>Requirements</span>
@@ -130,7 +130,7 @@ const ClientSubdataView = ({
           <button
             type="button"
             onClick={onAddFlight}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#101B82] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#0d176f] transition shadow-2xs"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#264624] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1b331a] transition shadow-2xs"
           >
             <Plus size={14} weight="bold" />
             <span>Add Flight</span>
@@ -171,7 +171,7 @@ const ClientSubdataView = ({
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : f.flightType === "DEPARTURE"
                           ? "bg-blue-50 text-blue-700 border-blue-200"
-                          : "bg-indigo-50 text-[#101B82] border-indigo-200"
+                          : "bg-[#264624]/10 text-[#264624] border-[#264624]/20"
                       }`}
                     >
                       {f.flightType}

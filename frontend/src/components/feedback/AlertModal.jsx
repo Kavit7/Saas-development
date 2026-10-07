@@ -19,8 +19,8 @@ const alertStyles = {
   },
   info: {
     icon: Info,
-    color: "text-[#101B82] bg-blue-50 border-blue-200",
-    button: "bg-[#101B82] hover:bg-[#0d176f]",
+    color: "text-[#264624] bg-emerald-50 border-emerald-200",
+    button: "bg-[#264624] hover:bg-[#1b331a]",
   },
 };
 
@@ -70,7 +70,7 @@ const AlertModal = ({
               ? "bg-rose-600"
               : type === "warning"
               ? "bg-amber-500"
-              : "bg-[#101B82]"
+              : "bg-[#264624]"
           }`}
         />
 

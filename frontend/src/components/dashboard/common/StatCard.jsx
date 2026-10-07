@@ -21,15 +21,15 @@ const StatCard = ({
   icon,
   trend,
   trendDirection = "up",
-  iconBg = "bg-indigo-50",
-  iconColor = "text-[#101B82]",
+  iconBg = "bg-[#264624]/10",
+  iconColor = "text-[#264624]",
 }) => {
   const isPositive = trendDirection === "up";
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs transition-all hover:shadow-md hover:border-slate-300 group">
       {/* Decorative top accent line */}
-      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-slate-100 to-transparent group-hover:via-indigo-500 transition-all duration-300" />
+      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-slate-100 to-transparent group-hover:via-[#264624] transition-all duration-300" />
 
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">

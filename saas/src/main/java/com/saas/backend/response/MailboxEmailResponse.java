@@ -23,6 +23,8 @@ public class MailboxEmailResponse {
     private boolean processed;
     private UUID bookingId;
     private String bookingReference;
+    private String bookingStatus;
+    private String confirmationNumber;
     private String propertyName;
     private String safariReference;
     private String clientName;

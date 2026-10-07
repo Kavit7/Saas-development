@@ -19,4 +19,7 @@ public class IncomingMailMessage {
     private String body;
 
     private OffsetDateTime receivedAt;
+
+    @Builder.Default
+    private java.util.List<EmailAttachmentDto> attachments = new java.util.ArrayList<>();
 }

@@ -9,6 +9,7 @@ import {
   CalendarCheck,
   CheckCircle,
   WarningCircle,
+  XCircle,
   ArrowsClockwise
 } from "@phosphor-icons/react";
 import { useAuth } from "../../hooks/useAuth";
@@ -24,7 +25,7 @@ const getStatusBadgeClass = (status) => {
   if (s === "CANCELLED" || s === "INACTIVE" || s === "REJECTED") {
     return "bg-rose-50 text-rose-700 border-rose-200/90";
   }
-  return "bg-indigo-50 text-[#101B82] border-indigo-200/90";
+  return "bg-[#264624]/10 text-[#264624] border-[#264624]/20";
 };
 
 const formatDisplayDate = (val) => {
@@ -102,7 +103,7 @@ const SafariItineraryView = ({
             type="button"
             onClick={onRegenerateDays}
             disabled={actionLoading}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#101B82] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#0d176f] transition active:scale-95 shadow-md disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#264624] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#1b331a] transition active:scale-95 shadow-md disabled:opacity-50"
           >
             <ArrowsClockwise size={16} className={actionLoading ? "animate-spin" : ""} weight="bold" />
             <span>{actionLoading ? "Generating Days..." : "Generate / Retry Days"}</span>
@@ -138,7 +139,7 @@ const SafariItineraryView = ({
       return {
         label: "CONFIRMED",
         desc: "All Destinations Configured",
-        cls: "bg-blue-50 text-blue-800 border-blue-300",
+        cls: "bg-[#264624]/10 text-[#264624] border-[#264624]/30",
       };
     }
     return {
@@ -156,7 +157,7 @@ const SafariItineraryView = ({
       <div className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-xs space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-[#101B82] flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-xl bg-[#264624]/10 text-[#264624] flex items-center justify-center font-bold">
               <CalendarCheck size={22} weight="duotone" />
             </div>
             <div>
@@ -181,7 +182,7 @@ const SafariItineraryView = ({
                 onClick={onRegenerateDays}
                 disabled={actionLoading}
                 title="Sync / Regenerate Itinerary Days from Start to End Date"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-50 text-slate-700 border border-slate-200 hover:bg-indigo-50 hover:text-[#101B82] hover:border-indigo-200 transition active:scale-95 disabled:opacity-50 shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-50 text-slate-700 border border-slate-200 hover:bg-[#264624]/10 hover:text-[#264624] hover:border-[#264624]/30 transition active:scale-95 disabled:opacity-50 shadow-2xs"
               >
                 <ArrowsClockwise size={14} className={actionLoading ? "animate-spin" : ""} weight="bold" />
                 <span>{actionLoading ? "Syncing..." : "Retry / Sync Days"}</span>
@@ -206,11 +207,11 @@ const SafariItineraryView = ({
         <div className="space-y-1.5">
           <div className="flex justify-between text-xs text-slate-600 font-medium">
             <span>Overall Booking Status</span>
-            <span className="font-bold text-[#101B82]">{progressPercent}% Completed</span>
+            <span className="font-bold text-[#264624]">{progressPercent}% Completed</span>
           </div>
           <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-[#101B82] via-indigo-600 to-emerald-500 transition-all duration-300"
+              className="h-full rounded-full bg-gradient-to-r from-[#264624] via-[#7A5229] to-emerald-600 transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -231,10 +232,20 @@ const SafariItineraryView = ({
             String(req.status || "").toUpperCase() === "CONFIRMED"
           ));
 
+        const isBookingDeclined =
+          booking &&
+          (String(booking.status || "").toUpperCase() === "CANCELLED" ||
+           String(booking.status || "").toUpperCase() === "DECLINED");
+
+        const isManualReviewNeeded =
+          booking &&
+          booking.notes &&
+          booking.notes.includes("[MANUAL REVIEW REQUIRED]");
+
         const isBookingPending =
           !isRequirementConfirmed &&
+          !isBookingDeclined &&
           booking &&
-          String(booking.status || "").toUpperCase() !== "CANCELLED" &&
           (
             String(booking.status || "").toUpperCase() === "PROVISIONAL" ||
             String(booking.status || "").toUpperCase() === "DRAFT" ||
@@ -252,7 +263,7 @@ const SafariItineraryView = ({
             {/* Day Header Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3.5">
               <div className="flex flex-wrap items-center gap-3">
-                <span className="inline-flex items-center px-3 py-1 rounded-lg bg-[#101B82] text-white text-xs font-bold shadow-2xs">
+                <span className="inline-flex items-center px-3 py-1 rounded-lg bg-[#264624] text-white text-xs font-bold shadow-2xs">
                   Day {day.dayNumber}
                 </span>
 
@@ -262,7 +273,7 @@ const SafariItineraryView = ({
                 </div>
 
                 <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900 font-serif-title">
-                  <MapPin size={16} className={isDestinationConfigured ? "text-[#101B82]" : "text-amber-500"} weight="fill" />
+                  <MapPin size={16} className={isDestinationConfigured ? "text-[#264624]" : "text-amber-500"} weight="fill" />
                   <span className={isDestinationConfigured ? "text-slate-900" : "text-amber-700 italic"}>
                     {day.destination || "Destination pending configuration"}
                   </span>
@@ -275,8 +286,8 @@ const SafariItineraryView = ({
                   onClick={() => onEditDay(day)}
                   className={`inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl px-3.5 py-1.5 text-xs font-bold transition active:scale-95 shadow-2xs ${
                     !isDestinationConfigured
-                      ? "bg-gradient-to-r from-[#101B82] to-indigo-600 text-white hover:from-[#0d176f] hover:to-indigo-700"
-                      : "border border-slate-200 bg-slate-50/70 text-slate-700 hover:bg-slate-100 hover:text-[#101B82]"
+                      ? "bg-gradient-to-r from-[#264624] to-[#345c31] text-white hover:from-[#1b331a] hover:to-[#264624]"
+                      : "border border-slate-200 bg-slate-50/70 text-slate-700 hover:bg-slate-100 hover:text-[#264624]"
                   }`}
                 >
                   <PencilSimple size={13} weight="bold" />
@@ -298,10 +309,10 @@ const SafariItineraryView = ({
             {/* Accommodation Requirement Card */}
             <div>
               {req ? (
-                <div className="rounded-xl border border-indigo-100/90 bg-gradient-to-br from-indigo-50/40 via-white to-slate-50/60 p-4 shadow-2xs space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-100/60 pb-2.5">
+                <div className="rounded-xl border border-[#264624]/20 bg-gradient-to-br from-[#264624]/5 via-white to-stone-50/60 p-4 shadow-2xs space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#264624]/15 pb-2.5">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#101B82]/10 text-[#101B82]">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#264624]/10 text-[#264624]">
                         <Bed size={16} weight="duotone" />
                       </div>
                       <span className="text-xs font-bold text-slate-900 font-serif-title">
@@ -329,7 +340,7 @@ const SafariItineraryView = ({
                         <button
                           type="button"
                           onClick={() => onEditRequirement(day, req)}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#101B82] hover:text-[#0c145e] hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-[#264624] hover:text-[#1b331a] hover:underline"
                         >
                           <PencilSimple size={13} />
                           <span>Edit Requirement</span>
@@ -386,7 +397,7 @@ const SafariItineraryView = ({
                           req.roomRequirements.map((r, i) => (
                             <span
                               key={i}
-                              className="inline-flex items-center px-1.5 py-0.5 rounded bg-indigo-50 border border-indigo-200/60 text-[10px] font-bold text-[#101B82]"
+                              className="inline-flex items-center px-1.5 py-0.5 rounded bg-[#7A5229]/10 border border-[#7A5229]/20 text-[10px] font-bold text-[#7A5229]"
                             >
                               {r.roomType}: {r.quantity}
                             </span>
@@ -413,13 +424,64 @@ const SafariItineraryView = ({
                     </div>
                   )}
 
+                  {/* Lodge Booking Declined Alert Banner */}
+                  {isBookingDeclined && !isRequirementConfirmed && (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs animate-in fade-in">
+                      <div className="flex items-center gap-2">
+                        <XCircle size={18} weight="bold" className="text-rose-600 shrink-0" />
+                        <div>
+                          <p className="font-bold text-rose-900">Lodge Booking Declined</p>
+                          <p className="text-[11px] text-rose-700">
+                            {booking?.propertyName ? `Lodge '${booking.propertyName}'` : "Property"} was unavailable or declined the request. An alternative property allocation is required.
+                          </p>
+                        </div>
+                      </div>
+                      {!isSalesPerson && canBook && (
+                        <button
+                          type="button"
+                          onClick={() => onBookLodge && onBookLodge(req, day)}
+                          className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-700 text-white text-xs font-bold hover:bg-rose-800 transition active:scale-95 shadow-2xs shrink-0"
+                        >
+                          <CalendarCheck size={14} weight="bold" />
+                          <span>Re-allocate Alternative Lodge</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Manual Review Needed Alert Banner */}
+                  {isManualReviewNeeded && !isRequirementConfirmed && !isBookingDeclined && (
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs animate-in fade-in">
+                      <div className="flex items-center gap-2">
+                        <WarningCircle size={18} weight="bold" className="text-amber-600 shrink-0" />
+                        <div>
+                          <p className="font-bold text-amber-900">Action Needed: Verify Lodge Response</p>
+                          <p className="text-[11px] text-amber-700">
+                            Inbound email from lodge requires human review. Please check the response and confirm or decline manually.
+                          </p>
+                        </div>
+                      </div>
+                      {!isSalesPerson && canBook && (
+                        <button
+                          type="button"
+                          onClick={() => onBookLodge && onBookLodge(req, day)}
+                          className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-700 text-white text-xs font-bold hover:bg-amber-800 transition active:scale-95 shadow-2xs shrink-0"
+                        >
+                          <span>Review & Confirm Manually</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   {/* Booking Trigger / Status Bar */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-indigo-100/60">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#264624]/15">
                     <div className="text-[11px] text-slate-500">
                       Requirement Status:{" "}
                       <span className="font-semibold text-slate-800">
                         {isRequirementConfirmed
                           ? "CONFIRMED"
+                          : isBookingDeclined
+                          ? "DECLINED — NEEDS RE-BOOKING"
                           : isBookingPending
                           ? (booking?.status ? String(booking.status).toUpperCase() : (req?.status || "IN_PROGRESS"))
                           : (req?.status || "PENDING")}
@@ -431,10 +493,14 @@ const SafariItineraryView = ({
                       <button
                         type="button"
                         onClick={() => onBookLodge && onBookLodge(req, day)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#101B82] text-white text-xs font-bold hover:bg-[#0c145e] transition active:scale-95 shadow-2xs"
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-white text-xs font-bold transition active:scale-95 shadow-2xs ${
+                          isBookingDeclined
+                            ? "bg-rose-700 hover:bg-rose-800"
+                            : "bg-[#264624] hover:bg-[#1b331a]"
+                        }`}
                       >
                         <CalendarCheck size={14} weight="bold" />
-                        <span>Allocate & Book Lodge</span>
+                        <span>{isBookingDeclined ? "Re-allocate Alternative Lodge" : "Allocate & Book Lodge"}</span>
                       </button>
                     )}
 
@@ -474,7 +540,7 @@ const SafariItineraryView = ({
                     <button
                       type="button"
                       onClick={() => onAddRequirement(day)}
-                      className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-gradient-to-r from-[#101B82] to-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:from-[#0d176f] hover:to-indigo-700 transition active:scale-95 shadow-2xs"
+                      className="inline-flex items-center gap-1.5 self-start sm:self-auto rounded-xl bg-gradient-to-r from-[#264624] to-[#345c31] px-3.5 py-2 text-xs font-semibold text-white hover:from-[#1b331a] hover:to-[#264624] transition active:scale-95 shadow-2xs"
                     >
                       <Plus size={14} weight="bold" />
                       <span>Add Accommodation Requirement</span>

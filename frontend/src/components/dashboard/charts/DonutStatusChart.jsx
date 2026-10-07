@@ -77,7 +77,7 @@ const DonutStatusChart = ({
                   cy={size / 2}
                   r={radius}
                   fill="transparent"
-                  stroke={slice.color || "#101B82"}
+                  stroke={slice.color || "#264624"}
                   strokeWidth={isHovered ? strokeWidth + 4 : strokeWidth}
                   strokeDasharray={slice.strokeDasharray}
                   strokeDashoffset={slice.strokeDashoffset}
@@ -117,7 +117,7 @@ const DonutStatusChart = ({
                 <div className="flex items-center gap-2">
                   <span
                     className="h-2.5 w-2.5 rounded-full shrink-0 shadow-2xs"
-                    style={{ backgroundColor: slice.color || "#101B82" }}
+                    style={{ backgroundColor: slice.color || "#264624" }}
                   />
                   <span className="text-slate-700">{slice.label}</span>
                 </div>

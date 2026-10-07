@@ -180,7 +180,7 @@ const GuestRequirementsModal = ({
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4.5 bg-gradient-to-r from-slate-50 to-white">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#101B82]/10 text-[#101B82] border border-indigo-100 shadow-2xs">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#264624]/10 text-[#264624] border border-indigo-100 shadow-2xs">
               <FirstAid size={24} weight="duotone" />
             </div>
             <div>
@@ -188,7 +188,7 @@ const GuestRequirementsModal = ({
                 <h3 className="text-base font-bold text-slate-900 font-serif-title">
                   Guest Requirements & Preferences
                 </h3>
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 border border-indigo-200 text-[#101B82]">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 border border-indigo-200 text-[#264624]">
                   {requirements.length} Configured
                 </span>
               </div>
@@ -241,7 +241,7 @@ const GuestRequirementsModal = ({
                   resetForm();
                   setShowAddForm(true);
                 }}
-                className="inline-flex items-center gap-1.5 shrink-0 px-3.5 py-1.5 rounded-xl bg-[#101B82] text-white text-xs font-bold hover:bg-[#0c145e] transition active:scale-95 shadow-2xs"
+                className="inline-flex items-center gap-1.5 shrink-0 px-3.5 py-1.5 rounded-xl bg-[#264624] text-white text-xs font-bold hover:bg-[#1b331a] transition active:scale-95 shadow-2xs"
               >
                 <Plus size={14} weight="bold" />
                 <span>Add Requirement</span>
@@ -256,7 +256,7 @@ const GuestRequirementsModal = ({
               className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/40 via-white to-slate-50/50 p-4.5 space-y-4 shadow-xs"
             >
               <div className="flex items-center justify-between border-b border-indigo-100/70 pb-2">
-                <span className="text-xs font-bold text-[#101B82] uppercase tracking-wider font-serif-title">
+                <span className="text-xs font-bold text-[#264624] uppercase tracking-wider font-serif-title">
                   {editingId ? "Edit Guest Requirement" : "Record New Guest Requirement"}
                 </span>
                 <button
@@ -277,7 +277,7 @@ const GuestRequirementsModal = ({
                     disabled={!!editingId}
                     value={formData.requirementType}
                     onChange={(e) => setFormData({ ...formData, requirementType: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#101B82] focus:ring-1 focus:ring-[#101B82] focus:outline-hidden disabled:bg-slate-100"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#264624] focus:ring-1 focus:ring-[#264624] focus:outline-hidden disabled:bg-slate-100"
                   >
                     {REQUIREMENT_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
@@ -294,7 +294,7 @@ const GuestRequirementsModal = ({
                   <select
                     value={formData.severity}
                     onChange={(e) => setFormData({ ...formData, severity: e.target.value })}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#101B82] focus:ring-1 focus:ring-[#101B82] focus:outline-hidden"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 focus:border-[#264624] focus:ring-1 focus:ring-[#264624] focus:outline-hidden"
                   >
                     {SEVERITY_LEVELS.map((s) => (
                       <option key={s.value} value={s.value}>
@@ -315,7 +315,7 @@ const GuestRequirementsModal = ({
                   placeholder="e.g. Strict Peanut Allergy, Diabetic, Wheelchair Access, King Bed..."
                   value={formData.requirementValue}
                   onChange={(e) => setFormData({ ...formData, requirementValue: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 placeholder-slate-400 focus:border-[#101B82] focus:ring-1 focus:ring-[#101B82] focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 placeholder-slate-400 focus:border-[#264624] focus:ring-1 focus:ring-[#264624] focus:outline-hidden"
                 />
               </div>
 
@@ -328,7 +328,7 @@ const GuestRequirementsModal = ({
                   placeholder="Provide explicit instructions for reservation team and lodge kitchen..."
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 placeholder-slate-400 focus:border-[#101B82] focus:ring-1 focus:ring-[#101B82] focus:outline-hidden"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 placeholder-slate-400 focus:border-[#264624] focus:ring-1 focus:ring-[#264624] focus:outline-hidden"
                 />
               </div>
 
@@ -343,7 +343,7 @@ const GuestRequirementsModal = ({
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#101B82] text-white text-xs font-bold hover:bg-[#0c145e] transition active:scale-95 shadow-2xs disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#264624] text-white text-xs font-bold hover:bg-[#1b331a] transition active:scale-95 shadow-2xs disabled:opacity-50"
                 >
                   {submitting && <ArrowsClockwise size={13} className="animate-spin" />}
                   <span>{editingId ? "Update Requirement" : "Save Requirement"}</span>
@@ -355,7 +355,7 @@ const GuestRequirementsModal = ({
           {/* List of Requirements */}
           {loading ? (
             <div className="py-12 text-center text-slate-400">
-              <ArrowsClockwise size={28} className="animate-spin mx-auto text-[#101B82] mb-2" />
+              <ArrowsClockwise size={28} className="animate-spin mx-auto text-[#264624] mb-2" />
               <p className="text-xs font-semibold">Loading guest requirements...</p>
             </div>
           ) : requirements.length === 0 ? (
@@ -391,7 +391,7 @@ const GuestRequirementsModal = ({
                           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${
                             isCritical
                               ? "bg-rose-50 text-rose-600 border-rose-200"
-                              : "bg-[#101B82]/10 text-[#101B82] border-indigo-100"
+                              : "bg-[#264624]/10 text-[#264624] border-indigo-100"
                           }`}
                         >
                           <IconComponent size={16} weight="duotone" />
@@ -419,7 +419,7 @@ const GuestRequirementsModal = ({
                           <button
                             type="button"
                             onClick={() => handleStartEdit(req)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-[#101B82] hover:bg-slate-100 transition"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-[#264624] hover:bg-slate-100 transition"
                             title="Edit Requirement"
                           >
                             <PencilSimple size={14} />
