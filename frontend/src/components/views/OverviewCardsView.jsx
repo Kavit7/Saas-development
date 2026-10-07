@@ -9,7 +9,7 @@ const getStatusBadgeClass = (status) => {
   if (s === "CANCELLED" || s === "INACTIVE" || s === "REJECTED") {
     return "bg-rose-50 text-rose-700 border-rose-200/90";
   }
-  return "bg-indigo-50 text-[#101B82] border-indigo-200/90";
+  return "bg-[#264624]/10 text-[#264624] border-[#264624]/30";
 };
 
 const OverviewCardsView = ({ fields = [], item = {} }) => {

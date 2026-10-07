@@ -22,7 +22,7 @@ const DynamicTable = ({
   const getActionClass = (actionKey) => {
     switch (actionKey) {
       case "view":
-        return "bg-[#101B82] text-white hover:bg-[#0d176f] shadow-2xs";
+        return "bg-[#264624] text-white hover:bg-[#1b331a] shadow-2xs";
       case "update":
         return "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200";
       case "delete":
@@ -58,7 +58,7 @@ const DynamicTable = ({
     <div className="w-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
       {title && (
         <div className="border-b border-slate-100 px-5 py-4">
-          <h2 className="text-lg font-bold text-[#101B82] tracking-tight">
+          <h2 className="text-lg font-bold text-[#264624] tracking-tight font-title">
             {title}
           </h2>
         </div>

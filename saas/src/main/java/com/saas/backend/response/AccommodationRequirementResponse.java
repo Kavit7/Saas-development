@@ -19,6 +19,8 @@ public class AccommodationRequirementResponse {
     private UUID id;
     private UUID safariId;
     private UUID itineraryDayId;
+    private java.time.LocalDate itineraryDayDate;
+    private Integer dayNumber;
     private String destination;
     private UUID categoryId;
     private String categoryName;

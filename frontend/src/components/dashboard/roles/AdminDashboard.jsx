@@ -42,7 +42,7 @@ const AdminDashboard = ({ stats }) => {
       description: "Build an itinerary for a client",
       to: "/safaris",
       icon: <Compass size={20} weight="duotone" />,
-      color: "#101B82",
+      color: "#264624",
     },
     {
       label: "Register Client",
@@ -56,7 +56,7 @@ const AdminDashboard = ({ stats }) => {
       description: "Manage sales, RMs & guides",
       to: "/users",
       icon: <UserGear size={20} weight="duotone" />,
-      color: "#4F46E5",
+      color: "#7A5229",
     },
     {
       label: "Lodge Bookings",
@@ -99,8 +99,8 @@ const AdminDashboard = ({ stats }) => {
           icon={<Compass size={24} weight="duotone" />}
           trend={`${kpis.totalSafaris || 0} active`}
           trendDirection="up"
-          iconBg="bg-indigo-50"
-          iconColor="text-[#101B82]"
+          iconBg="bg-[#264624]/10"
+          iconColor="text-[#264624]"
         />
 
         <StatCard
@@ -144,7 +144,7 @@ const AdminDashboard = ({ stats }) => {
             data={trendData}
             title="Safari Bookings Trend"
             subtitle="Monthly expedition reservations over the last 6 months"
-            color="#101B82"
+            color="#264624"
             valueSuffix="safaris"
           />
         </div>

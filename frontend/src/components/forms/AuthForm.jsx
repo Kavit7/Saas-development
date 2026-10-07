@@ -45,7 +45,7 @@ const AuthForm = ({ formName, OnSubmit, loading = false }) => {
             }
             autoComplete={name === "email" ? "username" : "current-password"}
             required
-            className="h-12 w-full rounded-xl border border-[#211917]/[0.12] bg-[#f8f8fb] px-4 text-sm text-[#211917] outline-none transition placeholder:text-[#211917]/35 hover:border-[#101B82]/30 focus:border-[#101B82] focus:ring-4 focus:ring-[#101B82]/10"
+            className="h-12 w-full rounded-xl border border-[#211917]/[0.12] bg-[#FAF8F5] px-4 text-sm text-[#211917] outline-none transition placeholder:text-[#211917]/35 hover:border-[#264624]/30 focus:border-[#264624] focus:ring-4 focus:ring-[#264624]/10"
           />
         </div>
       ))}
@@ -53,7 +53,7 @@ const AuthForm = ({ formName, OnSubmit, loading = false }) => {
         type="submit"
         disabled={loading}
         aria-busy={loading}
-        className="group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#101B82] px-4 text-sm font-bold text-white shadow-lg shadow-[#101B82]/20 transition duration-200 hover:-translate-y-0.5 hover:bg-[#0d176f] disabled:cursor-not-allowed disabled:opacity-70"
+        className="group flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#264624] px-4 text-sm font-bold text-white shadow-lg shadow-[#264624]/20 transition duration-200 hover:-translate-y-0.5 hover:bg-[#1b331a] disabled:cursor-not-allowed disabled:opacity-70"
       >
         {loading ? (
           <>

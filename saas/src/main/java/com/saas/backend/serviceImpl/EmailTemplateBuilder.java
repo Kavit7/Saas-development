@@ -20,6 +20,11 @@ import com.saas.backend.models.User;
 /**
  * Builds responsive executive HTML and structured plain-text email templates
  * for accommodation reservation requests and follow-up reminders.
+ *
+ * Design Guidelines:
+ * - Authentic East African Safari Palette: Deep Safari Forest Green (#264624) & Warm Earth Tones / Savannah Browns (#7A5229, #8C6239, #EDE7DC, #FAF8F4).
+ * - Typography: Titles / Headings in Arial Bolded; Body Text in Calibri Light.
+ * - Strictly NO emojis (all symbols/emojis removed).
  */
 @Component
 public class EmailTemplateBuilder {
@@ -74,7 +79,7 @@ public class EmailTemplateBuilder {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Accommodation Reservation Request - %s</title>
 <style type="text/css">
-  body { margin: 0; padding: 0; min-width: 100%%; width: 100%% !important; height: 100%% !important; background-color: #f1f5f9; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; padding: 0; min-width: 100%%; width: 100%% !important; height: 100%% !important; background-color: #F5F2EB; -webkit-font-smoothing: antialiased; }
   table { border-spacing: 0; border-collapse: collapse; }
   td { padding: 0; }
   img { border: 0; }
@@ -85,27 +90,27 @@ public class EmailTemplateBuilder {
   }
 </style>
 </head>
-<body style="margin: 0; padding: 24px 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.5;">
+<body style="margin: 0; padding: 24px 0; background-color: #F5F2EB; font-family: 'Calibri Light', Calibri, sans-serif; font-weight: 300; color: #2D241E; line-height: 1.55;">
   <center style="width: 100%%; table-layout: fixed;">
-    <div class="container" style="max-width: 640px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; text-align: left;">
-      <!-- TOP GOLD ACCENT STRIPE -->
+    <div class="container" style="max-width: 640px; margin: 0 auto; background-color: #FFFFFF; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 16px rgba(45, 36, 30, 0.08); border: 1px solid #E2D9CC; text-align: left;">
+      <!-- TOP WARM EARTH TONE STRIPE -->
       <table width="100%%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td height="5" style="background: linear-gradient(90deg, #d97706 0%%, #f59e0b 50%%, #d97706 100%%); background-color: #d97706;"></td>
+          <td height="5" style="background: linear-gradient(90deg, #7A5229 0%%, #B8860B 50%%, #7A5229 100%%); background-color: #7A5229;"></td>
         </tr>
       </table>
 
-      <!-- EXECUTIVE HEADER BANNER -->
-      <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="background-color: #101b82; padding: 28px 32px; color: #ffffff;">
+      <!-- EXECUTIVE SAFARI HEADER BANNER -->
+      <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="background-color: #264624; padding: 28px 32px; color: #FFFFFF;">
         <tr>
           <td>
             <table width="100%%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td>
-                  <div style="text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">
+                  <div style="font-family: Arial, Helvetica, sans-serif; font-weight: bold; text-transform: uppercase; font-size: 11px; letter-spacing: 1.6px; color: #D5E3D2; margin-bottom: 6px;">
                     SAFARI OPERATIONS &bull; RESERVATION DESK
                   </div>
-                  <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; line-height: 1.3;">
+                  <h1 style="margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 20px; font-weight: bold; color: #FFFFFF; letter-spacing: -0.2px; line-height: 1.3;">
                     ACCOMMODATION RESERVATION REQUEST
                   </h1>
                 </td>
@@ -114,13 +119,13 @@ public class EmailTemplateBuilder {
                 <td style="padding-top: 14px;">
                   <table cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td style="background-color: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 20px; padding: 6px 14px;">
-                        <span style="font-size: 12px; font-weight: 700; color: #fde68a; font-family: 'Courier New', Courier, monospace;">
+                      <td style="background-color: rgba(255, 255, 255, 0.14); border: 1px solid rgba(220, 205, 175, 0.5); border-radius: 18px; padding: 5px 14px;">
+                        <span style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; color: #EDE4D3; letter-spacing: 0.5px;">
                           REF: %s
                         </span>
                       </td>
                       <td style="padding-left: 12px;">
-                        <span style="font-size: 11px; color: #e2e8f0;">
+                        <span style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 12px; color: #D5E3D2;">
                           Dispatched: %s
                         </span>
                       </td>
@@ -138,18 +143,18 @@ public class EmailTemplateBuilder {
         <tr>
           <td>
             <!-- SALUTATION -->
-            <p style="margin: 0 0 14px; font-size: 15px; color: #334155; line-height: 1.6;">
-              Dear Reservations Team at <strong style="color: #0f172a;">%s</strong>,
+            <p style="margin: 0 0 14px; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 15px; color: #2D241E; line-height: 1.6;">
+              Dear Reservations Team at <strong style="font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #1F1916;">%s</strong>,
             </p>
-            <p style="margin: 0 0 22px; font-size: 14px; color: #475569; line-height: 1.6;">
+            <p style="margin: 0 0 22px; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 14px; color: #4A3A2F; line-height: 1.6;">
               Please accept our official accommodation reservation request for our upcoming safari party. Kindly review availability and confirm space for the dates and room configuration detailed below:
             </p>
 
             <!-- SECTION 1: STAY OVERVIEW CARDS -->
-            <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background-color: #f8fafc;">
+            <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px; border: 1px solid #E2D9CC; border-radius: 8px; overflow: hidden; background-color: #FAF8F4;">
               <tr>
-                <td style="padding: 11px 16px; background-color: #f1f5f9; border-bottom: 1px solid #e2e8f0; font-size: 11px; font-weight: 700; color: #1e293b; text-transform: uppercase; letter-spacing: 0.8px;">
-                  &#128197; Stay Overview &amp; Itinerary Parameters
+                <td style="padding: 11px 16px; background-color: #EDE7DC; border-bottom: 1px solid #E2D9CC; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #3A2E26; text-transform: uppercase; letter-spacing: 0.8px;">
+                  STAY OVERVIEW &amp; ITINERARY PARAMETERS
                 </td>
               </tr>
               <tr>
@@ -157,32 +162,32 @@ public class EmailTemplateBuilder {
                   <table width="100%%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td width="50%%" valign="top" style="padding-right: 10px; padding-bottom: 12px;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 2px;">Check-In Date</div>
-                        <div style="font-size: 14px; font-weight: 700; color: #0f172a;">%s</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; text-transform: uppercase; color: #7D6B5C; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 2px;">Check-In Date</div>
+                        <div style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 14px; font-weight: bold; color: #1F1916;">%s</div>
                       </td>
                       <td width="50%%" valign="top" style="padding-left: 10px; padding-bottom: 12px;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 2px;">Check-Out Date</div>
-                        <div style="font-size: 14px; font-weight: 700; color: #0f172a;">%s</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; text-transform: uppercase; color: #7D6B5C; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 2px;">Check-Out Date</div>
+                        <div style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 14px; font-weight: bold; color: #1F1916;">%s</div>
                       </td>
                     </tr>
                     <tr>
                       <td width="50%%" valign="top" style="padding-right: 10px; padding-bottom: 12px;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 2px;">Duration</div>
-                        <div style="font-size: 14px; font-weight: 700; color: #101b82;">%s</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; text-transform: uppercase; color: #7D6B5C; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 2px;">Duration</div>
+                        <div style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 14px; font-weight: bold; color: #264624;">%s</div>
                       </td>
                       <td width="50%%" valign="top" style="padding-left: 10px; padding-bottom: 12px;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 2px;">Total Requirements</div>
-                        <div style="font-size: 14px; font-weight: 700; color: #0f172a;">%s Room(s) &bull; %s Guest(s)</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; text-transform: uppercase; color: #7D6B5C; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 2px;">Total Requirements</div>
+                        <div style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 14px; font-weight: bold; color: #1F1916;">%s Room(s) &bull; %s Guest(s)</div>
                       </td>
                     </tr>
                     <tr>
                       <td width="50%%" valign="top" style="padding-right: 10px;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 2px;">Safari Reference</div>
-                        <div style="font-size: 13px; font-weight: 700; color: #101b82; font-family: monospace;">%s</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; text-transform: uppercase; color: #7D6B5C; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 2px;">Safari Reference</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; color: #264624;">%s</div>
                       </td>
                       <td width="50%%" valign="top" style="padding-left: 10px;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #64748b; font-weight: 600; margin-bottom: 2px;">Itinerary Schedule</div>
-                        <div style="font-size: 13px; font-weight: 600; color: #334155;">%s</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; text-transform: uppercase; color: #7D6B5C; font-weight: bold; letter-spacing: 0.5px; margin-bottom: 2px;">Itinerary Schedule</div>
+                        <div style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 13px; color: #3A2E26;">%s</div>
                       </td>
                     </tr>
                   </table>
@@ -192,17 +197,17 @@ public class EmailTemplateBuilder {
 
             <!-- SECTION 2: ROOM REQUIREMENTS -->
             <div style="margin-bottom: 24px;">
-              <div style="font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">
-                &#128716; Room Allocation &amp; Requirements
+              <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #1F1916; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;">
+                ROOM ALLOCATION &amp; REQUIREMENTS
               </div>
-              <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+              <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #E2D9CC; border-radius: 8px; overflow: hidden;">
                 <thead>
-                  <tr style="background-color: #f1f5f9; text-align: left; font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">
-                    <th style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0;">Room Category</th>
-                    <th style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; text-align: center; width: 90px;">Quantity</th>
+                  <tr style="background-color: #EDE7DC; text-align: left; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #3A2E26; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <th style="padding: 10px 14px; border-bottom: 1px solid #E2D9CC;">Room Category</th>
+                    <th style="padding: 10px 14px; border-bottom: 1px solid #E2D9CC; text-align: center; width: 90px;">Quantity</th>
                   </tr>
                 </thead>
-                <tbody style="font-size: 13px; color: #1e293b;">
+                <tbody style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 13px; color: #2D241E;">
                   %s
                 </tbody>
               </table>
@@ -211,19 +216,19 @@ public class EmailTemplateBuilder {
 
             <!-- SECTION 3: GUEST MANIFEST -->
             <div style="margin-bottom: 24px;">
-              <div style="font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">
-                &#128101; Guest Manifest &amp; Passenger Manifest
+              <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #1F1916; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;">
+                GUEST MANIFEST &amp; PASSENGER DETAILS
               </div>
-              <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+              <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #E2D9CC; border-radius: 8px; overflow: hidden;">
                 <thead>
-                  <tr style="background-color: #f1f5f9; text-align: left; font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">
-                    <th style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; width: 36px; text-align: center;">#</th>
-                    <th style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0;">Guest Full Name</th>
-                    <th style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; width: 90px;">Gender</th>
-                    <th style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; width: 120px;">Nationality</th>
+                  <tr style="background-color: #EDE7DC; text-align: left; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #3A2E26; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <th style="padding: 10px 14px; border-bottom: 1px solid #E2D9CC; width: 36px; text-align: center;">#</th>
+                    <th style="padding: 10px 14px; border-bottom: 1px solid #E2D9CC;">Guest Full Name</th>
+                    <th style="padding: 10px 14px; border-bottom: 1px solid #E2D9CC; width: 90px;">Gender</th>
+                    <th style="padding: 10px 14px; border-bottom: 1px solid #E2D9CC; width: 120px;">Nationality</th>
                   </tr>
                 </thead>
-                <tbody style="font-size: 13px; color: #1e293b;">
+                <tbody style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 13px; color: #2D241E;">
                   %s
                 </tbody>
               </table>
@@ -233,21 +238,21 @@ public class EmailTemplateBuilder {
             %s
 
             <!-- SECTION 5: ACTION REQUIRED & PROTOCOL -->
-            <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px; border: 1px solid #bfdbfe; border-left: 5px solid #2563eb; border-radius: 8px; background-color: #eff6ff;">
+            <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px; border: 1px solid #DFD5C3; border-left: 5px solid #264624; border-radius: 8px; background-color: #FAF7F2;">
               <tr>
                 <td style="padding: 16px 20px;">
-                  <div style="font-size: 12px; font-weight: 800; color: #1e40af; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">
-                    &#9889; Action Required: Confirmation Protocol
+                  <div style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; color: #264624; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">
+                    ACTION REQUIRED: CONFIRMATION PROTOCOL
                   </div>
-                  <ol style="margin: 0; padding-left: 18px; font-size: 13px; color: #1e3a8a; line-height: 1.6;">
+                  <ol style="margin: 0; padding-left: 18px; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 13px; color: #3D3128; line-height: 1.6;">
                     <li style="margin-bottom: 6px;">
-                      <strong>Confirm Room Availability:</strong> Please reply directly to this email confirming space for the requested room configuration.
+                      <strong style="font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #1F1916;">Confirm Room Availability:</strong> Please reply directly to this email confirming space for the requested room configuration.
                     </li>
                     <li style="margin-bottom: 6px;">
-                      <strong>Lodge Confirmation Reference:</strong> Kindly provide your property confirmation number or reservation voucher code.
+                      <strong style="font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #1F1916;">Lodge Confirmation Reference:</strong> Kindly provide your property confirmation number or reservation voucher code.
                     </li>
                     <li>
-                      <strong>Automatic Processing:</strong> Please <strong>maintain '<code style="font-family: monospace; background-color: #dbeafe; padding: 2px 5px; border-radius: 3px; font-weight: 700;">%s</code>'</strong> in the email subject line to guarantee automated status processing.
+                      <strong style="font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #1F1916;">Automated Tracking:</strong> Please maintain '<span style="font-family: Arial, monospace; background-color: #EDE7DC; color: #264624; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #D8CBB6;">%s</span>' in the email subject line to guarantee automated status processing.
                     </li>
                   </ol>
                 </td>
@@ -261,16 +266,16 @@ public class EmailTemplateBuilder {
       </table>
 
       <!-- FOOTER -->
-      <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0f172a; padding: 20px 32px; color: #94a3b8; font-size: 11px; text-align: center; border-top: 1px solid #1e293b;" class="mobile-padding">
+      <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="background-color: #1F1A17; padding: 20px 32px; color: #A69C8E; font-size: 11px; text-align: center; border-top: 1px solid #2B231E;" class="mobile-padding">
         <tr>
           <td>
-            <div style="font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">
+            <div style="font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #EDE7DC; margin-bottom: 4px; letter-spacing: 0.6px;">
               SAFARI OPERATIONS RESERVATIONS PLATFORM
             </div>
-            <div>
+            <div style="font-family: 'Calibri Light', Calibri, sans-serif;">
               Automated Reservation Dispatch &bull; Reference: %s &bull; Generated: %s
             </div>
-            <div style="margin-top: 6px; color: #64748b; font-size: 10px;">
+            <div style="margin-top: 6px; color: #877D70; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 10px;">
               This transmission is intended solely for the property reservations department. Confidentiality protected.
             </div>
           </td>
@@ -375,7 +380,7 @@ public class EmailTemplateBuilder {
         sb.append("5. ACTION REQUIRED & CONFIRMATION PROTOCOL:\n");
         sb.append("   - Please reply to this email directly confirming availability.\n");
         sb.append("   - Kindly include your lodge reservation number / voucher reference.\n");
-        sb.append("   - CRITICAL: Please keep '").append(bookingRef).append("' in the subject line.\n\n");
+        sb.append("   - Please maintain '").append(bookingRef).append("' in the subject line.\n\n");
 
         sb.append("Best regards,\n");
         if (consultant != null) {
@@ -427,7 +432,7 @@ public class EmailTemplateBuilder {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Follow-up - Accommodation Request %s</title>
 <style type="text/css">
-  body { margin: 0; padding: 0; min-width: 100%%; width: 100%% !important; background-color: #f1f5f9; -webkit-font-smoothing: antialiased; }
+  body { margin: 0; padding: 0; min-width: 100%%; width: 100%% !important; background-color: #F5F2EB; -webkit-font-smoothing: antialiased; }
   table { border-spacing: 0; border-collapse: collapse; }
   td { padding: 0; }
   @media screen and (max-width: 600px) {
@@ -436,27 +441,27 @@ public class EmailTemplateBuilder {
   }
 </style>
 </head>
-<body style="margin: 0; padding: 24px 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b; line-height: 1.5;">
+<body style="margin: 0; padding: 24px 0; background-color: #F5F2EB; font-family: 'Calibri Light', Calibri, sans-serif; font-weight: 300; color: #2D241E; line-height: 1.55;">
   <center style="width: 100%%; table-layout: fixed;">
-    <div class="container" style="max-width: 640px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; text-align: left;">
-      <!-- TOP WARNING STRIPE -->
+    <div class="container" style="max-width: 640px; margin: 0 auto; background-color: #FFFFFF; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 16px rgba(45, 36, 30, 0.08); border: 1px solid #E2D9CC; text-align: left;">
+      <!-- TOP WARM EARTH TONE STRIPE -->
       <table width="100%%" cellpadding="0" cellspacing="0" border="0">
         <tr>
-          <td height="5" style="background: linear-gradient(90deg, #d97706 0%%, #ef4444 100%%); background-color: #d97706;"></td>
+          <td height="5" style="background: linear-gradient(90deg, #7A5229 0%%, #B8860B 100%%); background-color: #7A5229;"></td>
         </tr>
       </table>
 
-      <!-- HEADER BANNER -->
-      <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0f172a; padding: 28px 32px; color: #ffffff;">
+      <!-- HEADER BANNER (SAFARI FOREST GREEN) -->
+      <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="background-color: #264624; padding: 28px 32px; color: #FFFFFF;">
         <tr>
           <td>
             <table width="100%%" cellpadding="0" cellspacing="0" border="0">
               <tr>
                 <td>
-                  <div style="text-transform: uppercase; font-size: 11px; letter-spacing: 1.5px; font-weight: 700; color: #f59e0b; margin-bottom: 6px;">
+                  <div style="font-family: Arial, Helvetica, sans-serif; font-weight: bold; text-transform: uppercase; font-size: 11px; letter-spacing: 1.6px; color: #D5E3D2; margin-bottom: 6px;">
                     FOLLOW-UP NOTIFICATION &bull; PENDING CONFIRMATION
                   </div>
-                  <h1 style="margin: 0; font-size: 21px; font-weight: 800; color: #ffffff; letter-spacing: -0.3px; line-height: 1.3;">
+                  <h1 style="margin: 0; font-family: Arial, Helvetica, sans-serif; font-size: 20px; font-weight: bold; color: #FFFFFF; letter-spacing: -0.2px; line-height: 1.3;">
                     RESERVATION REQUEST FOLLOW-UP
                   </h1>
                 </td>
@@ -465,8 +470,8 @@ public class EmailTemplateBuilder {
                 <td style="padding-top: 14px;">
                   <table cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td style="background-color: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 20px; padding: 6px 14px;">
-                        <span style="font-size: 12px; font-weight: 700; color: #fbbf24; font-family: 'Courier New', Courier, monospace;">
+                      <td style="background-color: rgba(255, 255, 255, 0.14); border: 1px solid rgba(220, 205, 175, 0.5); border-radius: 18px; padding: 5px 14px;">
+                        <span style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; color: #EDE4D3; letter-spacing: 0.5px;">
                           REF: %s
                         </span>
                       </td>
@@ -483,18 +488,18 @@ public class EmailTemplateBuilder {
       <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="padding: 28px 32px;" class="mobile-padding">
         <tr>
           <td>
-            <p style="margin: 0 0 14px; font-size: 15px; color: #334155; line-height: 1.6;">
-              Dear Reservations Team at <strong style="color: #0f172a;">%s</strong>,
+            <p style="margin: 0 0 14px; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 15px; color: #2D241E; line-height: 1.6;">
+              Dear Reservations Team at <strong style="font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #1F1916;">%s</strong>,
             </p>
-            <p style="margin: 0 0 20px; font-size: 14px; color: #475569; line-height: 1.6;">
+            <p style="margin: 0 0 20px; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 14px; color: #4A3A2F; line-height: 1.6;">
               We are following up on our accommodation reservation request submitted previously. We have not yet received confirmation of room availability for this booking.
             </p>
 
             <!-- REMINDER SUMMARY CARD -->
-            <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px; border: 1px solid #fde68a; border-radius: 8px; overflow: hidden; background-color: #fffbeb;">
+            <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px; border: 1px solid #E2D9CC; border-radius: 8px; overflow: hidden; background-color: #FAF8F4;">
               <tr>
-                <td style="padding: 11px 16px; background-color: #fef3c7; border-bottom: 1px solid #fde68a; font-size: 11px; font-weight: 700; color: #92400e; text-transform: uppercase; letter-spacing: 0.8px;">
-                  &#9888;&#65039; Pending Booking Summary
+                <td style="padding: 11px 16px; background-color: #EDE7DC; border-bottom: 1px solid #E2D9CC; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #3A2E26; text-transform: uppercase; letter-spacing: 0.8px;">
+                  PENDING RESERVATION SUMMARY
                 </td>
               </tr>
               <tr>
@@ -502,22 +507,22 @@ public class EmailTemplateBuilder {
                   <table width="100%%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td width="50%%" valign="top" style="padding-bottom: 10px;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #78350f; font-weight: 600;">Check-In Date</div>
-                        <div style="font-size: 14px; font-weight: 700; color: #0f172a;">%s</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; text-transform: uppercase; color: #7D6B5C; font-weight: bold;">Check-In Date</div>
+                        <div style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 14px; font-weight: bold; color: #1F1916;">%s</div>
                       </td>
                       <td width="50%%" valign="top" style="padding-bottom: 10px;">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #78350f; font-weight: 600;">Check-Out Date</div>
-                        <div style="font-size: 14px; font-weight: 700; color: #0f172a;">%s</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; text-transform: uppercase; color: #7D6B5C; font-weight: bold;">Check-Out Date</div>
+                        <div style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 14px; font-weight: bold; color: #1F1916;">%s</div>
                       </td>
                     </tr>
                     <tr>
                       <td width="50%%" valign="top">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #78350f; font-weight: 600;">Duration</div>
-                        <div style="font-size: 14px; font-weight: 700; color: #101b82;">%s</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; text-transform: uppercase; color: #7D6B5C; font-weight: bold;">Duration</div>
+                        <div style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 14px; font-weight: bold; color: #264624;">%s</div>
                       </td>
                       <td width="50%%" valign="top">
-                        <div style="font-size: 11px; text-transform: uppercase; color: #78350f; font-weight: 600;">Safari Reference</div>
-                        <div style="font-size: 13px; font-weight: 700; color: #101b82; font-family: monospace;">%s</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; text-transform: uppercase; color: #7D6B5C; font-weight: bold;">Safari Reference</div>
+                        <div style="font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; color: #264624;">%s</div>
                       </td>
                     </tr>
                   </table>
@@ -527,31 +532,31 @@ public class EmailTemplateBuilder {
 
             <!-- ROOM TABLE -->
             <div style="margin-bottom: 24px;">
-              <div style="font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">
-                Requested Rooms:
+              <div style="font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #1F1916; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px;">
+                REQUESTED ROOMS:
               </div>
-              <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+              <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #E2D9CC; border-radius: 8px; overflow: hidden;">
                 <thead>
-                  <tr style="background-color: #f1f5f9; text-align: left; font-size: 11px; color: #475569; text-transform: uppercase;">
-                    <th style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0;">Room Category</th>
-                    <th style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; text-align: center; width: 90px;">Quantity</th>
+                  <tr style="background-color: #EDE7DC; text-align: left; font-family: Arial, Helvetica, sans-serif; font-size: 11px; font-weight: bold; color: #3A2E26; text-transform: uppercase;">
+                    <th style="padding: 10px 14px; border-bottom: 1px solid #E2D9CC;">Room Category</th>
+                    <th style="padding: 10px 14px; border-bottom: 1px solid #E2D9CC; text-align: center; width: 90px;">Quantity</th>
                   </tr>
                 </thead>
-                <tbody style="font-size: 13px;">
+                <tbody style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 13px; color: #2D241E;">
                   %s
                 </tbody>
               </table>
             </div>
 
-            <!-- URGENT CTA -->
-            <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px; border: 1px solid #fed7aa; border-left: 5px solid #ea580c; border-radius: 8px; background-color: #fff7ed;">
+            <!-- URGENT CTA (WARM EARTH BROWN ACCENT) -->
+            <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 24px; border: 1px solid #E5D5C0; border-left: 5px solid #7A5229; border-radius: 8px; background-color: #FAF6F0;">
               <tr>
                 <td style="padding: 16px 20px;">
-                  <div style="font-size: 12px; font-weight: 800; color: #9a3412; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;">
-                    Kindly Confirm At Your Earliest Convenience
+                  <div style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; color: #7A5229; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;">
+                    KINDLY CONFIRM AT YOUR EARLIEST CONVENIENCE
                   </div>
-                  <p style="margin: 0; font-size: 13px; color: #7c2d12; line-height: 1.5;">
-                    Please reply to this email confirming availability or advising if alternative dates/rooms are available. Kindly keep reference '<code style="font-family: monospace; font-weight: 700;">%s</code>' in the subject line.
+                  <p style="margin: 0; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 13px; color: #4A3525; line-height: 1.55;">
+                    Please reply to this email confirming availability or advising if alternative dates/rooms are available. Kindly keep reference '<span style="font-family: Arial, monospace; background-color: #EDE7DC; color: #7A5229; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #D8CBB6;">%s</span>' in the subject line.
                   </p>
                 </td>
               </tr>
@@ -563,11 +568,11 @@ public class EmailTemplateBuilder {
       </table>
 
       <!-- FOOTER -->
-      <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="background-color: #0f172a; padding: 20px 32px; color: #94a3b8; font-size: 11px; text-align: center;" class="mobile-padding">
+      <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="background-color: #1F1A17; padding: 20px 32px; color: #A69C8E; font-size: 11px; text-align: center;" class="mobile-padding">
         <tr>
           <td>
-            <div style="font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">SAFARI OPERATIONS RESERVATIONS PLATFORM</div>
-            <div>Follow-up Reminder &bull; Reference: %s &bull; Dispatched: %s</div>
+            <div style="font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #EDE7DC; margin-bottom: 4px;">SAFARI OPERATIONS RESERVATIONS PLATFORM</div>
+            <div style="font-family: 'Calibri Light', Calibri, sans-serif;">Follow-up Reminder &bull; Reference: %s &bull; Dispatched: %s</div>
           </td>
         </tr>
       </table>
@@ -692,8 +697,8 @@ public class EmailTemplateBuilder {
     private String buildRoomRowsHtml(AccommodationRequirement req) {
         if (req == null || req.getRooms() == null || req.getRooms().isEmpty()) {
             return """
-              <tr style="background-color: #ffffff;">
-                <td colspan="2" style="padding: 12px 14px; color: #64748b; font-style: italic;">
+              <tr style="background-color: #FFFFFF;">
+                <td colspan="2" style="padding: 12px 14px; font-family: 'Calibri Light', Calibri, sans-serif; color: #7D6B5C; font-style: italic;">
                   Standard room configuration requested
                 </td>
               </tr>
@@ -707,9 +712,9 @@ public class EmailTemplateBuilder {
                     ? escapeHtml(r.getRoomType().getName())
                     : "Standard Room";
             int qty = r.getQuantity() != null ? r.getQuantity() : 1;
-            String bg = (idx++ % 2 == 0) ? "#ffffff" : "#f8fafc";
+            String bg = (idx++ % 2 == 0) ? "#FFFFFF" : "#FAF8F4";
             sb.append(String.format(
-                    "<tr style=\"background-color: %s;\"><td style=\"padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-weight: 600;\">%s</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #e2e8f0; text-align: center; font-weight: 700; color: #101b82;\">%d</td></tr>\n",
+                    "<tr style=\"background-color: %s;\"><td style=\"padding: 10px 14px; border-bottom: 1px solid #E2D9CC; font-family: 'Calibri Light', Calibri, sans-serif; font-weight: bold; color: #1F1916;\">%s</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #E2D9CC; text-align: center; font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #264624;\">%d</td></tr>\n",
                     bg, typeName, qty
             ));
         }
@@ -721,7 +726,7 @@ public class EmailTemplateBuilder {
             return "";
         }
         return String.format(
-                "<div style=\"margin-top: 8px; font-size: 12px; color: #475569; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 12px;\"><strong style=\"color: #0f172a;\">Bedding / Room Preferences:</strong> %s</div>",
+                "<div style=\"margin-top: 8px; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 12px; color: #4A3A2F; background-color: #FAF8F4; border: 1px solid #E2D9CC; border-radius: 6px; padding: 8px 12px;\"><strong style=\"font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #1F1916;\">Bedding / Room Preferences:</strong> %s</div>",
                 escapeHtml(req.getRoomPreferences().trim())
         );
     }
@@ -737,11 +742,11 @@ public class EmailTemplateBuilder {
                         ? escapeHtml(g.getNationality())
                         : "-";
                 String leadBadge = (idx == 1)
-                        ? "<span style=\"display: inline-block; background-color: #e0e7ff; color: #1e40af; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;\">LEAD GUEST</span>"
+                        ? "<span style=\"display: inline-block; background-color: #EDE7DC; color: #5C3D1E; border: 1px solid #D8CBB6; font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 6px;\">LEAD GUEST</span>"
                         : "";
-                String bg = (idx % 2 == 1) ? "#ffffff" : "#f8fafc";
+                String bg = (idx % 2 == 1) ? "#FFFFFF" : "#FAF8F4";
                 sb.append(String.format(
-                        "<tr style=\"background-color: %s;\"><td style=\"padding: 10px 14px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #64748b;\">%d</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-weight: 600;\">%s%s</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #475569;\">%s</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #475569;\">%s</td></tr>\n",
+                        "<tr style=\"background-color: %s;\"><td style=\"padding: 10px 14px; border-bottom: 1px solid #E2D9CC; text-align: center; font-family: Arial, sans-serif; color: #7D6B5C;\">%d</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #E2D9CC; font-family: 'Calibri Light', Calibri, sans-serif; font-weight: bold; color: #1F1916;\">%s%s</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #E2D9CC; font-family: 'Calibri Light', Calibri, sans-serif; color: #4A3A2F;\">%s</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #E2D9CC; font-family: 'Calibri Light', Calibri, sans-serif; color: #4A3A2F;\">%s</td></tr>\n",
                         bg, idx, name, leadBadge, gender, nationality
                 ));
                 idx++;
@@ -753,13 +758,13 @@ public class EmailTemplateBuilder {
                     ? escapeHtml(client.getNationality())
                     : "-";
             sb.append(String.format(
-                    "<tr style=\"background-color: #ffffff;\"><td style=\"padding: 10px 14px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #64748b;\">1</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #e2e8f0; font-weight: 600;\">%s <span style=\"display: inline-block; background-color: #e0e7ff; color: #1e40af; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; margin-left: 6px;\">LEAD GUEST</span></td><td style=\"padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #475569;\">%s</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #475569;\">%s</td></tr>\n",
+                    "<tr style=\"background-color: #FFFFFF;\"><td style=\"padding: 10px 14px; border-bottom: 1px solid #E2D9CC; text-align: center; font-family: Arial, sans-serif; color: #7D6B5C;\">1</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #E2D9CC; font-family: 'Calibri Light', Calibri, sans-serif; font-weight: bold; color: #1F1916;\">%s <span style=\"display: inline-block; background-color: #EDE7DC; color: #5C3D1E; border: 1px solid #D8CBB6; font-family: Arial, Helvetica, sans-serif; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; margin-left: 6px;\">LEAD GUEST</span></td><td style=\"padding: 10px 14px; border-bottom: 1px solid #E2D9CC; font-family: 'Calibri Light', Calibri, sans-serif; color: #4A3A2F;\">%s</td><td style=\"padding: 10px 14px; border-bottom: 1px solid #E2D9CC; font-family: 'Calibri Light', Calibri, sans-serif; color: #4A3A2F;\">%s</td></tr>\n",
                     name, gender, nationality
             ));
         } else {
             sb.append("""
-              <tr style=\"background-color: #ffffff;\">
-                <td colspan=\"4\" style=\"padding: 12px 14px; color: #64748b; font-style: italic; text-align: center;\">
+              <tr style="background-color: #FFFFFF;">
+                <td colspan="4" style="padding: 12px 14px; font-family: 'Calibri Light', Calibri, sans-serif; color: #7D6B5C; font-style: italic; text-align: center;">
                   Guest manifest details will be provided prior to arrival
                 </td>
               </tr>
@@ -776,18 +781,18 @@ public class EmailTemplateBuilder {
         }
 
         StringBuilder sb = new StringBuilder();
-        sb.append("<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 24px; border: 1px solid #fde68a; border-left: 5px solid #d97706; border-radius: 8px; background-color: #fffbeb;\">");
+        sb.append("<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom: 24px; border: 1px solid #E5D5C0; border-left: 5px solid #7A5229; border-radius: 8px; background-color: #FAF6F0;\">");
         sb.append("<tr><td style=\"padding: 16px 20px;\">");
-        sb.append("<div style=\"font-size: 12px; font-weight: 800; color: #b45309; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;\">&#9888;&#65039; Special Requests &amp; Dietary Requirements</div>");
+        sb.append("<div style=\"font-family: Arial, Helvetica, sans-serif; font-size: 12px; font-weight: bold; color: #7A5229; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 6px;\">SPECIAL REQUESTS &amp; DIETARY REQUIREMENTS</div>");
 
         if (hasSpecial) {
-            sb.append("<div style=\"font-size: 13px; color: #92400e; line-height: 1.5; margin-bottom: ").append(hasNotes ? "8px;" : "0;").append("\">")
+            sb.append("<div style=\"font-family: 'Calibri Light', Calibri, sans-serif; font-size: 13px; color: #4A3525; line-height: 1.55; margin-bottom: ").append(hasNotes ? "8px;" : "0;").append("\">")
               .append(escapeHtml(req.getSpecialRequests().trim()))
               .append("</div>");
         }
 
         if (hasNotes) {
-            sb.append("<div style=\"font-size: 12px; color: #78350f; line-height: 1.5; font-style: italic;\"><strong>Additional Internal Notes:</strong> ")
+            sb.append("<div style=\"font-family: 'Calibri Light', Calibri, sans-serif; font-size: 12px; color: #6B4E38; line-height: 1.5; font-style: italic;\"><strong style=\"font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #4A3525;\">Additional Internal Notes:</strong> ")
               .append(escapeHtml(booking.getNotes().trim()))
               .append("</div>");
         }
@@ -807,17 +812,17 @@ public class EmailTemplateBuilder {
                 ? escapeHtml(company.getName())
                 : "Safari Operations Platform";
         String phoneStr = (consultant != null && consultant.getPhone() != null && !consultant.getPhone().isBlank())
-                ? " &bull; Phone: <strong style=\"color: #0f172a;\">" + escapeHtml(consultant.getPhone()) + "</strong>"
+                ? " &bull; Phone: <strong style=\"font-family: Arial, Helvetica, sans-serif; font-weight: bold; color: #1F1916;\">" + escapeHtml(consultant.getPhone()) + "</strong>"
                 : "";
 
         return String.format("""
-            <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="border-top: 1px solid #e2e8f0; padding-top: 18px; margin-top: 6px;">
+            <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="border-top: 1px solid #E2D9CC; padding-top: 18px; margin-top: 6px;">
               <tr>
                 <td valign="top">
-                  <div style="font-size: 14px; font-weight: 700; color: #0f172a;">%s</div>
-                  <div style="font-size: 12px; color: #64748b; margin-top: 2px;">%s &bull; %s</div>
-                  <div style="font-size: 12px; color: #475569; margin-top: 6px;">
-                    Inquiries / Direct Reply: <a href="mailto:%s" style="color: #101b82; text-decoration: none; font-weight: 600;">%s</a>%s
+                  <div style="font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; color: #1F1916;">%s</div>
+                  <div style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 12px; color: #6B5B4E; margin-top: 2px;">%s &bull; %s</div>
+                  <div style="font-family: 'Calibri Light', Calibri, sans-serif; font-size: 12px; color: #4A3A2F; margin-top: 6px;">
+                    Inquiries / Direct Reply: <a href="mailto:%s" style="color: #264624; text-decoration: none; font-weight: bold;">%s</a>%s
                   </div>
                 </td>
               </tr>

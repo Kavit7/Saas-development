@@ -33,6 +33,11 @@ public interface NotificationService {
     void notifyBookingDeclined(AccommodationBooking booking);
 
     /**
+     * Triggered when incoming lodge response could not be verified automatically and requires human review.
+     */
+    void notifyManualReviewRequired(AccommodationBooking booking, String reason);
+
+    /**
      * Triggered for automated or manual follow-ups on pending accommodation requests.
      */
     void notifyFollowUp(AccommodationBooking booking);

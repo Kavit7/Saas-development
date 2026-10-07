@@ -19,8 +19,8 @@ const alertStyles = {
   },
   info: {
     icon: Info,
-    color: "text-[#101B82] bg-blue-50 border-blue-200",
-    button: "bg-[#101B82] hover:bg-[#0d176f]",
+    color: "text-[#264624] bg-emerald-50 border-emerald-200",
+    button: "bg-[#264624] hover:bg-[#1b331a]",
   },
 };
 
@@ -65,7 +65,7 @@ const DynamicModal = ({
         className={`relative w-full ${maxWidth} rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 border border-slate-100 overflow-hidden my-8 transition-all`}
       >
         {/* Top Accent Gradient */}
-        <div className="h-1 w-full bg-gradient-to-r from-[#101B82] via-indigo-600 to-blue-500" />
+        <div className="h-1 w-full bg-gradient-to-r from-[#264624] via-[#7A5229] to-[#B8860B]" />
 
         {isAlert ? (
           /* Alert / Notification View */

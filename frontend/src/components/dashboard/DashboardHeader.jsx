@@ -51,14 +51,14 @@ const DashboardHeader = ({
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight font-serif-title">
             Welcome back, {userFullName || "Colleague"}
           </h1>
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-[#101B82]/10 text-[#101B82] border border-[#101B82]/20 shadow-2xs">
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-[#264624]/10 text-[#264624] border border-[#264624]/20 shadow-2xs">
             <ShieldCheck size={13} weight="bold" />
             <span>{getRoleDisplayName(role)}</span>
           </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-medium">
-          <span className="text-[#101B82] font-semibold">{companyName || "Safari Global Operations"}</span>
+          <span className="text-[#264624] font-semibold">{companyName || "Safari Global Operations"}</span>
           <span className="text-slate-300">•</span>
           <span>{todayStr}</span>
           <span className="text-slate-300">•</span>
@@ -74,12 +74,12 @@ const DashboardHeader = ({
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-[#101B82] transition active:scale-95 shadow-2xs disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-[#264624] transition active:scale-95 shadow-2xs disabled:opacity-50"
         >
           <ArrowsClockwise
             size={15}
             weight="bold"
-            className={`${loading ? "animate-spin text-[#101B82]" : ""}`}
+            className={`${loading ? "animate-spin text-[#264624]" : ""}`}
           />
           <span>{loading ? "Refreshing..." : "Refresh Data"}</span>
         </button>

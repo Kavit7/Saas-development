@@ -28,9 +28,9 @@ const ReservationDashboard = ({ stats }) => {
   ];
 
   const categoryBars = [
-    { label: "Luxury Tented Camps", value: 42, target: 50, color: "#101B82" },
+    { label: "Luxury Tented Camps", value: 42, target: 50, color: "#264624" },
     { label: "National Park Lodges", value: 68, target: 80, color: "#059669" },
-    { label: "Boutique Safari Hotels", value: 25, target: 35, color: "#4F46E5" },
+    { label: "Boutique Safari Hotels", value: 25, target: 35, color: "#7A5229" },
     { label: "Specialty Campsites", value: 13, target: 20, color: "#D97706" },
   ];
 
@@ -40,7 +40,7 @@ const ReservationDashboard = ({ stats }) => {
       description: "Manage lodges, camps & verifications",
       to: "/properties",
       icon: <Buildings size={20} weight="duotone" />,
-      color: "#101B82",
+      color: "#264624",
     },
     {
       label: "Safari Itineraries",
@@ -54,7 +54,7 @@ const ReservationDashboard = ({ stats }) => {
       description: "Manage double, twin & family suites",
       to: "/room-types",
       icon: <Bed size={20} weight="duotone" />,
-      color: "#4F46E5",
+      color: "#7A5229",
     },
   ];
 
@@ -69,8 +69,8 @@ const ReservationDashboard = ({ stats }) => {
           icon={<Bed size={24} weight="duotone" />}
           trend="+14.0%"
           trendDirection="up"
-          iconBg="bg-indigo-50"
-          iconColor="text-[#101B82]"
+          iconBg="bg-[#264624]/10"
+          iconColor="text-[#264624]"
         />
 
         <StatCard
@@ -114,7 +114,7 @@ const ReservationDashboard = ({ stats }) => {
             data={trendData}
             title="Lodge Room Nights Booked"
             subtitle="Monthly allocated room nights across partner properties"
-            color="#101B82"
+            color="#264624"
             valueSuffix="nights"
           />
         </div>

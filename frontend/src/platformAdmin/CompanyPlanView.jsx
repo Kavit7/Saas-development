@@ -111,7 +111,7 @@ const CompanyPlanView = () => {
     return (
       <div className="flex h-96 w-full items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <ArrowsClockwise size={32} className="animate-spin text-[#101B82]" />
+          <ArrowsClockwise size={32} className="animate-spin text-[#264624]" />
           <p className="text-sm font-medium text-slate-500 font-sans">
             Loading company subscription details...
           </p>
@@ -128,7 +128,7 @@ const CompanyPlanView = () => {
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
             <span>Company Account</span>
             <span>/</span>
-            <span className="text-[#101B82]">Subscription & Plans</span>
+            <span className="text-[#264624]">Subscription & Plans</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-serif-title mt-1">
             {company?.name ? `${company.name} Plan` : "Company Subscription"}
@@ -149,7 +149,7 @@ const CompanyPlanView = () => {
       </div>
 
       {/* 2. Current Plan Active Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-[#101B82]/20 bg-gradient-to-r from-[#101B82] via-indigo-900 to-[#1e2eaa] p-6 sm:p-8 text-white shadow-md">
+      <div className="relative overflow-hidden rounded-2xl border border-[#264624]/20 bg-gradient-to-r from-[#264624] via-[#1b331a] to-[#264624] p-6 sm:p-8 text-white shadow-md">
         <div className="absolute right-0 top-0 -mr-16 -mt-16 h-64 w-64 rounded-full bg-white/5 blur-2xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -233,7 +233,7 @@ const CompanyPlanView = () => {
                     isCurrent
                       ? "border-emerald-500 ring-2 ring-emerald-500/20"
                       : isPopular
-                      ? "border-[#101B82] shadow-md shadow-indigo-950/5 hover:-translate-y-0.5"
+                      ? "border-[#264624] shadow-md shadow-emerald-950/5 hover:-translate-y-0.5"
                       : "border-slate-200/90 hover:border-slate-300 hover:-translate-y-0.5"
                   }`}
                 >
@@ -245,7 +245,7 @@ const CompanyPlanView = () => {
                   )}
 
                   {!isCurrent && isPopular && (
-                    <div className="absolute -top-3 left-6 inline-flex items-center gap-1 rounded-full bg-[#101B82] px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs">
+                    <div className="absolute -top-3 left-6 inline-flex items-center gap-1 rounded-full bg-[#264624] px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-white shadow-xs">
                       <Sparkle size={14} weight="fill" />
                       <span>Recommended</span>
                     </div>
@@ -312,7 +312,7 @@ const CompanyPlanView = () => {
                       <button
                         type="button"
                         onClick={() => setSelectedPlanToSwitch(plan)}
-                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#101B82] to-[#1e2eaa] px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:from-[#0d176f] hover:to-[#17258c] transition active:scale-[0.98]"
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#264624] px-4 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-[#1b331a] transition active:scale-[0.98]"
                       >
                         <span>Switch to {plan.name}</span>
                         <ArrowRight size={14} weight="bold" />

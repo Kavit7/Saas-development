@@ -15,7 +15,7 @@ export const decorations = {
   },
   safariStatus: {
     DRAFT: "bg-slate-100 text-slate-700 border-slate-200",
-    CONFIRMED: "bg-indigo-50 text-[#101B82] border-indigo-200/80",
+    CONFIRMED: "bg-[#264624]/10 text-[#264624] border-[#264624]/30",
     CANCELLED: "bg-rose-50 text-rose-700 border-rose-200/80",
     COMPLETED: "bg-emerald-50 text-emerald-700 border-emerald-200/80",
   },

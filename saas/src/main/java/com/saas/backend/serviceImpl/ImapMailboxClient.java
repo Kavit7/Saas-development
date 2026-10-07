@@ -10,6 +10,7 @@ import java.util.Properties;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.saas.backend.dto.EmailAttachmentDto;
 import com.saas.backend.dto.IncomingMailMessage;
 import com.saas.backend.service.MailboxClient;
 
@@ -20,6 +21,7 @@ import jakarta.mail.Session;
 import jakarta.mail.Store;
 import jakarta.mail.search.FlagTerm;
 import jakarta.mail.*;
+import jakarta.mail.internet.MimeUtility;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
@@ -103,6 +105,14 @@ public class ImapMailboxClient implements MailboxClient {
                     "Found {} unread emails",
                     messages.length
             );
+
+            // Fallback: If 0 unread, check the most recent 15 messages in inbox in case emails were already opened/marked read
+            if (messages.length == 0 && inbox.getMessageCount() > 0) {
+                int total = inbox.getMessageCount();
+                int start = Math.max(1, total - 14);
+                messages = inbox.getMessages(start, total);
+                log.info("Checking {} recent messages from inbox", messages.length);
+            }
 
             // 6. Read emails
             for (Message message : messages) {
@@ -206,14 +216,58 @@ public class ImapMailboxClient implements MailboxClient {
                                 )
                         : OffsetDateTime.now();
 
+        List<EmailAttachmentDto> attachments = extractAttachments(message);
+
         return IncomingMailMessage.builder()
                 .messageId(messageId)
                 .from(from)
                 .to(to)
                 .subject(subject)
                 .body(body)
+                .attachments(attachments)
                 .receivedAt(receivedAt)
                 .build();
+    }
+
+    private List<EmailAttachmentDto> extractAttachments(Message message) {
+        List<EmailAttachmentDto> list = new ArrayList<>();
+        try {
+            Object content = message.getContent();
+            if (content instanceof Multipart multipart) {
+                collectAttachments(multipart, list);
+            }
+        } catch (Exception e) {
+            log.warn("Could not extract email attachments: {}", e.getMessage());
+        }
+        return list;
+    }
+
+    private void collectAttachments(Multipart multipart, List<EmailAttachmentDto> list) throws Exception {
+        for (int i = 0; i < multipart.getCount(); i++) {
+            BodyPart part = multipart.getBodyPart(i);
+            String disposition = part.getDisposition();
+            String rawFileName = part.getFileName();
+
+            boolean isAttachment = (disposition != null && (disposition.equalsIgnoreCase(Part.ATTACHMENT) || disposition.equalsIgnoreCase(Part.INLINE)))
+                    || (rawFileName != null && !rawFileName.isBlank());
+
+            if (isAttachment && rawFileName != null && !rawFileName.isBlank()) {
+                String decodedName = MimeUtility.decodeText(rawFileName);
+                String contentType = part.getContentType();
+                try (var is = part.getInputStream()) {
+                    byte[] data = is.readAllBytes();
+                    list.add(EmailAttachmentDto.builder()
+                            .fileName(decodedName)
+                            .contentType(contentType)
+                            .data(data)
+                            .size(data.length)
+                            .build());
+                    log.info("Extracted email attachment '{}' ({} bytes, type: {})", decodedName, data.length, contentType);
+                }
+            } else if (part.getContent() instanceof Multipart nested) {
+                collectAttachments(nested, list);
+            }
+        }
     }
 
     private String getMessageId(

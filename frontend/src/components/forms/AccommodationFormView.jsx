@@ -19,7 +19,7 @@ const AccommodationFormView = ({
           <button
             type="button"
             onClick={onCancel}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-[#101B82] transition active:scale-95 group shadow-2xs"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-[#264624] transition active:scale-95 group shadow-2xs"
           >
             <ArrowLeft size={16} weight="bold" className="transition-transform group-hover:-translate-x-0.5" />
             <span>Cancel & Back</span>
@@ -39,12 +39,12 @@ const AccommodationFormView = ({
 
       {/* Main Form Card */}
       <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-xs">
-        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#101B82] via-indigo-600 to-blue-500" />
+        <div className="absolute top-0 inset-x-0 h-1.5 bg-gradient-to-r from-[#264624] via-[#7A5229] to-[#B8860B]" />
 
         <div className="mb-6 border-b border-slate-100 pb-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-indigo-50 border border-indigo-100 text-[#101B82]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#264624]/10 border border-[#264624]/20 text-[#264624]">
                 <Bed size={26} weight="duotone" />
               </div>
               <div>
@@ -60,12 +60,12 @@ const AccommodationFormView = ({
             {/* Destination & Date Banner */}
             <div className="flex flex-wrap items-center gap-3 rounded-xl bg-slate-50/90 border border-slate-200/80 px-4 py-2.5 text-xs">
               <div className="flex items-center gap-1.5">
-                <span className="inline-flex px-2 py-0.5 rounded bg-[#101B82] text-white font-bold text-[11px]">
+                <span className="inline-flex px-2 py-0.5 rounded bg-[#264624] text-white font-bold text-[11px]">
                   Day {itineraryDay?.dayNumber}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 font-bold text-slate-900">
-                <MapPin size={16} className="text-[#101B82]" weight="fill" />
+                <MapPin size={16} className="text-[#264624]" weight="fill" />
                 <span>{itineraryDay?.destination || "Destination not set"}</span>
               </div>
               <div className="flex items-center gap-1.5 text-slate-500 font-medium">
@@ -86,7 +86,7 @@ const AccommodationFormView = ({
                 required
                 value={reqForm.categoryId}
                 onChange={(e) => setReqForm({ ...reqForm, categoryId: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition duration-150 hover:bg-white focus:border-[#101B82] focus:bg-white focus:ring-2 focus:ring-[#101B82]/15 shadow-2xs"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition duration-150 hover:bg-white focus:border-[#264624] focus:bg-white focus:ring-2 focus:ring-[#264624]/15 shadow-2xs"
               >
                 <option value="">Select Category...</option>
                 {(dynamicOptions.categories || []).map((cat) => (
@@ -105,7 +105,7 @@ const AccommodationFormView = ({
                 required
                 value={reqForm.pricetierId}
                 onChange={(e) => setReqForm({ ...reqForm, pricetierId: e.target.value })}
-                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition duration-150 hover:bg-white focus:border-[#101B82] focus:bg-white focus:ring-2 focus:ring-[#101B82]/15 shadow-2xs"
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition duration-150 hover:bg-white focus:border-[#264624] focus:bg-white focus:ring-2 focus:ring-[#264624]/15 shadow-2xs"
               >
                 <option value="">Select Price Tier...</option>
                 {(dynamicOptions.priceTiers || []).map((tier) => (
@@ -129,7 +129,7 @@ const AccommodationFormView = ({
               onChange={(e) =>
                 setReqForm({ ...reqForm, numberOfrooms: parseInt(e.target.value, 10) || 1 })
               }
-              className="w-full sm:w-48 rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition duration-150 hover:bg-white focus:border-[#101B82] focus:bg-white focus:ring-2 focus:ring-[#101B82]/15 shadow-2xs"
+              className="w-full sm:w-48 rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition duration-150 hover:bg-white focus:border-[#264624] focus:bg-white focus:ring-2 focus:ring-[#264624]/15 shadow-2xs"
             />
           </div>
 
@@ -156,7 +156,7 @@ const AccommodationFormView = ({
                     ],
                   })
                 }
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#101B82] hover:text-[#0c145e] hover:underline"
+                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#264624] hover:text-[#1b331a] hover:underline"
               >
                 <Plus size={14} weight="bold" />
                 <span>Add Another Room Type</span>
@@ -175,7 +175,7 @@ const AccommodationFormView = ({
                         updated[idx].roomType = e.target.value;
                         setReqForm({ ...reqForm, roomRequirements: updated });
                       }}
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 outline-none transition hover:bg-white focus:border-[#101B82] focus:bg-white focus:ring-2 focus:ring-[#101B82]/15"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 outline-none transition hover:bg-white focus:border-[#264624] focus:bg-white focus:ring-2 focus:ring-[#264624]/15"
                     >
                       <option value="">Select Room Type</option>
                       {(dynamicOptions.roomTypes || []).map((rt) => (
@@ -198,7 +198,7 @@ const AccommodationFormView = ({
                         updated[idx].quantity = parseInt(e.target.value, 10) || 1;
                         setReqForm({ ...reqForm, roomRequirements: updated });
                       }}
-                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 outline-none transition hover:bg-white focus:border-[#101B82] focus:bg-white focus:ring-2 focus:ring-[#101B82]/15 text-center font-semibold"
+                      className="w-full rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm text-slate-800 outline-none transition hover:bg-white focus:border-[#264624] focus:bg-white focus:ring-2 focus:ring-[#264624]/15 text-center font-semibold"
                     />
                   </div>
 
@@ -246,7 +246,7 @@ const AccommodationFormView = ({
               placeholder="e.g. Ground floor, interconnected rooms, ocean view, king bed"
               value={reqForm.roomPreferences}
               onChange={(e) => setReqForm({ ...reqForm, roomPreferences: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition hover:bg-white focus:border-[#101B82] focus:bg-white focus:ring-2 focus:ring-[#101B82]/15 shadow-2xs"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition hover:bg-white focus:border-[#264624] focus:bg-white focus:ring-2 focus:ring-[#264624]/15 shadow-2xs"
             />
           </div>
 
@@ -259,7 +259,7 @@ const AccommodationFormView = ({
               placeholder="e.g. Late check-in, honeymoon setup, gluten-free dining"
               value={reqForm.specialRequests}
               onChange={(e) => setReqForm({ ...reqForm, specialRequests: e.target.value })}
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition hover:bg-white focus:border-[#101B82] focus:bg-white focus:ring-2 focus:ring-[#101B82]/15 shadow-2xs"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 placeholder-slate-400 outline-none transition hover:bg-white focus:border-[#264624] focus:bg-white focus:ring-2 focus:ring-[#264624]/15 shadow-2xs"
             />
           </div>
 
@@ -274,7 +274,7 @@ const AccommodationFormView = ({
             <button
               type="submit"
               disabled={loading}
-              className="rounded-xl bg-gradient-to-r from-[#101B82] to-[#1E2EAA] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm hover:shadow hover:from-[#0d176f] hover:to-[#17248e] transition active:scale-[0.98] disabled:opacity-50"
+              className="rounded-xl bg-gradient-to-r from-[#264624] to-[#345c31] px-6 py-2.5 text-xs font-semibold uppercase tracking-wider text-white shadow-sm hover:shadow hover:from-[#1b331a] hover:to-[#264624] transition active:scale-[0.98] disabled:opacity-50"
             >
               {loading ? "Saving..." : "Save Requirement"}
             </button>
