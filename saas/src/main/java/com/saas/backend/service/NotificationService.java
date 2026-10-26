@@ -74,4 +74,14 @@ public interface NotificationService {
      * Marks all notifications for the current user as read.
      */
     void markAllAsRead(Authentication auth);
+
+    /**
+     * Deletes a specific notification.
+     */
+    void deleteNotification(UUID notificationId, Authentication auth);
+
+    /**
+     * Clears all notifications for current user.
+     */
+    void clearAllNotifications(Authentication auth);
 }

@@ -1,5 +1,8 @@
 package com.saas.backend.serviceImpl;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -12,8 +15,9 @@ import com.saas.backend.dto.EmailAnalysisResult;
 import com.saas.backend.dto.EmailAttachmentDto;
 import com.saas.backend.dto.IncomingMailMessage;
 import com.saas.backend.models.AccommodationBooking;
-import com.saas.backend.models.EmailResponseType;
 import com.saas.backend.models.IncomingEmail;
+import com.saas.backend.models.Safari;
+import com.saas.backend.models.User;
 import com.saas.backend.repositories.AccommodationBookingRepository;
 import com.saas.backend.repositories.IncomingEmailRepository;
 import com.saas.backend.service.AccommodationBookingService;
@@ -48,6 +52,15 @@ public class IncomingEmailServiceImpl
 
     private final InvoiceService
             invoiceService;
+
+    private final com.saas.backend.service.EmailService
+            emailService;
+
+    private final com.saas.backend.repositories.UserRepository
+            userRepository;
+
+    @org.springframework.beans.factory.annotation.Value("${app.upload.dir:uploads}")
+    private String uploadBaseDir = "uploads";
 
     @Override
     public void processNewEmails() {
@@ -118,6 +131,7 @@ public class IncomingEmailServiceImpl
                                 bookingService.markForManualReview(booking, mailMsg, analysis.getNotes());
                                 break;
                         }
+                        dispatchLodgeReplyAlerts(booking, mailMsg, analysis);
                         pendingEmail.setProcessed(true);
                         incomingEmailRepository.save(pendingEmail);
                         log.info("Reprocessed previously pending email {} (booking {}) as {}",
@@ -182,6 +196,30 @@ public class IncomingEmailServiceImpl
                         .build()
         );
         incomingEmail.setBooking(booking);
+        if (email.getAttachments() != null && !email.getAttachments().isEmpty()) {
+            incomingEmail.setHasAttachment(true);
+            EmailAttachmentDto first = email.getAttachments().get(0);
+            incomingEmail.setAttachmentFileName(first.getFileName());
+            incomingEmail.setAttachmentFileType(first.getContentType());
+            try {
+                String safeMsgId = (email.getMessageId() != null)
+                        ? email.getMessageId().replaceAll("[^a-zA-Z0-9.-]", "_")
+                        : "msg_" + System.currentTimeMillis();
+                Path attDir = Paths.get(uploadBaseDir, "email-attachments", safeMsgId);
+                Files.createDirectories(attDir);
+                String safeName = (first.getFileName() != null && !first.getFileName().isBlank())
+                        ? first.getFileName().replaceAll("[^a-zA-Z0-9.-]", "_")
+                        : "attachment.pdf";
+                Path attFile = attDir.resolve(safeName);
+                if (first.getData() != null && first.getData().length > 0) {
+                    Files.write(attFile, first.getData());
+                    incomingEmail.setAttachmentFilePath(attFile.toAbsolutePath().toString());
+                    log.info("Persisted email attachment to {}", attFile.toAbsolutePath());
+                }
+            } catch (Exception ex) {
+                log.warn("Failed to persist email attachment to disk: {}", ex.getMessage());
+            }
+        }
         incomingEmailRepository.save(incomingEmail);
 
         // 5. Intelligent AI / Heuristic Analysis
@@ -227,13 +265,46 @@ public class IncomingEmailServiceImpl
         // 6b. Auto-detect and process lodge invoice attachments (PDF / Excel)
         processInvoiceAttachments(booking, email);
 
-        // 7. Mark email as processed
+        // 6c. Dispatch alert email to Sales Person and Reservation Manager
+        dispatchLodgeReplyAlerts(booking, email, analysis);
 
+        // 7. Mark email as processed
         incomingEmail.setProcessed(true);
 
         incomingEmailRepository.save(
                 incomingEmail
         );
+    }
+
+    private void dispatchLodgeReplyAlerts(AccommodationBooking booking, IncomingMailMessage email, EmailAnalysisResult analysis) {
+        if (booking == null) return;
+        try {
+            // 1. Notify Sales Consultant
+            Safari safari = (booking.getAccommodationRequirement() != null)
+                    ? booking.getAccommodationRequirement().getSafari()
+                    : null;
+            User salesPerson = (safari != null) ? safari.getSalesPerson() : null;
+            if (salesPerson != null && salesPerson.getEmail() != null) {
+                emailService.sendLodgeReplyAlert(salesPerson, booking, email, analysis);
+            }
+
+            // 2. Notify Reservation Manager
+            User rm = booking.getReservationManager();
+            if (rm != null && rm.getEmail() != null) {
+                if (salesPerson == null || !rm.getId().equals(salesPerson.getId())) {
+                    emailService.sendLodgeReplyAlert(rm, booking, email, analysis);
+                }
+            } else if (safari != null && safari.getClient() != null && safari.getClient().getCompany() != null) {
+                List<User> companyRms = userRepository.findReservationManagersByCompanyId(safari.getClient().getCompany().getId());
+                for (User companyRm : companyRms) {
+                    if (companyRm.getEmail() != null && (salesPerson == null || !companyRm.getId().equals(salesPerson.getId()))) {
+                        emailService.sendLodgeReplyAlert(companyRm, booking, email, analysis);
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            log.error("Failed to dispatch lodge reply alerts for booking {}: {}", booking.getReferenceNumber(), ex.getMessage());
+        }
     }
 
     private void processInvoiceAttachments(AccommodationBooking booking, IncomingMailMessage email) {
@@ -243,11 +314,15 @@ public class IncomingEmailServiceImpl
 
         for (EmailAttachmentDto att : email.getAttachments()) {
             String name = att.getFileName() != null ? att.getFileName().toLowerCase() : "";
-            boolean isInvoiceDoc = name.endsWith(".pdf") || name.endsWith(".xlsx") || name.endsWith(".xls");
+            String ct = att.getContentType() != null ? att.getContentType().toLowerCase() : "";
+            boolean isInvoiceDoc = name.endsWith(".pdf") || name.endsWith(".xlsx") || name.endsWith(".xls")
+                    || ct.contains("pdf") || ct.contains("spreadsheet") || ct.contains("excel")
+                    || name.contains("invoice") || name.contains("bill") || name.contains("proforma");
+
             if (isInvoiceDoc && att.getData() != null && att.getData().length > 0) {
                 try {
-                    log.info("Found invoice attachment '{}' ({} bytes) in email {} for booking {}",
-                            att.getFileName(), att.getSize(), email.getMessageId(), booking.getReferenceNumber());
+                    log.info("Found invoice attachment '{}' ({} bytes, ct: {}) in email {} for booking {}",
+                            att.getFileName(), att.getSize(), att.getContentType(), email.getMessageId(), booking.getReferenceNumber());
                     invoiceService.processInboundInvoiceAttachment(
                             booking,
                             att.getData(),

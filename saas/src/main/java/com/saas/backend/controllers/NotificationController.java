@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -75,5 +76,28 @@ public class NotificationController {
     public ResponseEntity<Map<String, String>> markAllAsRead(Authentication authentication) {
         notificationService.markAllAsRead(authentication);
         return ResponseEntity.ok(Collections.singletonMap("message", "All notifications marked as read"));
+    }
+
+    /**
+     * Deletes a specific notification.
+     */
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete notification")
+    public ResponseEntity<Map<String, String>> deleteNotification(
+            @PathVariable UUID id,
+            Authentication authentication
+    ) {
+        notificationService.deleteNotification(id, authentication);
+        return ResponseEntity.ok(Collections.singletonMap("message", "Notification deleted successfully"));
+    }
+
+    /**
+     * Clears all notifications for the current user.
+     */
+    @DeleteMapping("/clear-all")
+    @Operation(summary = "Clear all notifications")
+    public ResponseEntity<Map<String, String>> clearAllNotifications(Authentication authentication) {
+        notificationService.clearAllNotifications(authentication);
+        return ResponseEntity.ok(Collections.singletonMap("message", "All notifications cleared successfully"));
     }
 }

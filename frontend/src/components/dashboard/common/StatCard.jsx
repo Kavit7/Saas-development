@@ -21,50 +21,43 @@ const StatCard = ({
   icon,
   trend,
   trendDirection = "up",
-  iconBg = "bg-[#264624]/10",
-  iconColor = "text-[#264624]",
 }) => {
   const isPositive = trendDirection === "up";
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs transition-all hover:shadow-md hover:border-slate-300 group">
-      {/* Decorative top accent line */}
-      <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-slate-100 to-transparent group-hover:via-[#264624] transition-all duration-300" />
-
+    <div className="rounded-xl border border-[#28332C]/10 bg-white p-5 transition-shadow hover:shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-1">
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <span className="text-xs font-medium text-slate-500">
             {title}
           </span>
-          <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-serif-title tracking-tight">
+          <div className="text-2xl font-semibold tracking-tight text-[#28332C]">
             {value}
           </div>
         </div>
 
-        {/* Icon Badge */}
         <div
-          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-slate-100 ${iconBg} ${iconColor} transition-transform group-hover:scale-105 shadow-2xs`}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#EAF1EC] text-[#35634B]"
         >
           {icon}
         </div>
       </div>
 
-      {/* Subtitle & Trend footer */}
       {(subtitle || trend) && (
-        <div className="mt-4 flex items-center gap-2 pt-3 border-t border-slate-100/80 text-xs">
+        <div className="mt-3 flex min-h-5 items-center gap-2 text-xs">
           {trend && (
             <span
-              className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 font-bold ${
+              className={`inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 font-medium ${
                 isPositive
-                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200/80"
-                  : "bg-rose-50 text-rose-700 border border-rose-200/80"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-rose-50 text-rose-700"
               }`}
             >
-              {isPositive ? <ArrowUpRight size={12} weight="bold" /> : <ArrowDownRight size={12} weight="bold" />}
+              {isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
               <span>{trend}</span>
             </span>
           )}
-          {subtitle && <span className="text-slate-500 truncate">{subtitle}</span>}
+          {subtitle && <span className="truncate text-slate-500">{subtitle}</span>}
         </div>
       )}
     </div>

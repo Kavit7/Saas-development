@@ -26,6 +26,8 @@ public class UserResponse {
     private UserStatus status;
     private UUID companyId;
     private String companyName;
+    private Boolean mustChangePassword;
+    private OffsetDateTime passwordExpire;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 

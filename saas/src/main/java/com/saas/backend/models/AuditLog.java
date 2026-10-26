@@ -1,7 +1,10 @@
 package com.saas.backend.models;
+
 import jakarta.persistence.*;
 import lombok.*;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity @Table(name="audit_logs")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -13,8 +16,8 @@ public class AuditLog extends BaseEntity {
     private String action;
     private String entityType;
     private UUID entityId;
-    @Column(columnDefinition="jsonb") private String oldValues;
-    @Column(columnDefinition="jsonb") private String newValues;
+    @JdbcTypeCode(SqlTypes.JSON) @Column(columnDefinition="jsonb") private String oldValues;
+    @JdbcTypeCode(SqlTypes.JSON) @Column(columnDefinition="jsonb") private String newValues;
     private String ipAddress;
     private String userAgent;
 }

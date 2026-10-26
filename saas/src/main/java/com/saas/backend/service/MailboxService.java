@@ -16,4 +16,7 @@ public interface MailboxService {
     InvoiceResponse getInvoiceById(UUID id);
     InvoiceResponse createInvoice(InvoiceCreateRequest request);
     InvoiceResponse updateInvoiceStatus(UUID id, InvoiceStatus status);
+    byte[] getEmailAttachmentBytes(UUID id);
+    String getEmailAttachmentFileName(UUID id);
+    String getEmailAttachmentFileType(UUID id);
 }

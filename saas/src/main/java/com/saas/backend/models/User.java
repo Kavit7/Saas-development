@@ -62,6 +62,9 @@ public class User extends BaseEntity implements UserDetails {
 
     private OffsetDateTime passwordExpire;
 
+    @Builder.Default
+    private Boolean mustChangePassword = false;
+
     @Enumerated(EnumType.STRING)
     private UserStatus status;
 

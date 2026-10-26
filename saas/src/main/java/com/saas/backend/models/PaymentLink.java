@@ -12,6 +12,7 @@ public class PaymentLink extends BaseEntity {
     @Column(nullable=false, unique=true) private String token;
     private BigDecimal amount;
     private String currency;
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     @Column(columnDefinition="jsonb") private String allowedMethods;
     private String status;
     private OffsetDateTime expiresAt;

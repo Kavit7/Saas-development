@@ -27,6 +27,7 @@ public class AccommodationRequirementResponse {
     private UUID pricetierId;
     private String priceTierName;
     private Integer numberOfrooms;
+    private Integer numberOfNights;
     List<RoomRequirementResponse> roomRequirements;
     private String roomPreferences;
     private String specialRequests;

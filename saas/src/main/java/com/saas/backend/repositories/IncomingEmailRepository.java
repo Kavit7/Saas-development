@@ -29,4 +29,23 @@ public interface IncomingEmailRepository extends JpaRepository<IncomingEmail,UUI
     java.util.List<IncomingEmail> findByBookingIdAndCompanyIdOrderByReceivedAtDesc(
            @org.springframework.data.repository.query.Param("bookingId") UUID bookingId,
            @org.springframework.data.repository.query.Param("companyId") UUID companyId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT e FROM IncomingEmail e " +
+           "WHERE e.booking.accommodationRequirement.safari.client.company.id = :companyId " +
+           "AND (e.booking.accommodationRequirement.safari.salesPerson.id = :salesPersonId " +
+           "     OR e.booking.accommodationRequirement.safari.client.salesPerson.id = :salesPersonId) " +
+           "ORDER BY e.receivedAt DESC")
+    java.util.List<IncomingEmail> findBySalesPersonIdAndCompanyIdOrderByReceivedAtDesc(
+           @org.springframework.data.repository.query.Param("salesPersonId") UUID salesPersonId,
+           @org.springframework.data.repository.query.Param("companyId") UUID companyId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT e FROM IncomingEmail e " +
+           "WHERE e.booking.id = :bookingId AND e.booking.accommodationRequirement.safari.client.company.id = :companyId " +
+           "AND (e.booking.accommodationRequirement.safari.salesPerson.id = :salesPersonId " +
+           "     OR e.booking.accommodationRequirement.safari.client.salesPerson.id = :salesPersonId) " +
+           "ORDER BY e.receivedAt DESC")
+    java.util.List<IncomingEmail> findByBookingIdAndSalesPersonIdAndCompanyIdOrderByReceivedAtDesc(
+           @org.springframework.data.repository.query.Param("bookingId") UUID bookingId,
+           @org.springframework.data.repository.query.Param("salesPersonId") UUID salesPersonId,
+           @org.springframework.data.repository.query.Param("companyId") UUID companyId);
 }

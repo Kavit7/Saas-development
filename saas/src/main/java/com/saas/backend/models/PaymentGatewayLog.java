@@ -10,6 +10,7 @@ public class PaymentGatewayLog extends BaseEntity {
     private UUID relatedEntityId;
     @Enumerated(EnumType.STRING) private GatewayProvider gatewayProvider;
     @Enumerated(EnumType.STRING) private GatewayDirection direction;
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
     @Column(columnDefinition="jsonb") private String rawPayload;
     private Integer httpStatus;
     private Boolean signatureVerified;

@@ -19,6 +19,7 @@ public class AccommodationRequirement extends BaseEntity {
         cascade = CascadeType.ALL,
         orphanRemoval = true
   )
+    @Builder.Default
     @JsonManagedReference
     private List<RoomRequirement> rooms = new ArrayList<>();
     private String destination;
@@ -27,6 +28,9 @@ public class AccommodationRequirement extends BaseEntity {
     @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="required_price_tier_id")
     private PriceTier requiredPriceTier;
     private Integer numberOfRooms;
+    @Builder.Default
+    @Column(name="number_of_nights")
+    private Integer numberOfNights = 1;
     @Column(columnDefinition="TEXT") private String roomPreferences;
     @Column(columnDefinition="TEXT") private String specialRequests;
     @Enumerated(EnumType.STRING) private AccomodationRequirmentStatus accomodationRequirmentStatus;

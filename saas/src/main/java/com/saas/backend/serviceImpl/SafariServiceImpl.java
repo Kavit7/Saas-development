@@ -22,6 +22,7 @@ import com.saas.backend.dto.ItineraryDayUpdateRequest;
 import com.saas.backend.dto.ItineraryRequest;
 import com.saas.backend.dto.ItineraryUpdateRequest;
 import com.saas.backend.dto.SafariRequest;
+import com.saas.backend.dto.SafariRescheduleRequest;
 import com.saas.backend.models.Client;
 import com.saas.backend.models.ItineraryDay;
 import com.saas.backend.models.Safari;
@@ -97,6 +98,19 @@ public class SafariServiceImpl implements SafariService {
         Client client = clientRepository.findById(clientId).orElseThrow(() -> new ResourceNotFoundException("Client not found"));
         companyAccessValidator.validate(client.getCompany().getId());
 
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getName() != null) {
+            User currentUser = userRepository.findByEmail(auth.getName()).orElse(null);
+            if (currentUser != null && currentUser.getRole() != null) {
+                String roleName = currentUser.getRole().getName().toUpperCase().replace(" ", "_");
+                if (roleName.contains("SALES")) {
+                    if (client.getSalesPerson() != null && !client.getSalesPerson().getId().equals(currentUser.getId())) {
+                        throw new SecurityException("Security & Access Policy: Sales consultants may only create safaris for their own clients.");
+                    }
+                }
+            }
+        }
+
         if (request.getStartDate() == null || request.getEndDate() == null) {
             throw new IllegalArgumentException("Safari start date and end date are required");
         }
@@ -125,7 +139,7 @@ public class SafariServiceImpl implements SafariService {
 
         User salesPerson = client.getSalesPerson();
         if (salesPerson == null) {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+             auth = SecurityContextHolder.getContext().getAuthentication();
             if (auth != null && auth.isAuthenticated() && !auth.getName().equalsIgnoreCase("anonymousUser")) {
                 salesPerson = userRepository.findByEmail(auth.getName()).orElse(null);
                 if (salesPerson != null && client.getSalesPerson() == null) {
@@ -177,12 +191,30 @@ public class SafariServiceImpl implements SafariService {
         return code.toString();
     }
 
+    private void validateSalesPersonSafariAccess(Safari safari) {
+        if (safari == null) return;
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || auth.getName() == null) return;
+        User user = userRepository.findByEmail(auth.getName()).orElse(null);
+        if (user == null) return;
+
+        String roleName = user.getRole() != null ? user.getRole().getName().toUpperCase().replace(" ", "_") : "";
+        boolean isSalesPerson = roleName.contains("SALES");
+        if (isSalesPerson) {
+            if (safari.getSalesPerson() == null || !safari.getSalesPerson().getId().equals(user.getId())) {
+                throw new SecurityException("Security & Access Policy: Sales consultants may only view or manage their own safaris.");
+            }
+        }
+    }
+
     @Override
     public List<ItineraryDayResponse> getItineraryDaySafari(UUID safariId) {
         Safari safari = safariRepository.findById(safariId).orElseThrow(() -> new ResourceNotFoundException("Safari not found"));
         if (safari.getClient() != null && safari.getClient().getCompany() != null) {
             companyAccessValidator.validate(safari.getClient().getCompany().getId());
         }
+        validateSalesPersonSafariAccess(safari);
+
         List<ItineraryDay> itineraryDays = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safari.getId());
 
         // Self-heal: If days were never generated (e.g. legacy/seeded safaris), generate them automatically now
@@ -201,6 +233,7 @@ public class SafariServiceImpl implements SafariService {
         if (safari.getClient() != null && safari.getClient().getCompany() != null) {
             companyAccessValidator.validate(safari.getClient().getCompany().getId());
         }
+        validateSalesPersonSafariAccess(safari);
 
         for (ItineraryDayUpdateRequest dayRequest : request.getDays()) {
             ItineraryDay day = itineraryDayRepository.findByIdAndSafariId(dayRequest.getDayId(), safariId)
@@ -221,22 +254,72 @@ public class SafariServiceImpl implements SafariService {
         if (safari.getClient() != null && safari.getClient().getCompany() != null) {
             companyAccessValidator.validate(safari.getClient().getCompany().getId());
         }
+        validateSalesPersonSafariAccess(safari);
 
         ItineraryDay day = itineraryDayRepository
                 .findByIdAndSafariId(dayId, safariId)
                 .orElseThrow(() -> new ResourceNotFoundException("Itinerary day not found"));
 
+        List<AccommodationBooking> activeBookings = accommodationBookingRepository.findBySafariId(safariId)
+                .stream()
+                .filter(b -> b.getStatus() != BookingStatus.CANCELLED)
+                .toList();
+
+        // 1. Guard against deleting if a CONFIRMED booking is directly on this day
+        boolean directConfirmed = activeBookings.stream().anyMatch(b ->
+                b.getStatus() == BookingStatus.CONFIRMED &&
+                b.getAccommodationRequirement() != null &&
+                b.getAccommodationRequirement().getItineraryDay() != null &&
+                b.getAccommodationRequirement().getItineraryDay().getId().equals(dayId)
+        );
+        if (directConfirmed) {
+            throw new IllegalStateException("Cannot delete Day " + day.getDayNumber() +
+                    ": A confirmed lodge booking exists on this day. Please cancel or reallocate the lodge booking first.");
+        }
+
+        // 2. Cleanly cancel draft/provisional bookings directly on this day
+        List<AccommodationBooking> directDayBookings = activeBookings.stream()
+                .filter(b -> b.getAccommodationRequirement() != null &&
+                             b.getAccommodationRequirement().getItineraryDay() != null &&
+                             b.getAccommodationRequirement().getItineraryDay().getId().equals(dayId))
+                .toList();
+        for (AccommodationBooking b : directDayBookings) {
+            b.setStatus(BookingStatus.CANCELLED);
+            b.setNotes((b.getNotes() != null ? b.getNotes() + " " : "") + "[Auto-cancelled due to Itinerary Day deletion]");
+            accommodationBookingRepository.save(b);
+        }
+
+        // 3. Delete any requirement directly on this day
+        accommodationRequirementRepository.findByItineraryDayId(dayId)
+                .ifPresent(accommodationRequirementRepository::delete);
+
+        // 4. Remove the day
         itineraryDayRepository.delete(day);
 
-        List<ItineraryDay> days =
-                itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safariId);
-
+        // 5. Renumber remaining days sequentially and smoothly shift their dates
+        List<ItineraryDay> days = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safariId);
         int dayNumber = 1;
         LocalDate date = safari.getStartDate();
 
         for (ItineraryDay itineraryDay : days) {
+            LocalDate oldDate = itineraryDay.getDate();
             itineraryDay.setDayNumber(dayNumber);
             itineraryDay.setDate(date);
+
+            // Resynchronize checkIn/checkOut for requirements on shifted days
+            if (oldDate != null && !oldDate.equals(date)) {
+                long diff = java.time.temporal.ChronoUnit.DAYS.between(oldDate, date);
+                accommodationRequirementRepository.findByItineraryDayId(itineraryDay.getId()).ifPresent(req -> {
+                    List<AccommodationBooking> reqBookings = accommodationBookingRepository.findByAccommodationRequirementId(req.getId());
+                    for (AccommodationBooking b : reqBookings) {
+                        if (b.getStatus() != BookingStatus.CANCELLED) {
+                            if (b.getCheckIn() != null) b.setCheckIn(b.getCheckIn().plusDays(diff));
+                            if (b.getCheckOut() != null) b.setCheckOut(b.getCheckOut().plusDays(diff));
+                            accommodationBookingRepository.save(b);
+                        }
+                    }
+                });
+            }
 
             dayNumber++;
             date = date.plusDays(1);
@@ -244,9 +327,82 @@ public class SafariServiceImpl implements SafariService {
 
         itineraryDayRepository.saveAll(days);
 
-        safari.setEndDate(date.minusDays(1));
+        if (!days.isEmpty()) {
+            safari.setEndDate(date.minusDays(1));
+        }
         safariRepository.save(safari);
         recalculateAndSaveSafariStatus(safari);
+    }
+
+    @Transactional
+    @Override
+    public SafariResponse rescheduleSafari(UUID safariId, SafariRescheduleRequest request) {
+        if (request == null || request.getNewStartDate() == null) {
+            throw new IllegalArgumentException("New safari start date is required");
+        }
+
+        Safari safari = safariRepository.findById(safariId)
+                .orElseThrow(() -> new ResourceNotFoundException("Safari not found: " + safariId));
+
+        if (safari.getClient() != null && safari.getClient().getCompany() != null) {
+            companyAccessValidator.validate(safari.getClient().getCompany().getId());
+        }
+        validateSalesPersonSafariAccess(safari);
+
+        LocalDate oldStart = safari.getStartDate();
+        if (oldStart == null) {
+            safari.setStartDate(request.getNewStartDate());
+            if (safari.getEndDate() == null) {
+                safari.setEndDate(request.getNewStartDate());
+            }
+            safari = safariRepository.save(safari);
+            generateItineraryDay(safari);
+            return mapToSafariResponse(safari);
+        }
+
+        long daysOffset = java.time.temporal.ChronoUnit.DAYS.between(oldStart, request.getNewStartDate());
+        if (daysOffset == 0) {
+            return mapToSafariResponse(safari);
+        }
+
+        // 1. Shift Safari start and end dates
+        safari.setStartDate(request.getNewStartDate());
+        if (safari.getEndDate() != null) {
+            safari.setEndDate(safari.getEndDate().plusDays(daysOffset));
+        }
+        safari = safariRepository.save(safari);
+
+        // 2. Shift all Itinerary Days
+        List<ItineraryDay> days = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safariId);
+        for (ItineraryDay d : days) {
+            if (d.getDate() != null) {
+                d.setDate(d.getDate().plusDays(daysOffset));
+            }
+        }
+        itineraryDayRepository.saveAll(days);
+
+        // 3. Shift all Active Accommodation Bookings Check-In and Check-Out
+        List<AccommodationBooking> bookings = accommodationBookingRepository.findBySafariId(safariId);
+        for (AccommodationBooking b : bookings) {
+            if (b.getStatus() == BookingStatus.CANCELLED) {
+                continue;
+            }
+            if (b.getCheckIn() != null) {
+                b.setCheckIn(b.getCheckIn().plusDays(daysOffset));
+            }
+            if (b.getCheckOut() != null) {
+                b.setCheckOut(b.getCheckOut().plusDays(daysOffset));
+            }
+            String reasonText = (request.getReason() != null && !request.getReason().isBlank())
+                    ? " Reason: " + request.getReason().trim() : "";
+            String auditNote = String.format("[RESCHEDULED on %s by %d day(s).%s]",
+                    LocalDate.now(), daysOffset, reasonText);
+            b.setNotes(b.getNotes() != null && !b.getNotes().isBlank() ? b.getNotes() + " " + auditNote : auditNote);
+            accommodationBookingRepository.save(b);
+        }
+
+        recalculateAndSaveSafariStatus(safari);
+        return mapToSafariResponse(safari);
     }
 
     @Transactional
@@ -257,10 +413,34 @@ public class SafariServiceImpl implements SafariService {
         if (safari.getClient() != null && safari.getClient().getCompany() != null) {
             companyAccessValidator.validate(safari.getClient().getCompany().getId());
         }
+        validateSalesPersonSafariAccess(safari);
 
         ItineraryDay day = itineraryDayRepository
                 .findByIdAndSafariId(dayId, safariId)
                 .orElseThrow(() -> new ResourceNotFoundException("Itinerary day not found"));
+
+        // Data Consistency & ACID Protection:
+        // 1. Prevent changing day date if active bookings exist for this day
+        if (request.getDate() != null && !request.getDate().equals(day.getDate())) {
+            boolean hasBooking = accommodationBookingRepository.findBySafariId(safariId).stream()
+                    .filter(b -> b.getStatus() != com.saas.backend.models.BookingStatus.CANCELLED)
+                    .anyMatch(b -> (b.getAccommodationRequirement() != null && b.getAccommodationRequirement().getItineraryDay() != null && b.getAccommodationRequirement().getItineraryDay().getId().equals(dayId))
+                            || (b.getCheckIn() != null && b.getCheckIn().equals(day.getDate())));
+            if (hasBooking) {
+                throw new IllegalStateException("Security & Booking Policy: Cannot modify date for Day " + day.getDayNumber() +
+                        ". An active lodge booking is already registered for this date. The booking must be rescheduled or cancelled first.");
+            }
+            day.setDate(request.getDate());
+        }
+
+        // 2. Sequential Route Policy: Cannot configure Day N destination if Day N-1 is not configured
+        if (day.getDayNumber() > 1 && request.getDestination() != null && !request.getDestination().trim().isEmpty()) {
+            ItineraryDay prevDay = itineraryDayRepository.findBySafariIdAndDayNumber(safariId, day.getDayNumber() - 1).orElse(null);
+            if (prevDay != null && (prevDay.getDestination() == null || prevDay.getDestination().trim().isEmpty() || prevDay.getDestination().toLowerCase().contains("pending"))) {
+                throw new IllegalStateException("Sequential Route Policy: Please configure Day " + prevDay.getDayNumber() +
+                        " destination before configuring Day " + day.getDayNumber() + ".");
+            }
+        }
 
         if (request.getDestination() != null) {
             day.setDestination(request.getDestination());
@@ -268,12 +448,46 @@ public class SafariServiceImpl implements SafariService {
         if (request.getNotes() != null) {
             day.setNotes(request.getNotes());
         }
-        if (request.getDate() != null) {
-            day.setDate(request.getDate());
-        }
 
         itineraryDayRepository.save(day);
         recalculateAndSaveSafariStatus(safari);
+    }
+
+    @Transactional
+    @Override
+    public ItineraryDayResponse addItineraryDay(UUID safariId) {
+        Safari safari = safariRepository.findById(safariId)
+                .orElseThrow(() -> new ResourceNotFoundException("Safari not found"));
+        if (safari.getClient() != null && safari.getClient().getCompany() != null) {
+            companyAccessValidator.validate(safari.getClient().getCompany().getId());
+        }
+        validateSalesPersonSafariAccess(safari);
+
+        if (safari.getStartDate() == null) {
+            throw new IllegalArgumentException("Cannot add day: Safari start date is missing.");
+        }
+
+        List<ItineraryDay> existingDays = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safariId);
+        int nextDayNum = existingDays.size() + 1;
+        LocalDate nextDate = existingDays.isEmpty()
+                ? safari.getStartDate()
+                : existingDays.get(existingDays.size() - 1).getDate().plusDays(1);
+
+        ItineraryDay newDay = ItineraryDay.builder()
+                .safari(safari)
+                .dayNumber(nextDayNum)
+                .date(nextDate)
+                .destination(null)
+                .build();
+
+        newDay = itineraryDayRepository.save(newDay);
+
+        // Safely extend safari end date to match the newly appended day
+        safari.setEndDate(nextDate);
+        safariRepository.save(safari);
+        recalculateAndSaveSafariStatus(safari);
+
+        return mapToItineraryDayResponse(newDay);
     }
 
     @Override
@@ -355,20 +569,30 @@ public class SafariServiceImpl implements SafariService {
         List<AccommodationBooking> bookings = accommodationBookingRepository.findBySafariId(safari.getId());
 
         boolean allDaysBooked = days.stream().allMatch(day -> {
-            boolean reqCompleted = requirements.stream().anyMatch(r -> 
-                r.getItineraryDay() != null 
-                && r.getItineraryDay().getId().equals(day.getId()) 
-                && (r.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.COMPLETED)
-            );
+            if (day.getDate() == null) return false;
 
-            boolean bookingConfirmed = bookings.stream().anyMatch(b ->
-                b.getStatus() == BookingStatus.CONFIRMED && (
-                    (b.getAccommodationRequirement() != null 
-                     && b.getAccommodationRequirement().getItineraryDay() != null 
-                     && b.getAccommodationRequirement().getItineraryDay().getId().equals(day.getId()))
-                    || (b.getCheckIn() != null && day.getDate() != null && b.getCheckIn().equals(day.getDate()))
-                )
-            );
+            boolean reqCompleted = requirements.stream().anyMatch(r -> {
+                if (r.getAccomodationRequirmentStatus() != AccomodationRequirmentStatus.COMPLETED) return false;
+                if (r.getItineraryDay() != null && r.getItineraryDay().getId().equals(day.getId())) return true;
+                if (r.getItineraryDay() != null && r.getItineraryDay().getDate() != null) {
+                    int n = r.getNumberOfNights() != null && r.getNumberOfNights() > 0 ? r.getNumberOfNights() : 1;
+                    LocalDate start = r.getItineraryDay().getDate();
+                    LocalDate end = start.plusDays(n);
+                    return !day.getDate().isBefore(start) && day.getDate().isBefore(end);
+                }
+                return false;
+            });
+
+            boolean bookingConfirmed = bookings.stream().anyMatch(b -> {
+                if (b.getStatus() != BookingStatus.CONFIRMED) return false;
+                if (b.getCheckIn() != null && b.getCheckOut() != null) {
+                    return !day.getDate().isBefore(b.getCheckIn()) && day.getDate().isBefore(b.getCheckOut());
+                }
+                if (b.getAccommodationRequirement() != null && b.getAccommodationRequirement().getItineraryDay() != null) {
+                    return b.getAccommodationRequirement().getItineraryDay().getId().equals(day.getId());
+                }
+                return b.getCheckIn() != null && b.getCheckIn().equals(day.getDate());
+            });
 
             return reqCompleted || bookingConfirmed;
         });
@@ -393,6 +617,7 @@ public class SafariServiceImpl implements SafariService {
         if (safari.getClient() != null && safari.getClient().getCompany() != null) {
             companyAccessValidator.validate(safari.getClient().getCompany().getId());
         }
+        validateSalesPersonSafariAccess(safari);
 
         if (safari.getStartDate() == null || safari.getEndDate() == null) {
             throw new IllegalArgumentException("Cannot generate itinerary days: Safari start date and end date are required");
@@ -443,6 +668,7 @@ public class SafariServiceImpl implements SafariService {
         if (safari.getClient() != null && safari.getClient().getCompany() != null) {
             companyAccessValidator.validate(safari.getClient().getCompany().getId());
         }
+        validateSalesPersonSafariAccess(safari);
 
         List<ItineraryDay> days = itineraryDayRepository.findBySafariIdOrderByDayNumberAsc(safari.getId());
 
@@ -478,20 +704,30 @@ public class SafariServiceImpl implements SafariService {
             List<AccommodationBooking> bookings = accommodationBookingRepository.findBySafariId(safari.getId());
 
             boolean allDaysBooked = days.stream().allMatch(day -> {
-                boolean reqCompleted = requirements.stream().anyMatch(r -> 
-                    r.getItineraryDay() != null 
-                    && r.getItineraryDay().getId().equals(day.getId()) 
-                    && (r.getAccomodationRequirmentStatus() == AccomodationRequirmentStatus.COMPLETED)
-                );
+                if (day.getDate() == null) return false;
 
-                boolean bookingConfirmed = bookings.stream().anyMatch(b ->
-                    b.getStatus() == BookingStatus.CONFIRMED && (
-                        (b.getAccommodationRequirement() != null 
-                         && b.getAccommodationRequirement().getItineraryDay() != null 
-                         && b.getAccommodationRequirement().getItineraryDay().getId().equals(day.getId()))
-                        || (b.getCheckIn() != null && day.getDate() != null && b.getCheckIn().equals(day.getDate()))
-                    )
-                );
+                boolean reqCompleted = requirements.stream().anyMatch(r -> {
+                    if (r.getAccomodationRequirmentStatus() != AccomodationRequirmentStatus.COMPLETED) return false;
+                    if (r.getItineraryDay() != null && r.getItineraryDay().getId().equals(day.getId())) return true;
+                    if (r.getItineraryDay() != null && r.getItineraryDay().getDate() != null) {
+                        int n = r.getNumberOfNights() != null && r.getNumberOfNights() > 0 ? r.getNumberOfNights() : 1;
+                        LocalDate start = r.getItineraryDay().getDate();
+                        LocalDate end = start.plusDays(n);
+                        return !day.getDate().isBefore(start) && day.getDate().isBefore(end);
+                    }
+                    return false;
+                });
+
+                boolean bookingConfirmed = bookings.stream().anyMatch(b -> {
+                    if (b.getStatus() != BookingStatus.CONFIRMED) return false;
+                    if (b.getCheckIn() != null && b.getCheckOut() != null) {
+                        return !day.getDate().isBefore(b.getCheckIn()) && day.getDate().isBefore(b.getCheckOut());
+                    }
+                    if (b.getAccommodationRequirement() != null && b.getAccommodationRequirement().getItineraryDay() != null) {
+                        return b.getAccommodationRequirement().getItineraryDay().getId().equals(day.getId());
+                    }
+                    return b.getCheckIn() != null && b.getCheckIn().equals(day.getDate());
+                });
 
                 return reqCompleted || bookingConfirmed;
             });

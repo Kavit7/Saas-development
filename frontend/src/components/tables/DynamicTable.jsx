@@ -8,6 +8,9 @@ const DynamicTable = ({
   actions = [],
   permissions = {},
   onAction = () => {},
+  sortField,
+  sortDirection,
+  onSort,
 }) => {
   const { can } = useAuth();
   const safeFields = Array.isArray(fields)
@@ -22,13 +25,13 @@ const DynamicTable = ({
   const getActionClass = (actionKey) => {
     switch (actionKey) {
       case "view":
-        return "bg-[#264624] text-white hover:bg-[#1b331a] shadow-2xs";
+        return "bg-[#35634B] text-white hover:bg-[#284C39]";
       case "update":
-        return "bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200";
+        return "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50";
       case "delete":
-        return "bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200";
+        return "border border-rose-200 bg-white text-rose-700 hover:bg-rose-50";
       default:
-        return "bg-slate-100 text-slate-700 hover:bg-slate-200";
+        return "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50";
     }
   };
 
@@ -38,27 +41,27 @@ const DynamicTable = ({
     }
 
     if (!field?.decorate) {
-      return <span className="text-slate-800 font-medium text-[13px]">{String(value)}</span>;
+      return <span className="text-[13px] text-slate-700">{String(value)}</span>;
     }
 
     const style = decorations[field.decorate]?.[value];
 
     if (!style) {
-      return <span className="text-slate-800 font-medium text-[13px]">{String(value)}</span>;
+      return <span className="text-[13px] text-slate-700">{String(value)}</span>;
     }
 
     return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold tracking-wide border shadow-2xs ${style}`}>
+      <span className={`inline-flex items-center rounded-md border px-2 py-1 text-[11px] font-medium ${style}`}>
         {value}
       </span>
     );
   };
 
   return (
-    <div className="w-full overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xs">
+    <div className="w-full overflow-hidden rounded-xl border border-[#28332C]/10 bg-white">
       {title && (
-        <div className="border-b border-slate-100 px-5 py-4">
-          <h2 className="text-lg font-bold text-[#264624] tracking-tight font-title">
+        <div className="border-b border-[#28332C]/10 px-5 py-4">
+          <h2 className="text-base font-semibold tracking-tight text-[#28332C]">
             {title}
           </h2>
         </div>
@@ -66,25 +69,38 @@ const DynamicTable = ({
 
       <div className="overflow-x-auto">
         <table className="min-w-[720px] w-full border-collapse text-left text-sm font-sans">
-          <thead className="bg-slate-50/75 border-b border-slate-200/80">
+          <thead className="border-b border-[#28332C]/10 bg-[#F7F8F6]">
             <tr>
-              {safeFields.map((field) => (
-                <th
-                  key={field.name}
-                  className="whitespace-nowrap px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500"
-                >
-                  {field.label}
-                </th>
-              ))}
+              {safeFields.map((field) => {
+                const isSorted = sortField === field.name || (field.name === "firstName" && sortField === "name");
+                return (
+                  <th
+                    key={field.name}
+                    onClick={() => onSort && onSort(field.name)}
+                    className={`whitespace-nowrap px-4 py-3 text-left text-[11px] font-medium text-slate-500 ${
+                      onSort ? "cursor-pointer hover:text-slate-800 transition select-none" : ""
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>{field.label}</span>
+                      {isSorted && (
+                        <span className="text-[#35634B] font-semibold text-xs">
+                          {sortDirection?.toLowerCase() === "desc" ? "↓" : "↑"}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                );
+              })}
               {visibleActions.length > 0 && (
-                <th className="whitespace-nowrap px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <th className="whitespace-nowrap px-4 py-3 text-left text-[11px] font-medium text-slate-500">
                   Actions
                 </th>
               )}
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#28332C]/[0.06]">
             {safeItems.length === 0 ? (
               <tr>
                 <td
@@ -101,26 +117,26 @@ const DynamicTable = ({
               safeItems.map((item) => (
                 <tr
                   key={item.id ?? item._id ?? JSON.stringify(item)}
-                  className="hover:bg-slate-50/60 transition-colors"
+                  className="transition-colors hover:bg-[#F8FAF8]"
                 >
                   {safeFields.map((field) => (
                     <td
                       key={`${item.id ?? item._id ?? JSON.stringify(item)}-${field.name}`}
-                      className="px-4 py-3.5 align-middle text-slate-700"
+                      className="px-4 py-3 align-middle text-slate-700"
                     >
                       {renderCell(item[field.name], field)}
                     </td>
                   ))}
 
                   {visibleActions.length > 0 && (
-                    <td className="px-4 py-3.5 align-middle">
-                      <div className="flex flex-wrap items-center gap-1.5">
+                    <td className="px-4 py-3 align-middle">
+                      <div className="flex flex-wrap items-center gap-1">
                         {visibleActions.map((action) => (
                           <button
                             key={action.key}
                             type="button"
                             onClick={() => onAction(action.key, item)}
-                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition active:scale-95 ${getActionClass(action.key)}`}
+                            className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#35634B] ${getActionClass(action.key)}`}
                           >
                             {action.label || action.key}
                           </button>

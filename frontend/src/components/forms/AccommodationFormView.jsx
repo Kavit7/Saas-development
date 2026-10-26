@@ -117,20 +117,43 @@ const AccommodationFormView = ({
             </div>
           </div>
 
-          <div>
-            <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
-              Total Number of Rooms <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="number"
-              min="1"
-              required
-              value={reqForm.numberOfrooms}
-              onChange={(e) =>
-                setReqForm({ ...reqForm, numberOfrooms: parseInt(e.target.value, 10) || 1 })
-              }
-              className="w-full sm:w-48 rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition duration-150 hover:bg-white focus:border-[#264624] focus:bg-white focus:ring-2 focus:ring-[#264624]/15 shadow-2xs"
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
+                Total Number of Rooms <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={reqForm.numberOfrooms}
+                onChange={(e) =>
+                  setReqForm({ ...reqForm, numberOfrooms: parseInt(e.target.value, 10) || 1 })
+                }
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition duration-150 hover:bg-white focus:border-[#264624] focus:bg-white focus:ring-2 focus:ring-[#264624]/15 shadow-2xs"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">
+                Duration / Number of Nights <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="number"
+                min="1"
+                required
+                value={reqForm.numberOfNights ?? 1}
+                onChange={(e) =>
+                  setReqForm({ ...reqForm, numberOfNights: Math.max(1, parseInt(e.target.value, 10) || 1) })
+                }
+                className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm text-slate-800 outline-none transition duration-150 hover:bg-white focus:border-[#264624] focus:bg-white focus:ring-2 focus:ring-[#264624]/15 shadow-2xs"
+              />
+              <p className="mt-1.5 text-[11px] text-slate-500">
+                {(reqForm.numberOfNights || 1) > 1
+                  ? `Covers ${reqForm.numberOfNights} consecutive nights under this single requirement.`
+                  : "Single night stay (1 night)."}
+              </p>
+            </div>
           </div>
 
           {/* Room Requirements Breakdown */}

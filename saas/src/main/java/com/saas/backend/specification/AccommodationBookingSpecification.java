@@ -20,6 +20,16 @@ public class AccommodationBookingSpecification {
         );
     }
 
+    public static Specification<AccommodationBooking> hasSalesPerson(UUID salesPersonId) {
+        return (root, query, cb) -> cb.equal(
+            root.get("accommodationRequirement")
+                .get("safari")
+                .get("salesPerson")
+                .get("id"),
+            salesPersonId
+        );
+    }
+
     public static Specification<AccommodationBooking> hasStatus(BookingStatus status) {
         return (root, query, cb) -> cb.equal(root.get("status"), status);
     }

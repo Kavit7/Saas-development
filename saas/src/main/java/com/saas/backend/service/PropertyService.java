@@ -14,7 +14,10 @@ import com.saas.backend.response.TagResponse;
 public interface PropertyService {
     
     PropertyResponse createProperty(PropertyRequest request);
-    Page<PropertyResponse> getAllProperty(int page, int size, String sortBy, String direction, String search, VerificationStatus status);
+    Page<PropertyResponse> getAllProperty(int page, int size, String sortBy, String direction, String search, VerificationStatus status, String tag, UUID tagId);
+    default Page<PropertyResponse> getAllProperty(int page, int size, String sortBy, String direction, String search, VerificationStatus status) {
+        return getAllProperty(page, size, sortBy, direction, search, status, null, null);
+    }
     PropertyResponse getPropertyById(UUID propId);
     PropertyResponse UpdateProperty(UUID propId, PropertyRequest request);
     void PropertyVerification(UUID propId);
