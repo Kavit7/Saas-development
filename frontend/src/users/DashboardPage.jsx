@@ -132,7 +132,7 @@ const DashboardPage = () => {
           <button
             type="button"
             onClick={fetchDashboardStats}
-            className="inline-flex items-center gap-1.5 px-3 py-1 font-semibold rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 transition active:scale-95 shrink-0"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-amber-100 px-3 py-1.5 text-xs font-medium text-amber-900 transition hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-700"
           >
             <ArrowsClockwise size={13} weight="bold" />
             Retry

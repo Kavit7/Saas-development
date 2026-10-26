@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.saas.backend.dto.ItineraryRequest;
 import com.saas.backend.dto.ItineraryUpdateRequest;
 import com.saas.backend.dto.SafariRequest;
+import com.saas.backend.dto.SafariRescheduleRequest;
 import com.saas.backend.models.SafariStatus;
 import com.saas.backend.response.ItineraryDayResponse;
 import com.saas.backend.response.SafariResponse;
@@ -97,6 +98,15 @@ public class SafariController {
         );
     }
 
+    @PostMapping("/{safariId}/add-day")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','SUPER_ADMIN')")
+    public ResponseEntity<?> addItineraryDay(@PathVariable UUID safariId) {
+        ItineraryDayResponse day = safariServiceImpl.addItineraryDay(safariId);
+        return ResponseEntity.ok(
+                Map.of("message", "Itinerary day successfully appended to safari", "data", day)
+        );
+    }
+
     @PatchMapping("/{safariId}/status")
     @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
     public ResponseEntity<?> updateSafariStatus(
@@ -105,6 +115,17 @@ public class SafariController {
         SafariResponse updatedSafari = safariServiceImpl.updateSafariStatus(safariId, status);
         return ResponseEntity.ok(
                 Map.of("message", "Safari status updated to " + status, "data", updatedSafari)
+        );
+    }
+
+    @PutMapping("/{safariId}/reschedule")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
+    public ResponseEntity<?> rescheduleSafari(
+            @PathVariable UUID safariId,
+            @RequestBody SafariRescheduleRequest request) {
+        SafariResponse updatedSafari = safariServiceImpl.rescheduleSafari(safariId, request);
+        return ResponseEntity.ok(
+                Map.of("message", "Safari schedule successfully updated and synchronized", "data", updatedSafari)
         );
     }
 

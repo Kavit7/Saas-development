@@ -213,21 +213,50 @@ public class PropertyServiceImpl implements PropertyService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PropertyResponse> getAllProperty(int page, int size, String sortBy, String direction, String search, VerificationStatus status) {
-        Sort sort = direction.equalsIgnoreCase("desc") ?
-                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-         
-        Pageable pageable = PageRequest.of(page, size, sort);
+    public Page<PropertyResponse> getAllProperty(int page, int size, String sortBy, String direction, String search, VerificationStatus status, String tag, UUID tagId) {
+        String safeSortBy;
+        if (sortBy == null || sortBy.isBlank()) {
+            safeSortBy = "name";
+        } else {
+            String lower = sortBy.toLowerCase().trim();
+            if (lower.equals("name")) {
+                safeSortBy = "name";
+            } else if (lower.equals("location")) {
+                safeSortBy = "location";
+            } else if (lower.equals("region")) {
+                safeSortBy = "region";
+            } else if (lower.equals("country")) {
+                safeSortBy = "country";
+            } else if (lower.equals("status") || lower.equals("verificationstatus")) {
+                safeSortBy = "verificationStatus";
+            } else if (lower.equals("createdat") || lower.equals("created_at")) {
+                safeSortBy = "createdAt";
+            } else {
+                safeSortBy = "name";
+            }
+        }
+
+        Sort sort = direction != null && direction.equalsIgnoreCase("desc") ?
+                Sort.by(safeSortBy).descending() : Sort.by(safeSortBy).ascending();
+
+        int safePage = Math.max(page, 0);
+        int safeSize = (size <= 0) ? 20 : size;
+        Pageable pageable = PageRequest.of(safePage, safeSize, sort);
 
         Specification<Property> specification = (root, query, cb) -> cb.conjunction();
-        
+
         if (status != null) {
             specification = specification.and(PropertySpecification.hasStatus(status));
         }
-        
+
         if (search != null && !search.isBlank()) {
             specification = specification.and(PropertySpecification.hasSearch(search));
         }
+
+        if ((tag != null && !tag.isBlank()) || tagId != null) {
+            specification = specification.and(PropertySpecification.hasTag(tag, tagId));
+        }
+
         return propertyRepository.findAll(specification, pageable).map(this::mapToResponse);
     }
 

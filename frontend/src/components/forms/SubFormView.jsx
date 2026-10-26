@@ -143,6 +143,19 @@ const SubFormView = ({
           </div>
         </div>
 
+        {type === "itineraryDay" && initialValues?._autoSuggested && (
+          <div className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 text-xs text-emerald-900 flex items-start gap-2.5 shadow-2xs">
+            <span className="text-base leading-none">💡</span>
+            <div>
+              <span className="font-bold">Circuit Continuation Auto-Fill: </span>
+              <span>
+                Destination was pre-filled automatically from Day {initialValues._prevDayNumber} (
+                <strong>{initialValues._prevDestination}</strong>) based on itinerary continuity. Keep as is if staying in this circuit or customize for a new park.
+              </span>
+            </div>
+          </div>
+        )}
+
         <DynamicForm
           fields={getFields()}
           initialValues={initialValues}

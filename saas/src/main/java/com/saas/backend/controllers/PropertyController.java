@@ -61,7 +61,7 @@ public class PropertyController {
             @RequestParam(defaultValue = "0")
             int page,
 
-            @RequestParam(defaultValue = "10")
+            @RequestParam(defaultValue = "20")
             int size,
 
             @RequestParam(defaultValue = "name")
@@ -74,7 +74,13 @@ public class PropertyController {
             String search,
 
             @RequestParam(required = false)
-            VerificationStatus status) {
+            VerificationStatus status,
+
+            @RequestParam(required = false)
+            String tag,
+
+            @RequestParam(required = false)
+            UUID tagId) {
 
         Page<PropertyResponse> properties =
                 propertyService.getAllProperty(
@@ -83,7 +89,9 @@ public class PropertyController {
                         sortBy,
                         direction,
                         search,
-                        status
+                        status,
+                        tag,
+                        tagId
                 );
 
         return ResponseEntity.ok(properties);

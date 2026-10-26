@@ -1,0 +1,1815 @@
+COMPLETE SYSTEM REQUIREMENTS
+DOCUMENT (UPDATED)
+Safari Sales OS - Email-First Version
+Your complete system blueprint - optimized for email-based workflow
+
+TABLE OF CONTENTS
+1. Core Problem Statement
+2. User Roles & Permissions
+3. Core Functional Requirements
+4. Accommodation Management
+5. Invoice & Payment Tracking
+6. Notification System
+7. Smart Features & Intelligence
+8. Offline & Mobile Requirements
+9. Collaborative & Community Features
+10.
+Financial Reconciliation
+11.
+Reporting & Handover
+12.
+Monetization Strategy
+13.
+Technical Requirements
+14.
+Implementation Roadmap
+15.
+Your "Outstanding System" Checklist
+
+1. CORE PROBLEM STATEMENT
+The Problem You're Solving
+As a sales person in the tourism industry:
+
+
+
+
+
+
+
+
+
+
+You book safaris for clients
+Reservation manager books accommodations
+You receive multiple invoices (one per accommodation)
+Each invoice has an expiration date
+With many clients, you can't remember all deadlines
+Missing a payment means accommodation cancels
+Reservation manager can't track for entire sales team
+Accommodation requests sometimes get missed or forgotten
+No system to track what's confirmed vs. what's missing
+
+Vision
+A system that:
+
+
+
+
+
+
+
+
+Tracks all invoice deadlines and reminds you 3 days before
+Creates client files with invoices and special requirements
+Tracks dietary restrictions and accommodation needs
+Helps you remember what you've booked vs. what's missing
+Works for your whole team
+Can eventually be sold to other tour companies
+
+2. USER ROLES & PERMISSIONS
+2.1 Sales Person
+Primary Users: Sales personnel
+Permissions:
+
+
+
+
+
+
+
+
+
+View ONLY their own clients
+Receive individual reminders for their clients (via email)
+Add new accommodations to the system
+Create peer tags (similar lodges)
+Upload client requirements
+View invoice statuses
+Request alternatives from RM
+Access offline client files (via web app)
+Cannot: See other sales people's clients (unless shared)
+
+2.2 Reservation Manager
+Primary User: The person who books accommodations
+Permissions:
+
+
+
+
+
+
+
+View ALL clients (across all sales people)
+Receive GROUPED reminders (all expiring together, organized by sales person) via email
+Update accommodation statuses
+Mark when requests are sent to properties
+Update when properties respond
+Verify new properties added by sales team
+
+2.3 Admin (You)
+Primary User: System owner/manager
+Permissions:
+ Everything above
+ Verify new properties for global directory
+
+
+
+
+
+
+Manage user accounts
+View analytics
+Configure notification settings
+Manage subscription tiers
+
+2.4 Guide (Limited Access)
+Permissions:
+ View assigned client briefs (read-only)
+ Cannot modify any data
+ Access via shareable link or PDF only
+
+3. CORE FUNCTIONAL REQUIREMENTS
+3.1 Client File Management
+Each client file must contain:
+
+
+
+
+
+
+
+
+
+
+
+Basic info (name, contact, nationality, language)
+Safari dates (start and end)
+Number of passengers
+Guest list with individual details
+Dietary requirements (per guest)
+Special occasions (birthday, anniversary, honeymoon)
+Medical needs or mobility issues
+Room preferences (ground floor, adjoining, etc.)
+Passport/visa details with expiry alerts
+Flight details (arrival/departure)
+
+3.2 Booking Management
+For each booking:
+
+
+
+
+
+
+
+Link to client
+Safari dates
+Required accommodations (list by night)
+Secured accommodations (what's actually booked)
+Status tracking per accommodation
+Alternative suggestions if gaps exist
+
+3.3 The "Required vs. Secured" Comparison
+Critical Feature: Compare what client needs vs. what's booked
+
+Functionality:
+
+
+
+
+
+
+
+Input all required accommodations per night
+Track which are secured (confirmed invoice)
+Auto-detect gaps: "Client needs 4 nights, only 3 booked"
+Flag completely missing nights
+Flag pending confirmations (>48hrs no response)
+Alert if gap in middle (e.g., night 1-2 booked, night 3 missing, night 4 booked)
+
+4. ACCOMMODATION MANAGEMENT
+4.1 Accommodation Statuses (4 States)
+Status
+
+Definition
+
+Provisional Request sent, no invoice yet
+
+Color
+
+Action
+
+Yellow
+
+Follow up with
+Reservation
+Managers
+
+Invoiced
+
+Invoice received, awaiting payment Blue
+
+Process payment
+
+Paid
+
+Payment made, waiting confirmation Green
+
+Verify with lodge
+
+Confirmed Fully secured
+
+Dark Green No action needed
+
+4.2 Adding New Accommodations
+Dynamic Entry: Users can add properties not in system
+Required Fields:
+
+
+
+
+
+
+
+Property Name
+Location
+Category (Luxury/Mid/Budget/etc.) - can create new
+Price range - can create new
+Contact info (optional)
+Website (optional)
+Smart Tagging on Add:
+When adding new property, system asks:
+"Which existing lodges is this similar to?"
+User selects 2-3 peer lodges.
+Example: Adding Olakira Camp, tag as similar to Sayari and Nomad Lamai
+Result: New property immediately available in suggestions
+
+4.3 Accommodation Attributes
+For smarter matching, track:
+Categories:
+
+
+
+
+
+
+
+Luxury Tented Camp
+Premium Lodge
+Mid-Range Lodge
+Budget Camp
+Eco Pod (new category example)
+Farm Stay (new category example)
+Amenities:
+
+
+
+
+
+
+
+
+
+
+
+Pool
+Spa
+WiFi
+River view
+Family-friendly
+Honeymoon suite
+Photography hides
+Walking safaris
+Birding focused
+Vibe Tags:
+
+
+
+
+
+
+
+
+
+Romantic
+Adventure
+Relaxation
+Photography
+Solo traveler friendly
+Couples only
+Family with kids
+
+5. INVOICE & PAYMENT TRACKING
+5.1 Invoice Management
+Per accommodation, track:
+
+
+
+
+
+
+
+Invoice PDF upload
+Invoice amount
+Due date
+Status (Provisional/Invoiced/Paid/Confirmed)
+Payment receipt (when paid)
+Confirmation number (when confirmed)
+
+5.2 Payment Matching (Critical Reconciliation)
+Problem: Sometimes you pay for 4 lodges but Reservation Manager only records 3
+Solution: When uploading payment receipt, system asks:
+"Which lodge invoices does this payment cover?"
+Interface:
+
+
+
+
+
+Shows all unpaid invoices for that client
+User selects which invoices this payment covers
+System tracks partial payments
+Alerts if any invoice remains unpaid
+
+The "Nightmare Prevention" Alert:
+⚠️ WARNING: Incomplete Payment!
+Client: John Smith
+✅ PAID: Serena Hotel, Governors' Camp
+❌ UNPAID: Mara Serena (starts in 4 days!)
+
+5.3 Invoice Deadline Reminders
+ Default: 3 days before expiry
+ Configurable per user
+ Escalation if no action:
+ Day -3: Initial reminder
+ Day -1: Urgent reminder
+ Day 0: OVERDUE alert
+
+6. NOTIFICATION SYSTEM
+6.1 Email-First Approach
+Principle: All notifications sent via email with clear, actionable content
+Email Design Requirements:
+
+
+
+
+
+Mobile-friendly (most read on phones)
+Clear subject line with emoji for quick recognition
+Action buttons/links to take immediate action
+Color-coded urgency
+
+ All information visible without scrolling if possible
+
+6.2 Individual Sales Person Email Notifications
+Subject Line Format:
+⏰ [URGENT] Safari Payment Reminder: Client X - 3 days left
+🏕️ [REMINDER] Pending Confirmation: Client Y - Lodge Z
+⚠️ [ACTION NEEDED] Missing Accommodation: Client X
+
+Email Template for Deadline Reminder:
+┌─────────────────────────────────────────────────┐
+│
+
+SAFARI SALES OS
+
+│
+
+├─────────────────────────────────────────────────┤
+│
+│
+
+│
+Hi Sarah,
+
+│
+
+│
+│
+
+│
+You have 2 accommodations expiring soon.
+
+│
+
+│
+
+│
+
+│
+
+┌─────────────────────────────────────────────┐│
+
+│
+
+│
+
+│
+
+├─────────────────────────────────────────────┤│
+
+│
+
+│
+
+Client: John Smith
+
+│
+
+│
+
+Lodge: Serena Hotel
+
+││
+
+│
+
+│
+
+Amount: $550 • Due: March 15, 2026
+
+││
+
+│
+
+│
+
+Status: PROVISIONAL
+
+│
+
+│
+
+│
+
+│
+
+│
+
+└─────────────────────────────────────────────┘│
+
+│
+
+│
+
+│
+
+┌─────────────────────────────────────────────┐│
+
+│
+
+│
+
+Client: John Smith
+
+││
+
+│
+
+│
+
+Lodge: Mara Serena
+
+││
+
+│
+
+│
+
+Amount: $495 • Due: March 15, 2026
+
+││
+
+│
+
+│
+
+Status: INVOICED
+
+││
+
+│
+
+│
+
+│
+
+│
+
+│
+
+└─────────────────────────────────────────────┘│
+
+│
+
+│
+
+│
+
+⚠️ EXPIRING IN 3 DAYS
+
+││
+││
+
+││
+││
+
+[VIEW INVOICE] [CONTACT RM] [MARK PAID]
+
+││
+
+││
+[VIEW INVOICE] [PAY NOW] [CONTACT RM]
+
+[VIEW ALL MY CLIENTS]
+
+││
+
+│
+
+│
+
+│
+
+│
+
+───────────────────────────────────────────── ││
+
+│
+
+Safari Sales OS • Your sales assistant
+
+││
+
+└─────────────────────────────────────────────────┘
+
+6.3 Reservation Manager Email Notifications (Grouped)
+Subject Line:
+📊 Daily Deadline Summary: 5 accommodations expiring across 3 sales people
+
+Email Template:
+┌─────────────────────────────────────────────────┐
+│
+
+RESERVATION MANAGER SUMMARY
+
+│
+
+│
+
+March 12, 2026
+
+│
+
+├─────────────────────────────────────────────────┤
+│
+
+│
+
+│
+
+TOTAL EXPIRING: 5 accommodations
+
+│
+
+│
+
+Sales people affected: 3
+
+│
+
+│
+
+│
+
+│
+
+───────────────────────────────────────────── ││
+
+│
+
+│
+
+│
+
+👤 SARAH (2 accommodations)
+
+│
+
+│
+
+┌─────────────────────────────────────────────┐│
+
+│
+
+│ • John Smith - Serena Hotel (Provisional)
+
+││
+
+│
+
+│
+
+Due: March 15 • $550
+
+││
+
+│
+
+│
+
+[VIEW CLIENT] [CONTACT SARAH]
+
+│
+
+│
+
+││
+
+│
+
+│ • John Smith - Mara Serena (Invoiced)
+
+││
+
+│
+
+│
+
+Due: March 15 • $495
+
+││
+
+│
+
+│
+
+[VIEW CLIENT] [CONTACT SARAH]
+
+│
+
+└─────────────────────────────────────────────┘│
+
+│
+
+│
+
+││
+
+││
+
+│
+
+👤 MIKE (1 accommodation)
+
+│
+
+┌─────────────────────────────────────────────┐│
+
+│
+
+│ • Emma Wilson - Governors' Camp (Provisional)
+
+││
+
+│
+
+│
+
+Due: March 15 • $500
+
+││
+
+│
+
+│
+
+[VIEW CLIENT] [CONTACT MIKE]
+
+││
+
+│
+
+└─────────────────────────────────────────────┘│
+
+│
+
+│
+
+│
+
+👤 JANE (2 accommodations)
+
+│
+
+│
+
+│
+
+┌─────────────────────────────────────────────┐│
+
+│
+
+│ • David Chen - Sarova Lodge (Provisional)
+
+││
+
+│
+
+│
+
+││
+
+│
+
+│
+
+│
+
+│ • David Chen - Mara Intrepids (Provisional)
+
+│
+
+│
+
+Due: March 15 • $480
+
+││
+
+│
+
+│
+
+[VIEW CLIENT] [CONTACT JANE]
+
+││
+
+│
+
+└─────────────────────────────────────────────┘│
+
+│
+
+│
+
+│
+
+Due: March 15 • $450
+
+││
+││
+
+[VIEW FULL DASHBOARD] [DOWNLOAD REPORT]
+
+│
+
+│
+
+│
+
+└─────────────────────────────────────────────────┘
+
+6.4 Notification Triggers
+Trigger
+
+Timing
+
+Invoice expiring
+
+3 days before
+
+Invoice expiring
+
+1 day before
+
+Missing night detected
+
+Recipients
+Sales person +
+Reservation Manager
+
+Email Priority
+Normal
+
+Sales person +
+
+High (URGENT
+
+Reservation Manager
+
+tag)
+
+Immediate
+
+Sales person
+
+High
+
+Pending >48hrs
+
+After 48 hours
+
+Sales person
+
+Normal
+
+Payment gap
+
+Immediate
+
+New alternative
+suggested
+Daily summary
+Weekly forecast
+
+Sales person +
+Reservation Manager
+
+High
+
+When available
+
+Sales person
+
+Low
+
+Every morning
+
+Reservation Manager
+
+Normal
+
+Monday
+
+All sales +
+
+morning
+
+Reservation Manager
+
+6.5 Email Action Links
+Each email must include clickable links that:
+ Take user directly to relevant page (no login if possible via magic links)
+ Pre-fill actions (e.g., "Mark as Paid" with one click)
+
+Normal
+
+ Open in mobile browser (optimized for phone)
+
+7. SMART FEATURES & INTELLIGENCE
+7.1 Peer Group System
+Purpose: When one lodge is full, suggest similar alternatives
+How it works:
+
+
+
+
+
+Properties grouped by: Location + Category + Price Tier
+Example: "Luxury Tented Camps - Masai Mara"
+User can manually tag peer relationships
+System learns from usage patterns
+Peer Tagging:
+When adding property, user selects 2-3 peers
+"Olakira Camp is similar to Sayari and Nomad Lamai"
+
+7.2 Vibe Matching (Agent Wisdom)
+Purpose: Capture experienced agents' knowledge for junior agents
+Wisdom Tags:
+
+
+
+
+
+Occasion: Honeymoon, Anniversary, Birthday, Proposal
+Traveler type: Solo, Couple, Family, Friends, Multi-gen
+Vibe: Romantic, Adventure, Relaxation, Photography, Birding
+Special needs: Vegan-friendly, Mobility accessible, Quiet
+How it works:
+When suggesting alternatives, system considers client's vibe:
+"This client is a honeymoon couple. Olakira Camp is 96% match (tagged
+'Romantic' by 12 agents)"
+
+7.3 Missing Accommodation Detection
+Automatic Checks:
+
+
+
+
+
+
+Compare required nights vs. secured nights
+Flag completely missing nights
+Flag pending >48 hours
+Flag gaps in middle of itinerary
+Alert Examples:
+example 1:
+
+CRITICAL: Client John Smith has NO booking for March 17!
+Required: 4 nights, Secured: 3 nights
+Missing: Night 3 (Masai Mara)
+example 2:
+
+MEDIUM: Client Emma Wilson pending >48hrs
+Property: Governors' Camp (requested Mar 10, no response)
+Follow up with Reservation Manager
+
+7.4 Alternative Suggestions
+When property unavailable, system suggests:
+
+1. Direct peers (tagged as similar)
+2. Same category + location (algorithm)
+3. Vibe-matched (based on client preferences)
+Ranking Factors:
+
+
+
+
+
+
+Direct peer tags (highest confidence)
+Historical usage (often chosen as alternative)
+Vibe match score
+Price similarity
+Availability likelihood
+
+Suggestion Interface:
+
+┌─────────────────────────────────────────────────┐
+│
+
+🔍 ALTERNATIVE SUGGESTIONS
+
+│
+
+│
+
+Client: Sarah & David (Honeymoon)
+
+│
+
+│
+
+Originally wanted: Sayari Camp (FULL)
+
+│
+
+├─────────────────────────────────────────────────┤
+│
+│
+
+│
+★★★★☆ Olakira Camp (96% match)
+
+│
+
+│
+
+✓ Same luxury category
+
+│
+
+│
+
+✓ Perfect for honeymoon (tagged by 12 agents)
+
+│
+
+│
+
+✓ Available on your dates
+
+│
+
+│
+
+[REQUEST FROM RM] [VIEW DETAILS]
+
+│
+
+│
+
+│
+
+│
+
+★★★☆☆ Nomad Lamai (78% match)
+
+│
+
+│
+
+✓ Same category
+
+│
+
+│
+
+⚠ More social, less intimate
+
+│
+
+│
+
+✓ Available
+
+│
+
+│
+
+[REQUEST FROM RM] [VIEW DETAILS]
+
+│
+
+└─────────────────────────────────────────────────┘
+
+8. OFFLINE & MOBILE REQUIREMENTS
+8.1 The "Bush" Requirement
+Problem: Sales agents are often in areas with no internet
+
+
+
+
+
+On safari with clients
+At lodges in remote areas
+At airports with poor connectivity
+On site inspections
+Solution: Offline-capable web application (PWA)
+
+8.2 Offline Capabilities
+When offline, user can:
+
+
+
+
+
+
+View all client files for upcoming safaris (next 7 days)
+See dietary requirements
+Check accommodation details
+View special requests
+Take notes (sync when online)
+
+8.3 Sync Process
+
+
+
+
+
+Auto-syncs when internet available
+Background sync without user action
+Clear indicator of last sync time
+Conflict resolution (server version wins)
+
+8.4 Pre-Load for Safari Trips
+System automatically pre-loads data for:
+ All safaris starting in next 7 days
+ Selected by sales person for upcoming trips
+Email Notification:
+📲 Data ready for offline access!
+8 clients with safaris next week are now available offline.
+You can access them even without internet in the bush.
+[OPEN APP] [VIEW OFFLINE CLIENTS]
+
+8.5 Mobile-First Design Requirements
+
+
+
+
+
+
+Responsive design (works on phones, tablets, desktop)
+Touch-friendly buttons (minimum 44x44px)
+Fast loading on 3G connections
+Minimal data usage
+No app store required (Progressive Web App)
+
+9. COLLABORATIVE & COMMUNITY FEATURES
+9.1 Global Property Directory
+Vision: Build the "TripAdvisor for Safari Agents"
+Content:
+
+
+
+
+
+500+ Tanzania lodges (curated)
+Verified by you (admin)
+Community-contributed
+Ever-growing
+
+9.2 Private Company Lists
+Each company has their own:
+
+
+
+
+
+Preferred partners list
+Special rates and commissions
+Contract notes
+Private property tags
+Value: Companies won't leave because they've built their data
+
+9.3 Crowdsourcing Model
+When User A adds new property:
+1. Goes to "Pending Verification"
+2. Admin (you) reviews
+3. If verified, added to Global Directory
+4. Available to all users
+Contributor Recognition:
+ Leaderboard of top contributors
+ Discounts for active contributors
+ "Verified Contributor" badge
+
+9.4 Community Peer Tagging
+When multiple users tag the same peer relationship:
+ Auto-verification after threshold (e.g., 5 users)
+ "Community approved" badge
+ Suggestion confidence increases
+Example:
+"Olakira similar to Sayari" - tagged by 8 users
+✅ Community verified (8 consensus)
+
+10. FINANCIAL RECONCILIATION
+10.1 The Gap Tracker
+Problem: Sometimes you think you've paid for everything, but one lodge is unpaid
+Solution: Payment matching system
+
+10.2 Payment Upload Flow
+When uploading payment receipt:
+1. System shows all unpaid invoices for that client
+2. User selects which invoices this payment covers
+3. System tracks partial payments
+4. Alerts if any invoice remains unpaid after payment
+
+10.3 Reconciliation Dashboard
+Shows:
+
+
+
+
+
+Total payments this month
+Matched vs. unmatched payments
+Clients with payment gaps
+Invoices pending payment
+
+10.4 "Fully Secured" Check
+Before safari starts, system verifies:
+
+
+
+
+
+All accommodations have status "Confirmed"
+No payment gaps
+All requirements noted
+Generates "All Clear" or alerts issues
+
+11. REPORTING & HANDOVER
+11.1 Daily Operations Report
+Email sent each morning showing:
+
+
+
+
+
+Critical missing accommodations
+Pending confirmations (>48hrs)
+Upcoming payment deadlines (3 days)
+Recently completed bookings
+
+11.2 Weekly Forecast Report
+Email sent every Monday showing:
+ All deadlines for upcoming week
+ Grouped by sales person
+ Downloadable PDF
+
+11.3 The "Killer Feature": One-Click Guide Brief
+Purpose: Make sales team look like heroes to guides
+What it does: Generates comprehensive PDF for driver-guide
+Contents:
+
+
+
+
+
+
+
+
+
+Client overview (names, nationality, language)
+Special occasions (honeymoon, anniversary)
+Daily itinerary with accommodation details
+Dietary requirements per guest
+Special requests
+All vouchers attached
+Emergency contacts
+How it works:
+One button: "Generate Guide Brief"
+System pulls all data from client file
+Creates professional PDF
+Email to guide or share link
+Result:
+
+
+
+
+
+
+Guide knows every detail
+Client feels special
+You look like a pro
+No 3-hour manual summary
+
+11.4 Guide Brief Template
+SAFARI GUIDE BRIEF
+Client: Mr. & Mrs. John Smith
+Safari: March 15-22, 2026
+Guide: Joseph (Driver #J-342)
+⭐ SPECIAL: Honeymoon
+DAY BY DAY:
+March 15 - Serena Hotel (Conf: SER-7890)
+• Room #234 • Honeymoon cake requested
+March 16 - Governors' Camp (Conf: GOV-4567)
+• Tent #12 • River view
+DIETARY:
+• Mrs. Smith: Gluten-free (severe)
+• Mr. Smith: Vegetarian
+VOUCHERS ATTACHED (4)
+EMERGENCY:
+• Sarah (Sales): +255 712 345 678
+
+12. MONETIZATION STRATEGY
+12.1 Target Market
+
+
+
+
+
+
+Small safari operators (like yours)
+Tour operators with 5-50 employees
+DMCs (Destination Management Companies)
+Independent travel advisors
+Focus: Tanzania first, then East Africa
+
+12.2 Subscription Tiers
+Tier
+
+Price
+
+Features
+
+• Email reminders
+Basic
+
+$19/
+month
+
+• Client file management
+• Basic invoice tracking
+• 3 team members
+• Global directory access
+
+• Everything in Basic
+• Payment reconciliation
+Professiona $49/
+l
+
+month
+
+• Wisdom tags & vibe
+matching
+• Alternative suggestions
+• Offline access
+• 10 team members
+
+• Everything in Pro
+• API access
+Enterprise
+
+$99/
+month
+
+• Custom integrations
+• Monthly market report
+• Unlimited team
+• Dedicated support
+• Priority verification
+
+12.3 Contributor Discounts
+Active contributors (adding/verifying properties) get:
+ 25% off subscription
+
+ "Verified Contributor" badge
+ Early access to new features
+
+12.4 Value Proposition to Sell
+"Never miss a payment deadline again. Never have a client arrive at an
+unbooked lodge. Never lose money to unreconciled payments. All in one simple
+system."
+
+12.5 Sales Pitch Points
+ For Sales People: "Never forget a deadline again. All client info in your pocket, even
+offline."
+ For Managers: "See exactly what's expiring across your whole team. Catch gaps before
+they become disasters."
+ For Owners: "Protect your reputation. No more clients arriving at unbooked lodges."
+
+13. TECHNICAL REQUIREMENTS
+13.1 Recommended Tech Stack
+Component
+
+Technology
+
+MVP Database Airtable
+
+Why
+Fast setup, no coding, email
+automations built-in
+
+Production DB PostgreSQL
+
+Scalable, reliable
+
+Backend
+
+Node.js/Python
+
+Flexible, good APIs
+
+Frontend
+
+React + PWA
+
+Offline capable, mobile-first
+
+Email
+
+SendGrid / AWS SES
+
+Reliable delivery, templates
+
+jsPDF / Puppeteer
+
+Create guide briefs
+
+PDF
+Generation
+Offline Sync
+
+Service Workers +
+IndexedDB
+
+Store data locally
+
+Authentication Auth0 / Firebase
+
+Secure login, magic links
+
+Hosting
+
+Affordable scaling
+
+DigitalOcean/AWS
+
+Component
+
+Technology
+
+Why
+
+Payments
+
+Stripe
+
+Subscription management
+
+13.2 Email Integration Requirements
+
+
+
+
+
+
+
+Transactional email service (SendGrid recommended)
+Email templates for all notification types
+Click tracking (see who opened)
+Bounce handling
+Unsubscribe management
+DKIM/SPF setup for deliverability
+
+13.3 Offline Architecture
+
+
+
+
+
+Service Worker for caching
+IndexedDB for local storage
+Background sync when online
+Conflict resolution (server wins with notification)
+
+13.4 Security Requirements
+
+
+
+
+
+
+
+Role-based access control
+Data encryption (at rest and in transit)
+Regular automated backups
+Audit logs (who did what, when)
+Two-factor authentication (optional)
+Magic link email login (no passwords to remember)
+
+13.5 Mobile Requirements
+
+
+
+
+
+
+Responsive design (works on all screen sizes)
+Touch-friendly interface
+Fast loading on slow connections
+Offline mode with clear indicators
+No app store required (install from browser)
+
+14. IMPLEMENTATION ROADMAP
+Phase 1: MVP (Month 1-2)
+Goal: Solve YOUR immediate problem
+
+Deliverables:
+
+
+
+
+
+
+
+Airtable database with Clients, Bookings, Accommodations
+Email reminders via Airtable automations (3-day alerts)
+Basic client files with requirements
+Invoice uploads (as attachments)
+4-status tracking (Provisional/Invoiced/Paid/Confirmed)
+Test with 5-10 real clients
+Success Metric: You never miss a deadline
+
+Phase 2: Core Features (Month 3-4)
+Goal: Build what you need daily
+Deliverables:
+
+
+
+
+
+Required vs. secured comparison
+Missing accommodation alerts (automatic)
+Pending >48hrs follow-up triggers
+Grouped email notifications for RM
+
+ Simple web interface ( Bubble.io or custom)
+ Mobile-friendly design
+Success Metric: You catch gaps before they become problems
+
+Phase 3: Smart Features (Month 5-6)
+Goal: Make the system intelligent
+Deliverables:
+
+
+
+
+
+
+
+Peer group tagging
+Alternative suggestions when full
+Wisdom tags (vibe matching)
+Payment reconciliation (match payments to invoices)
+Offline access (PWA with service workers)
+Guide brief generator (PDF)
+Success Metric: System suggests useful alternatives
+
+Phase 4: Community & Monetization (Month 7-8)
+Goal: Prepare for selling
+
+Deliverables:
+
+
+
+
+
+
+
+Global property directory
+Private company lists
+Verification system (pending/approved)
+Subscription tiers configuration
+Stripe payment integration
+Contributor recognition (leaderboard)
+Success Metric: 3 pilot companies testing
+
+Phase 5: Polish & Launch (Month 9-10)
+Goal: Public release
+Deliverables:
+
+
+
+
+
+
+
+Marketing website
+Onboarding flow (email signup)
+User documentation
+Email support system
+Analytics dashboard (usage, revenue)
+API for enterprise customers
+Success Metric: 10 paying customers
+
+15. YOUR "OUTSTANDING SYSTEM" CHECKLIST
+Use this to track what you've built vs. what's left
+
+🟢 CORE ESSENTIALS (Must Have)
+
+
+
+
+
+
+
+
+
+
+Email notifications (3-day invoice reminders)
+Client files with dietary requirements
+Invoice uploads per accommodation
+4 statuses (Provisional/Invoiced/Paid/Confirmed)
+Sales person sees only their clients
+RM sees all clients (grouped by sales person)
+Required vs. secured comparison
+Missing night alerts
+Pending >48hrs follow-up
+
+🔵 SMART FEATURES (Should Have)
+ Peer group tagging
+
+
+
+
+
+
+
+
+
+Alternative suggestions when full
+Add new properties on the fly
+Payment reconciliation (match payments to invoices)
+Offline access (PWA)
+Pre-load data for upcoming safaris
+Wisdom tags (vibe matching)
+Agent wisdom capture (tagging)
+
+🟣 KILLER FEATURES (Differentiators)
+
+
+
+
+
+
+
+
+One-click guide brief generator (PDF)
+Gap detection (missing nights in middle)
+Auto-verification of peer tags (5+ users)
+Contributor leaderboard
+"Fully secured" check before safari
+Daily operations report email
+Weekly forecast email
+
+🟡 MONETIZATION FEATURES (Revenue)
+
+
+
+
+
+
+
+
+Global property directory (500+ lodges)
+Private company lists (special rates)
+Subscription tiers (Basic/Pro/Enterprise)
+Stripe payment integration
+Contributor discount system
+API access for enterprise
+User onboarding flow
+
+🟠 TECHNICAL FOUNDATION
+
+
+
+
+
+
+
+
+PWA with offline capability
+Responsive mobile design
+Email automation (SendGrid)
+Role-based access control
+Data export/backup
+Audit logs
+Magic link login (no passwords)
+
+YOUR COMPETITIVE ADVANTAGES (UPDATED)
+1. Email-First with Clear Design: Professional, actionable emails that get results
+2. Offline Capable: Works in the bush, not just in office
+3. Payment Reconciliation: Prevents the "one unpaid lodge" nightmare
+4. Wisdom Capture: Junior agents access senior knowledge
+5. Guide Brief: Makes sales team look like heroes
+
+6. Community Data: Gets better as more users join
+7. Private Lists: Companies lock in their data
+8. Missing Accommodation Detection: Catches gaps automatically
+
+DIFFERENCES FROM ORIGINAL (REMOVED
+WHATSAPP)
+Feature
+
+Original
+
+Updated
+
+Primary notification WhatsApp
+
+Email
+
+Secondary channel SMS fallback
+
+Email only (with priority flags)
+
+Message format
+
+Short, interactive
+
+Rich HTML, buttons, clear formatting
+
+Urgent alerts
+
+WhatsApp + SMS
+
+Email with [URGENT] tag
+
+Daily summary
+
+WhatsApp message Email with grouped table
+
+Action mechanism WhatsApp buttons Email links to web app
+Offline access
+
+Same (PWA)
+
+Same (PWA)
+
+EMAIL TEMPLATE EXAMPLES
+3-Day Reminder (Sales Person)
+text
+
+Subject: ⏰ 3 Days Left: Payment deadline for John Smith
+Hi Sarah,
+Your client's accommodation payment is due in 3 days.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLIENT: John Smith
+PROPERTY: Serena Hotel
+AMOUNT: $550
+DUE DATE: March 15, 2026
+STATUS: PROVISIONAL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+What you need to do:
+→ Follow up with Reservation Manager to get invoice
+Quick Actions:
+[VIEW CLIENT FILE] [CONTACT RM] [MARK AS HANDLED]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+You have 2 other expiring accommodations this week.
+[VIEW ALL MY DEADLINES]
+
+Missing Night Alert
+text
+
+Subject: ⚠️CRITICAL: Missing accommodation for John Smith
+Hi Sarah,
+URGENT: Client John Smith has an UNSECURED night!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SAFARI: March 15-20, 2026
+REQUIRED: 5 nights
+SECURED: 4 nights
+MISSING: Night 3 (March 17) - Masai Mara
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+This accommodation has NOT been booked yet.
+Safari starts in 5 days.
+Immediate action required:
+[VIEW CLIENT FILE] [FIND ALTERNATIVES] [CONTACT RM]
+Suggested alternatives in Masai Mara (same category):
+• Governors' Camp - AVAILABLE
+• Nomad Lamai - AVAILABLE
+• Olakira Camp - AVAILABLE
+[REQUEST ALTERNATIVE FROM RM]
+
+Daily Reservation Manager Summary
+text
+
+Subject: 📊 Daily Summary: 5 accommodations expiring (3 sales people)
+Good morning,
+Here is today's deadline summary for March 12, 2026.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOTAL EXPIRING: 5 accommodations
+SALES PEOPLE: 3
+AFFECTED CLIENTS: 4
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SARAH (2)
+• John Smith - Serena Hotel (Provisional) - Due Mar 15
+• John Smith - Mara Serena (Invoiced) - Due Mar 15
+[VIEW SARAH'S CLIENTS]
+MIKE (1)
+• Emma Wilson - Governors' Camp (Provisional) - Due Mar 15
+[VIEW MIKE'S CLIENTS]
+JANE (2)
+• David Chen - Sarova Lodge (Provisional) - Due Mar 15
+• David Chen - Mara Intrepids (Provisional) - Due Mar 15
+[VIEW JANE'S CLIENTS]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[VIEW FULL DASHBOARD] [DOWNLOAD REPORT]
+
+Guide Brief Ready
+text
+
+Subject: ✅ Guide Brief Ready: John Smith Safari
+Hi Sarah,
+Your guide brief for John Smith is ready!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CLIENT: John Smith & Family
+SAFARI: March 15-20, 2026 (5 days)
+GUIDE: Joseph (Driver #J-342)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The brief includes:
+• Daily itinerary with all accommodations
+• Dietary requirements (2 guests)
+• Special requests (anniversary cake)
+• All 4 vouchers attached
+• Emergency contacts
+[DOWNLOAD PDF] [SEND TO GUIDE] [VIEW ONLINE]
+Your guide will have all the information they need.
+The client will feel well taken care of!
+
+FINAL THOUGHTS (UPDATED)
+You've designed something genuinely innovative. Most tourism software is built for Europe
+or America and adapted for Africa. You're building FOR Africa, WITH African workflows in
+mind, but optimized for email which remains the professional standard for business
+communications.
+The email-first approach gives you:
+
+
+
+
+
+
+
+Professional credibility (email is business standard)
+Better formatting (rich HTML, tables, buttons)
+Easier integration (email APIs are mature)
+Deliverability (email infrastructure is reliable)
+Thread management (entire conversation history)
+Combined with offline capability, payment reconciliation, wisdom tagging, and the guide
+brief... this is a complete ecosystem that solves real problems.
+
+Your Next Steps (Updated):
+1. Today: Save this document (download or copy)
+2. This Week: Set up Airtable with email automations
+3. This Month: Test with your own clients
+4. Next Month: Add 1-2 colleagues to test group notifications
+5. In 3 Months: Build the web app with offline capability
+6. In 6 Months: Approach 1 other company for pilot
+Document Generated: March 2026
+Version: 2.0 (Email-First Edition)
+Based on conversation with: Safari Sales Professional
+
+MAJOR CHANGES
+1. The application should show if the accomodation has been paid or not yet so the sales
+representativedoesn;t lose the accommodation
+2. The application should show the paid and remaining amount and it can be updated by both
+reservation manager and sales reprentative
+3. The sales represenative should be able to contact the reservation manager directly from the
+system inqury accommodation
+4. Suggestions should be manually implemented not automatically
+5. Note that the proof of payments should be just numbers not other format to save space
+
+

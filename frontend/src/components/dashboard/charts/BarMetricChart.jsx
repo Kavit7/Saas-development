@@ -14,9 +14,9 @@ const BarMetricChart = ({
   const maxVal = Math.max(...items.map((i) => Math.max(i.value || 0, i.target || 0)), 10);
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between font-sans">
+    <div className="flex flex-col justify-between rounded-xl border border-[#28332C]/10 bg-white p-5 font-sans">
       <div className="mb-4">
-        <h3 className="text-base sm:text-lg font-bold text-slate-900 font-serif-title tracking-tight">
+        <h3 className="text-base font-semibold tracking-tight text-[#28332C]">
           {title}
         </h3>
         <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
@@ -31,15 +31,15 @@ const BarMetricChart = ({
             <div key={idx} className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-700">{item.label}</span>
-                <span className="font-bold text-slate-900 font-mono">
+                <span className="font-medium text-slate-700">
                   {item.value} {item.target ? `/ ${item.target}` : ""}
                 </span>
               </div>
 
               {/* Progress track */}
-              <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden relative">
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-[#E8ECE8]">
                 <div
-                  className="h-full rounded-full transition-all duration-500 ease-out shadow-2xs"
+                  className="h-full rounded-full transition-all duration-500 ease-out"
                   style={{
                     width: `${valPct}%`,
                     backgroundColor: barColor,

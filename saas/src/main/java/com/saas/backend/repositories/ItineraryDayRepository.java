@@ -19,4 +19,5 @@ public interface ItineraryDayRepository extends JpaRepository<ItineraryDay,UUID>
     Optional<ItineraryDay> findByIdAndSafariId(@org.springframework.data.repository.query.Param("dayId") UUID dayId, @org.springframework.data.repository.query.Param("safariId") UUID safariId);
 
     List<ItineraryDay> findBySafariIdOrderByDayNumberAsc(UUID safariId);
+    Optional<ItineraryDay> findBySafariIdAndDayNumber(UUID safariId, Integer dayNumber);
 }

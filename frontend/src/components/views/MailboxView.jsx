@@ -17,6 +17,9 @@ import {
   CurrencyCircleDollar,
   XCircle,
   Check,
+  Lightning,
+  DownloadSimple,
+  Paperclip,
 } from "@phosphor-icons/react";
 import { useAuth } from "../../hooks/useAuth";
 import { getAllData, apiRequest } from "../../api/api";
@@ -50,6 +53,7 @@ const MailboxView = () => {
   const [selectedEmail, setSelectedEmail] = useState(null);
   const [syncing, setSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState(null);
+  const [dispatchingReminders, setDispatchingReminders] = useState(false);
 
   // State for manual booking action inside Email Reader Modal
   const [manualConfirmOpen, setManualConfirmOpen] = useState(false);
@@ -146,6 +150,95 @@ const MailboxView = () => {
     } finally {
       setSyncing(false);
       setTimeout(() => setSyncMessage(null), 5000);
+    }
+  };
+
+  // Trigger manual payment reminders email dispatch
+  const handleTriggerPaymentReminders = async () => {
+    if (!token || dispatchingReminders) return;
+    if (
+      !window.confirm(
+        "Do you want to dispatch payment reminder emails to sales persons and reservation managers for unpaid bookings now?"
+      )
+    ) {
+      return;
+    }
+    setDispatchingReminders(true);
+    setSyncMessage(null);
+    try {
+      const res = await apiRequest(
+        "/api/v1/invoices/trigger-payment-reminders",
+        { method: "POST" },
+        token
+      );
+      const sent = res?.emailsSent ?? res?.remindersSent ?? res?.count ?? 0;
+      setSyncMessage({
+        type: "success",
+        text: `Payment reminders dispatched successfully! (${sent} reminder email alerts sent to consultants & managers).`,
+      });
+      await fetchInvoices();
+    } catch (err) {
+      setSyncMessage({
+        type: "error",
+        text: err.message || "Failed to dispatch payment reminders.",
+      });
+    } finally {
+      setDispatchingReminders(false);
+      setTimeout(() => setSyncMessage(null), 6000);
+    }
+  };
+
+  // Download Invoice PDF/Attachment
+  const handleDownloadInvoice = async (invoice) => {
+    if (!invoice?.id) return;
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || "";
+      const response = await fetch(`${baseUrl}/api/v1/invoices/${invoice.id}/download`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Could not download invoice file from storage");
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = invoice.fileName || `Invoice_${invoice.invoiceNumber || invoice.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to download invoice file: " + err.message);
+    }
+  };
+
+  // Download Email Attachment
+  const handleDownloadEmailAttachment = async (email) => {
+    if (!email?.id) return;
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || "";
+      const response = await fetch(`${baseUrl}/api/v1/mailbox/emails/${email.id}/attachment`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        throw new Error("Could not download email attachment from storage");
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = email.attachmentFileName || "email_attachment.pdf";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Failed to download email attachment: " + err.message);
     }
   };
 
@@ -403,6 +496,16 @@ const MailboxView = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <button
+            onClick={handleTriggerPaymentReminders}
+            disabled={dispatchingReminders}
+            className="inline-flex items-center gap-2 rounded-[10px] border border-amber-600/30 bg-amber-50 px-3.5 py-2 text-xs sm:text-sm font-semibold text-amber-900 shadow-sm transition hover:bg-amber-100 disabled:opacity-50"
+            title="Dispatch payment deadline reminder alerts to sales persons and reservation managers"
+          >
+            <Lightning size={16} className={dispatchingReminders ? "animate-spin text-amber-700" : "text-amber-700"} weight="fill" />
+            {dispatchingReminders ? "Sending Reminders..." : "Send Payment Reminders"}
+          </button>
+
           <button
             onClick={handleSyncMailbox}
             disabled={syncing}
@@ -800,6 +903,16 @@ const MailboxView = () => {
                                 Revert
                               </button>
                             )}
+                            {inv.filePath && (
+                              <button
+                                onClick={() => handleDownloadInvoice(inv)}
+                                className="inline-flex items-center gap-1 rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 transition hover:bg-blue-100"
+                                title={`Download ${inv.fileName || "PDF Invoice"}`}
+                              >
+                                <DownloadSimple size={14} />
+                                PDF
+                              </button>
+                            )}
                             <button
                               onClick={() => setSelectedInvoice(inv)}
                               className="inline-flex items-center gap-1 rounded-md bg-[#264624]/10 px-2.5 py-1 text-xs font-semibold text-[#264624] transition hover:bg-[#264624]/20"
@@ -914,6 +1027,12 @@ const MailboxView = () => {
                           {em.confirmationNumber && (
                             <span className="text-[10px] font-mono font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
                               Voucher: {em.confirmationNumber}
+                            </span>
+                          )}
+                          {em.hasAttachment && (
+                            <span className="inline-flex items-center gap-1 rounded bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
+                              <Paperclip size={12} />
+                              {em.attachmentFileName || "Attachment"}
                             </span>
                           )}
                         </div>
@@ -1033,6 +1152,32 @@ const MailboxView = () => {
               >
                 {bookingActionMsg.type === "success" ? <CheckCircle size={16} /> : <WarningCircle size={16} />}
                 <span>{bookingActionMsg.text}</span>
+              </div>
+            )}
+
+            {/* Attached File Manifest */}
+            {selectedEmail.hasAttachment && (
+              <div className="mx-6 mt-3 flex items-center justify-between rounded-xl border border-blue-200 bg-blue-50/70 p-3 text-xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+                    <Paperclip size={18} />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-blue-900 truncate">
+                      {selectedEmail.attachmentFileName || "Attached Document"}
+                    </p>
+                    <p className="text-[11px] text-blue-700/80">
+                      {selectedEmail.attachmentFileType || "application/pdf"} • Saved & Retained in System
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDownloadEmailAttachment(selectedEmail)}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-700 px-3 py-1.5 font-bold text-white shadow-sm hover:bg-blue-800 transition shrink-0 ml-2"
+                >
+                  <DownloadSimple size={14} />
+                  Download
+                </button>
               </div>
             )}
 
@@ -1167,6 +1312,16 @@ const MailboxView = () => {
                 Booking Invoice & Voucher: {selectedInvoice.invoiceNumber}
               </span>
               <div className="flex items-center gap-2">
+                {selectedInvoice.filePath && (
+                  <button
+                    onClick={() => handleDownloadInvoice(selectedInvoice)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-800 shadow-sm transition hover:bg-blue-100"
+                    title="Download original uploaded or parsed PDF/Excel invoice file"
+                  >
+                    <DownloadSimple size={16} />
+                    Download {selectedInvoice.fileName || "PDF"}
+                  </button>
+                )}
                 <button
                   onClick={() => window.print()}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-[#264624]/20 bg-white px-3 py-1.5 text-xs font-semibold text-[#264624] shadow-sm transition hover:bg-[#264624]/5"

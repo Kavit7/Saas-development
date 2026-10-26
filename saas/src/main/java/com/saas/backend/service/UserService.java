@@ -13,7 +13,11 @@ public interface UserService {
 
     UserResponse createAdmin(UserRequest userRequest);
 
-    Page<UserResponse> getAllUsers(int page, int size, String sortBy, String direction);
+    Page<UserResponse> getAllUsers(int page, int size, String sortBy, String direction, String role, String company, String status, String search);
+
+    default Page<UserResponse> getAllUsers(int page, int size, String sortBy, String direction) {
+        return getAllUsers(page, size, sortBy, direction, null, null, null, null);
+    }
 
     UserResponse getUserById(UUID id, Authentication auth);
 
@@ -22,4 +26,8 @@ public interface UserService {
     UserResponse updateUser(UUID id, UserRequest request, Authentication auth);
 
     java.util.Map<String, Object> triggerPasswordResetForUser(UUID id, Authentication auth);
+
+    java.util.Map<String, Object> personalizeUserAccount(UUID id, com.saas.backend.dto.AccountPersonalizationRequest request, Authentication auth);
+
+    java.util.Map<String, Object> impersonateUser(UUID id, String reason, Authentication auth);
 }

@@ -1,4 +1,4 @@
-import { ArrowsClockwise, ShieldCheck, Sparkle } from "@phosphor-icons/react";
+import { ArrowsClockwise, ShieldCheck } from "@phosphor-icons/react";
 
 /**
  * DashboardHeader Component
@@ -45,27 +45,22 @@ const DashboardHeader = ({
   }).format(new Date());
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs font-sans">
+    <div className="flex flex-col justify-between gap-4 rounded-xl border border-[#28332C]/10 bg-white p-5 sm:flex-row sm:items-center sm:p-6 font-sans">
       <div className="space-y-1.5">
         <div className="flex flex-wrap items-center gap-2.5">
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight font-serif-title">
+          <h1 className="text-xl font-semibold tracking-tight text-[#28332C] sm:text-2xl">
             Welcome back, {userFullName || "Colleague"}
           </h1>
-          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-[#264624]/10 text-[#264624] border border-[#264624]/20 shadow-2xs">
+          <span className="inline-flex items-center gap-1 rounded-md border border-[#35634B]/15 bg-[#EAF1EC] px-2 py-1 text-[11px] font-medium text-[#315B43]">
             <ShieldCheck size={13} weight="bold" />
             <span>{getRoleDisplayName(role)}</span>
           </span>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 font-medium">
-          <span className="text-[#264624] font-semibold">{companyName || "Safari Global Operations"}</span>
+          <span className="text-[#35634B] font-semibold">{companyName || "Safari Global Operations"}</span>
           <span className="text-slate-300">•</span>
           <span>{todayStr}</span>
-          <span className="text-slate-300">•</span>
-          <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
-            <Sparkle size={12} weight="fill" />
-            <span>System Live</span>
-          </span>
         </div>
       </div>
 
@@ -74,12 +69,12 @@ const DashboardHeader = ({
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:border-slate-300 hover:bg-slate-100 hover:text-[#264624] transition active:scale-95 shadow-2xs disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 hover:text-[#35634B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#35634B] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <ArrowsClockwise
             size={15}
             weight="bold"
-            className={`${loading ? "animate-spin text-[#264624]" : ""}`}
+            className={`${loading ? "animate-spin text-[#35634B]" : ""}`}
           />
           <span>{loading ? "Refreshing..." : "Refresh Data"}</span>
         </button>

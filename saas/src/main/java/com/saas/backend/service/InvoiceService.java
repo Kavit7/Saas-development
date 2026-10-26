@@ -66,6 +66,14 @@ public interface InvoiceService {
     );
 
     /**
+     * Manually records or updates an invoice directly for a booking (e.g. without uploading a document file).
+     */
+    InvoiceResponse createOrUpdateInvoiceForBooking(
+            UUID bookingId,
+            InvoiceManualUpdateRequest request
+    );
+
+    /**
      * Authoritative financial approval of invoice banking details by finance or management.
      */
     InvoiceResponse verifyInvoice(

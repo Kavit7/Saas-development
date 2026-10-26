@@ -21,6 +21,8 @@ import lombok.NoArgsConstructor;
 public class NotificationResponse {
     private UUID id;
     private UUID userId;
+    private UUID companyId;
+    private String companyName;
     private String type;
     private String title;
     private String message;

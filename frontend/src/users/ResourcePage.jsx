@@ -1,6 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams } from "react-router-dom";
-import { Plus } from "@phosphor-icons/react";
+import { useParams, useNavigate } from "react-router-dom";
+import {
+  ArrowsDownUp,
+  CaretDown,
+  FunnelSimple,
+  MagnifyingGlass,
+  Plus,
+  X,
+} from "@phosphor-icons/react";
 
 import DynamicTable from "../components/tables/DynamicTable";
 import DedicatedFormView from "../components/forms/DedicatedFormView";
@@ -10,6 +17,8 @@ import ResourceDetailView from "../components/views/ResourceDetailView";
 import BookingModal from "../components/bookings/BookingModal";
 import AlertModal from "../components/feedback/AlertModal";
 import ConfirmModal from "../components/feedback/ConfirmModal";
+import PersonalizeUserModal from "../components/forms/PersonalizeUserModal";
+import UserCreateModal from "../components/forms/UserCreateModal";
 
 import { useAuth } from "../hooks/useAuth";
 import {
@@ -32,7 +41,8 @@ const ResourcePage = ({
   updateEndpoint,
   deleteEndpoint,
 }) => {
-  const { token, user, can } = useAuth();
+  const { token, user, can, impersonateUser } = useAuth();
+  const navigate = useNavigate();
   const { resource: routeResource } = useParams();
   const resource = resourceName || routeResource;
 
@@ -67,9 +77,16 @@ const ResourcePage = ({
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState(
-    table?.filters?.find((f) => f.key === "status")?.defaultValue || ""
-  );
+  const [filtersState, setFiltersState] = useState(() => {
+    const init = {};
+    (table?.filters || []).forEach((f) => {
+      init[f.key] = f.defaultValue || "";
+    });
+    return init;
+  });
+  const [sortField, setSortField] = useState(table?.defaultSort || (resource === "properties" ? "name" : "createdAt"));
+  const [sortDirection, setSortDirection] = useState(table?.defaultDirection || (resource === "properties" ? "asc" : "desc"));
+  const [pageSize, setPageSize] = useState(20);
   const [page, setPage] = useState(0);
   const [pageInfo, setPageInfo] = useState({
     totalPages: 1,
@@ -77,6 +94,18 @@ const ResourcePage = ({
     number: 0,
     size: 20,
   });
+
+  useEffect(() => {
+    const init = {};
+    (table?.filters || []).forEach((f) => {
+      init[f.key] = f.defaultValue || "";
+    });
+    setFiltersState(init);
+    setSortField(table?.defaultSort || (resource === "properties" ? "name" : "createdAt"));
+    setSortDirection(table?.defaultDirection || (resource === "properties" ? "asc" : "desc"));
+    setSearchTerm("");
+    setPage(0);
+  }, [resource, table]);
 
   // Dynamic dropdown options (for categoryId, priceId, clientId, etc.)
   const [dynamicOptions, setDynamicOptions] = useState({});
@@ -134,6 +163,15 @@ const ResourcePage = ({
     day: null,
   });
 
+  // Modal for Administrative User Personalization
+  const [personalizeModal, setPersonalizeModal] = useState({
+    open: false,
+    user: null,
+  });
+
+  // Dedicated Modal for User Registration
+  const [userCreateModalOpen, setUserCreateModalOpen] = useState(false);
+
   const apiBasePath = endpoint || `/${resource}`;
 
   // Fetch dynamic options (categories, price tiers, clients, room types)
@@ -147,6 +185,7 @@ const ResourcePage = ({
             getAllData("/amenities", token),
             getAllData("/tags", token),
           ]);
+          const tagList = tagRes.status === "fulfilled" ? tagRes.value?.data || tagRes.value || [] : [];
           setDynamicOptions({
             categoryId: (catRes.status === "fulfilled" ? catRes.value?.data || catRes.value || [] : []).map((c) => ({
               label: c.name,
@@ -161,12 +200,19 @@ const ResourcePage = ({
               description: a.description,
               value: a.id,
             })),
-            tagIds: (tagRes.status === "fulfilled" ? tagRes.value?.data || tagRes.value || [] : []).map((t) => ({
+            tagIds: tagList.map((t) => ({
               label: `${t.name}${t.tagType ? ` (${t.tagType.replace("_", " ")})` : ""}`,
               description: t.description,
               tagType: t.tagType,
               value: t.id,
             })),
+            tagFilterOptions: [
+              { label: "All Tags", value: "" },
+              ...tagList.map((t) => ({
+                label: `${t.name}${t.tagType ? ` (${t.tagType.replace(/_/g, " ").toLowerCase()})` : ""}`,
+                value: t.name,
+              })),
+            ],
           });
         } else if (resource === "safaris") {
           const [clientRes, catRes, tierRes, roomRes] = await Promise.allSettled([
@@ -212,6 +258,55 @@ const ResourcePage = ({
               value: p.name,
             })),
           });
+        } else if (resource === "users") {
+          const isSuperAdmin = String(user?.role_name || user?.role || "").toUpperCase().includes("SUPER_ADMIN");
+          const roleOptions = isSuperAdmin
+            ? [
+                { label: "Platform Admin", value: "SUPER_ADMIN" },
+                { label: "Company Admin", value: "ADMIN" },
+                { label: "Sales Person", value: "SALES_PERSON" },
+                { label: "Reservation Manager", value: "RESERVATION_MANAGER" },
+                { label: "Guide", value: "GUIDE" },
+              ]
+            : [
+                { label: "Sales Person", value: "SALES_PERSON" },
+                { label: "Reservation Manager", value: "RESERVATION_MANAGER" },
+                { label: "Guide", value: "GUIDE" },
+              ];
+
+          let companyOptions = [];
+          if (isSuperAdmin) {
+            try {
+              const compRes = await getAllData("/api/company/companies?size=200", token);
+              const compList = Array.isArray(compRes?.data?.content)
+                ? compRes.data.content
+                : Array.isArray(compRes?.content)
+                ? compRes.content
+                : Array.isArray(compRes?.data)
+                ? compRes.data
+                : Array.isArray(compRes)
+                ? compRes
+                : [];
+              companyOptions = compList.map((c) => ({
+                label: c.name,
+                value: c.name,
+                id: c.id,
+              }));
+            } catch (ce) {
+              console.warn("Could not load companies for user assignment:", ce);
+            }
+          }
+
+          let companyFilterList = [
+            { label: "All Companies", value: "" },
+            ...companyOptions.map((c) => ({ label: c.label, value: c.label })),
+          ];
+          setDynamicOptions((prev) => ({
+            ...prev,
+            roleName: roleOptions,
+            ...(companyOptions.length > 0 ? { companyName: companyOptions } : {}),
+            companyFilterOptions: companyFilterList,
+          }));
         }
       } catch (err) {
         console.error("Failed to load select options:", err);
@@ -221,7 +316,7 @@ const ResourcePage = ({
     if (token) {
       fetchOptions();
     }
-  }, [resource, token]);
+  }, [resource, token, user]);
 
   // Load Main Table Data
   const loadData = useCallback(async () => {
@@ -229,18 +324,20 @@ const ResourcePage = ({
     try {
       const params = new URLSearchParams({
         page: String(page),
-        size: "20",
-        sortBy: "createdAt",
-        direction: "asc",
+        size: String(pageSize),
+        sortBy: sortField || (resource === "properties" ? "name" : "createdAt"),
+        direction: sortDirection || (resource === "properties" ? "asc" : "desc"),
       });
 
       if (searchTerm.trim()) {
         params.set("search", searchTerm.trim());
       }
 
-      if (statusFilter) {
-        params.set("status", statusFilter);
-      }
+      Object.entries(filtersState).forEach(([key, val]) => {
+        if (val !== undefined && val !== null && String(val).trim() !== "") {
+          params.set(key, String(val).trim());
+        }
+      });
 
       const queryString = params.toString();
       const separator = apiBasePath.includes("?") ? "&" : "?";
@@ -276,15 +373,15 @@ const ResourcePage = ({
         totalPages,
         totalElements,
         number: pageNumber,
-        size: 20,
+        size: pageSize,
       });
     } catch {
       setItems([]);
-      setPageInfo({ totalPages: 1, totalElements: 0, number: 0, size: 20 });
+      setPageInfo({ totalPages: 1, totalElements: 0, number: 0, size: pageSize });
     } finally {
       setLoading(false);
     }
-  }, [apiBasePath, page, searchTerm, statusFilter, token]);
+  }, [apiBasePath, page, pageSize, sortField, sortDirection, searchTerm, filtersState, token, resource]);
 
   useEffect(() => {
     loadData();
@@ -393,6 +490,15 @@ const ResourcePage = ({
         open: true,
         item,
       });
+    } else if (actionKey === "resetPassword") {
+      handleResetUserPassword(item);
+    } else if (actionKey === "toggleStatus") {
+      handleToggleUserStatus(item);
+    } else if (actionKey === "personalize") {
+      setPersonalizeModal({
+        open: true,
+        user: item,
+      });
     }
   };
 
@@ -422,6 +528,15 @@ const ResourcePage = ({
           if (!payload.companyName) {
             delete payload.companyName;
           }
+          if (!payload.gender) {
+            delete payload.gender;
+          }
+          if (!payload.password) {
+            delete payload.password;
+          }
+        } else if (resource === "support-tickets") {
+          if (!payload.priority) payload.priority = "MEDIUM";
+          if (!payload.category) payload.category = "OTHER";
         }
 
         await createData(postUrl, payload, token);
@@ -444,6 +559,17 @@ const ResourcePage = ({
           putUrl = `/api/v1/room-types/${formConfig.initialValues.id}?name=${encodeURIComponent(formData.name)}`;
         } else if (resource === "users") {
           putUrl = `/api/users/user/${formConfig.initialValues.id}`;
+          if (!payload.gender) {
+            delete payload.gender;
+          }
+          if (!payload.password) {
+            delete payload.password;
+          }
+          if (!payload.companyName) {
+            delete payload.companyName;
+          }
+        } else if (resource === "support-tickets") {
+          putUrl = `/api/v1/support-tickets/${formConfig.initialValues.id}`;
         }
 
         await updateData(putUrl, payload, token);
@@ -490,6 +616,7 @@ const ResourcePage = ({
       categoryId: defaultCat,
       pricetierId: defaultTier,
       numberOfrooms: 1,
+      numberOfNights: 1,
       roomPreferences: "",
       specialRequests: "",
       roomRequirements: [{ roomType: defaultRoom, quantity: 1 }],
@@ -507,6 +634,7 @@ const ResourcePage = ({
       categoryId: req.categoryId || "",
       pricetierId: req.pricetierId || "",
       numberOfrooms: req.numberOfrooms || 1,
+      numberOfNights: req.numberOfNights || 1,
       roomPreferences: req.roomPreferences || "",
       specialRequests: req.specialRequests || "",
       roomRequirements: req.roomRequirements?.length
@@ -517,6 +645,22 @@ const ResourcePage = ({
   };
 
   const handleDeleteRequirement = async (reqId) => {
+    // Booking Protection Policy: Do not allow deleting requirement with active booking
+    const activeBooking = (subData?.bookings || []).find((b) =>
+      String(b.requirementId) === String(reqId) &&
+      String(b.status || "").toUpperCase() !== "CANCELLED" &&
+      String(b.status || "").toUpperCase() !== "DECLINED"
+    );
+    if (activeBooking) {
+      setAlertModal({
+        open: true,
+        title: "Action Restricted",
+        message: `Cannot delete requirement: Active lodge booking '${activeBooking.referenceNumber || activeBooking.propertyName}' exists. Please cancel the booking first.`,
+        type: "error",
+      });
+      return;
+    }
+
     if (!window.confirm("Are you sure you want to delete this accommodation requirement?")) return;
     setActionLoading(true);
     try {
@@ -585,6 +729,7 @@ const ResourcePage = ({
         categoryId: reqForm.categoryId,
         pricetierId: reqForm.pricetierId,
         numberOfrooms: numRooms,
+        numberOfNights: Math.max(1, parseInt(reqForm.numberOfNights, 10) || 1),
         roomPreferences: reqForm.roomPreferences || "",
         specialRequests: reqForm.specialRequests || "",
         roomRequirements: reqForm.roomRequirements.map((r) => ({
@@ -842,6 +987,31 @@ const ResourcePage = ({
     }
   };
 
+  const handleAddDay = async () => {
+    if (!selectedItem || !selectedItem.id) return;
+    setActionLoading(true);
+    try {
+      await createData(`/safari/${selectedItem.id}/add-day`, {}, token);
+      setAlertModal({
+        open: true,
+        title: "Day Added Successfully",
+        message: "New itinerary day has been appended to the safari and the safari schedule was extended safely.",
+        type: "success",
+      });
+      loadSubDataForView(selectedItem);
+      loadData();
+    } catch (err) {
+      setAlertModal({
+        open: true,
+        title: "Failed to Add Day",
+        message: err.message || "Failed to append itinerary day",
+        type: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   // Delete Action
   const confirmDelete = async () => {
     if (!deleteModal.item) return;
@@ -1062,7 +1232,7 @@ const ResourcePage = ({
       setAlertModal({
         open: true,
         title: "Password Reset Generated",
-        message: `Temporary credentials created for ${targetUser.email}:\nPassword: ${res.temporaryPassword}\nExpires: ${res.expiresAt ? new Date(res.expiresAt).toLocaleTimeString() : "in 1 hour"}.`,
+        message: `Temporary credentials created for ${targetUser.email}:\nPassword: ${res.temporaryPassword}\nExpires: ${res.expiresAt ? new Date(res.expiresAt).toLocaleString() : "in 3 days"}\n(User must change password upon logging in).`,
         type: "success",
       });
       loadData();
@@ -1075,6 +1245,30 @@ const ResourcePage = ({
       });
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // User Personalization Intervention Success Handler
+  const handlePersonalizeSuccess = (res) => {
+    setAlertModal({
+      open: true,
+      title: "Personalization Completed",
+      message: res?.message || "Account personalization executed successfully with an audit support ticket.",
+      type: "success",
+    });
+    if (selectedItem && personalizeModal?.user && selectedItem.id === personalizeModal.user.id) {
+      if (res?.targetUser) {
+        setSelectedItem((prev) => ({ ...prev, ...res.targetUser }));
+      }
+    }
+    loadData();
+  };
+
+  // User Impersonation / Personalization Success Handler
+  const handleImpersonateSuccess = (res) => {
+    if (res?.token) {
+      impersonateUser(res.token);
+      navigate("/dashboard");
     }
   };
 
@@ -1171,10 +1365,23 @@ const ResourcePage = ({
             setViewMode("form");
           }}
           onEditDay={(day) => {
+            const allDays = (subData?.days || []).slice().sort((a, b) => (a.dayNumber || 0) - (b.dayNumber || 0));
+            const prevDay = allDays.find((d) => d.dayNumber === day.dayNumber - 1);
+            const isDestUnset = !day.destination || day.destination.trim().toLowerCase() === "destination not set" || day.destination.trim().toLowerCase().includes("pending");
+            const autoSuggestedDestination = isDestUnset && prevDay?.destination && !prevDay.destination.toLowerCase().includes("pending")
+              ? prevDay.destination
+              : "";
+
             setSubFormConfig({
               type: "itineraryDay",
               title: `Edit Day ${day.dayNumber} Destination`,
-              initialValues: day,
+              initialValues: {
+                ...day,
+                destination: day.destination && !isDestUnset ? day.destination : autoSuggestedDestination,
+                _autoSuggested: !!autoSuggestedDestination,
+                _prevDayNumber: prevDay?.dayNumber,
+                _prevDestination: prevDay?.destination,
+              },
             });
             setViewMode("sub-form");
           }}
@@ -1182,6 +1389,7 @@ const ResourcePage = ({
           onEditRequirement={handleEditRequirement}
           onDeleteRequirement={handleDeleteRequirement}
           onRegenerateDays={handleRegenerateDays}
+          onAddDay={handleAddDay}
           onAddGuest={() => {
             const targetClient = resource === "safaris" ? (selectedItem.client || { id: selectedItem.clientId }) : selectedItem;
             const targetClientId = targetClient?.id || selectedItem.clientId || selectedItem.id;
@@ -1219,59 +1427,32 @@ const ResourcePage = ({
           onDeclineBooking={handleDeclineBooking}
           onToggleUserStatus={handleToggleUserStatus}
           onResetUserPassword={handleResetUserPassword}
+          onPersonalizeUser={(target) => setPersonalizeModal({ open: true, user: target || selectedItem })}
         />
       )}
 
       {/* 5. MAIN TABLE LIST VIEW */}
       {viewMode === "list" && (
         <div className="space-y-4">
-          {/* Top Header & Search Bar */}
-          <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-[#264624] sm:text-2xl tracking-tight font-title">
-                {title}
-              </h1>
-              <p className="text-xs text-slate-500 font-sans mt-0.5">
-                Total {pageInfo.totalElements} records found
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              {table?.searchable && (
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setPage(0);
-                  }}
-                  placeholder="Search records..."
-                  className="rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-sm text-slate-800 outline-none transition focus:border-[#264624] focus:bg-white sm:w-56"
-                />
-              )}
-
-              {(table?.filters || []).map((filter) => (
-                <select
-                  key={filter.key}
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setPage(0);
-                  }}
-                  className="rounded-xl border border-slate-200 bg-slate-50/70 px-3.5 py-2 text-sm text-slate-800 outline-none transition focus:border-[#264624] focus:bg-white"
-                >
-                  {(filter.options || []).map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              ))}
+          <div className="overflow-hidden rounded-xl border border-[#28332C]/10 bg-white">
+            <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight text-[#28332C] sm:text-2xl">
+                  {title}
+                </h1>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  {Number(pageInfo.totalElements).toLocaleString()} records
+                </p>
+              </div>
 
               {can("create", permissions) && (
                 <button
                   type="button"
                   onClick={() => {
+                    if (resource === "users") {
+                      setUserCreateModalOpen(true);
+                      return;
+                    }
                     setFormConfig({
                       mode: "create",
                       initialValues: {},
@@ -1279,12 +1460,156 @@ const ResourcePage = ({
                     });
                     setViewMode("form");
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#264624] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1b331a]"
+                  className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg bg-[#35634B] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#284C39] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#35634B] sm:self-auto"
                 >
-                  <Plus size={16} weight="bold" />
+                  <Plus size={17} />
                   <span>Create {singularName}</span>
                 </button>
               )}
+            </div>
+
+            <div className="border-t border-[#28332C]/[0.08] bg-[#F8FAF8] px-5 py-4">
+              <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                <FunnelSimple size={15} />
+                <span>Find and filter</span>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-end gap-3">
+                {table?.searchable && (
+                  <label className="min-w-[220px] flex-1 sm:max-w-xs">
+                    <span className="mb-1.5 block text-xs font-medium text-slate-600">
+                      Search
+                    </span>
+                    <span className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-slate-400 transition focus-within:border-[#6F927D] focus-within:ring-2 focus-within:ring-[#35634B]/10">
+                      <MagnifyingGlass size={16} />
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => {
+                          setSearchTerm(e.target.value);
+                          setPage(0);
+                        }}
+                        placeholder="Search records..."
+                        aria-label="Search records"
+                        className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                      />
+                      {searchTerm && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSearchTerm("");
+                            setPage(0);
+                          }}
+                          className="rounded p-0.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                          aria-label="Clear search"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
+                    </span>
+                  </label>
+                )}
+
+                {(table?.filters || []).map((filter) => {
+                  const options = (filter.dynamicKey && dynamicOptions[filter.dynamicKey])
+                    ? dynamicOptions[filter.dynamicKey]
+                    : filter.options || [];
+
+                  return (
+                    <label key={filter.key} className="min-w-[150px]">
+                      <span className="mb-1.5 block text-xs font-medium text-slate-600">
+                        {filter.label}
+                      </span>
+                      <span className="relative flex h-10 items-center rounded-lg border border-slate-200 bg-white transition focus-within:border-[#6F927D] focus-within:ring-2 focus-within:ring-[#35634B]/10">
+                        <select
+                          value={filtersState[filter.key] ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setFiltersState((prev) => ({ ...prev, [filter.key]: val }));
+                            setPage(0);
+                          }}
+                          className="h-full w-full cursor-pointer appearance-none rounded-lg bg-transparent py-2 pl-3 pr-9 text-sm text-slate-700 outline-none"
+                          title={`Filter by ${filter.label}`}
+                        >
+                          {options.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </option>
+                          ))}
+                        </select>
+                        <CaretDown
+                          size={15}
+                          className="pointer-events-none absolute right-3 text-slate-400"
+                        />
+                      </span>
+                    </label>
+                  );
+                })}
+
+                {(table?.sortOptions || []).length > 0 && (
+                  <div className="min-w-[190px]">
+                    <span className="mb-1.5 block text-xs font-medium text-slate-600">
+                      Sort by
+                    </span>
+                    <div className="flex h-10 items-center rounded-lg border border-slate-200 bg-white transition focus-within:border-[#6F927D] focus-within:ring-2 focus-within:ring-[#35634B]/10">
+                      <ArrowsDownUp size={15} className="ml-3 shrink-0 text-slate-400" />
+                      <select
+                        value={sortField}
+                        onChange={(e) => {
+                          setSortField(e.target.value);
+                          setPage(0);
+                        }}
+                        className="h-full min-w-0 flex-1 cursor-pointer appearance-none bg-transparent px-2 text-sm text-slate-700 outline-none"
+                        title="Sort field"
+                      >
+                        {table.sortOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSortDirection((prev) => (prev.toLowerCase() === "asc" ? "desc" : "asc"));
+                          setPage(0);
+                        }}
+                        title={`Sort ${sortDirection === "asc" ? "ascending" : "descending"}. Click to change direction.`}
+                        aria-label={`Sort ${sortDirection === "asc" ? "ascending" : "descending"}`}
+                        className="mr-1.5 inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 px-2 text-[11px] font-medium text-slate-600 transition hover:bg-[#F2F4F0] hover:text-[#35634B] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[#35634B]"
+                      >
+                        <span>{sortDirection.toUpperCase()}</span>
+                        <CaretDown
+                          size={12}
+                          className={sortDirection.toLowerCase() === "asc" ? "rotate-180" : ""}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {(searchTerm || Object.values(filtersState).some((v) => v !== "") || (table?.defaultDirection && sortDirection !== table.defaultDirection)) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const init = {};
+                      (table?.filters || []).forEach((f) => {
+                        init[f.key] = f.defaultValue || "";
+                      });
+                      setFiltersState(init);
+                      setSearchTerm("");
+                      setSortField(table?.defaultSort || (resource === "properties" ? "name" : "createdAt"));
+                      setSortDirection(table?.defaultDirection || (resource === "properties" ? "asc" : "desc"));
+                      setPage(0);
+                    }}
+                    className="inline-flex h-10 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-slate-500 transition hover:bg-white hover:text-[#35634B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#35634B]"
+                    title="Reset all filters and search"
+                  >
+                    <X size={15} />
+                    <span>Clear all</span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1296,13 +1621,43 @@ const ResourcePage = ({
             actions={table?.actions || []}
             permissions={permissions}
             onAction={handleAction}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={(fieldName) => {
+              if (sortField === fieldName) {
+                setSortDirection((prev) => (prev.toLowerCase() === "asc" ? "desc" : "asc"));
+              } else {
+                setSortField(fieldName);
+                setSortDirection("asc");
+              }
+              setPage(0);
+            }}
           />
 
           {/* Pagination Footer */}
           <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-slate-600 font-sans">
-              Showing {items.length} of {pageInfo.totalElements || 0} records
-            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm text-slate-600 font-sans">
+                Showing {items.length} of {pageInfo.totalElements || 0} records
+              </p>
+
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <span>Rows:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setPage(0);
+                  }}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-700 outline-none cursor-pointer"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+            </div>
 
             <div className="flex items-center gap-2">
               <button
@@ -1315,7 +1670,7 @@ const ResourcePage = ({
               </button>
 
               <span className="rounded-xl bg-[#264624]/10 px-3 py-1.5 text-sm font-semibold text-[#264624]">
-                Page {pageInfo.number + 1} / {pageInfo.totalPages || 1}
+                Page {pageInfo.number + 1} / {Math.max(pageInfo.totalPages || 1, 1)}
               </span>
 
               <button
@@ -1359,6 +1714,34 @@ const ResourcePage = ({
         safari={selectedItem}
         onClose={() => setBookingModal({ open: false, requirement: null, day: null })}
         onSuccess={handleBookingSuccess}
+      />
+
+      {/* POPUP 4: User Personalization / Support Modal */}
+      <PersonalizeUserModal
+        isOpen={personalizeModal.open}
+        user={personalizeModal.user}
+        token={token}
+        onClose={() => setPersonalizeModal({ open: false, user: null })}
+        onSuccess={handlePersonalizeSuccess}
+        onImpersonate={handleImpersonateSuccess}
+      />
+
+      {/* POPUP 5: Dedicated User Creation Modal */}
+      <UserCreateModal
+        isOpen={userCreateModalOpen}
+        onClose={() => setUserCreateModalOpen(false)}
+        onSuccess={(newUser) => {
+          setUserCreateModalOpen(false);
+          setAlertModal({
+            open: true,
+            title: "User Created Successfully",
+            message: `User account for ${newUser?.data?.firstName || newUser?.firstName || "new user"} ${newUser?.data?.lastName || newUser?.lastName || ""} has been created. An automated secure temporary password was assigned.`,
+            type: "success",
+          });
+          loadData();
+        }}
+        currentUser={user}
+        token={token}
       />
     </div>
   );

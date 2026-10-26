@@ -4,17 +4,20 @@ import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
-
 import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.saas.backend.Exception.ResourceNotFoundException;
 import com.saas.backend.models.AccommodationBooking;
+import com.saas.backend.models.AccommodationRequirement;
+import com.saas.backend.models.Company;
 import com.saas.backend.models.Notification;
 import com.saas.backend.models.Priority;
 import com.saas.backend.models.User;
+import com.saas.backend.repositories.AccommodationBookingRepository;
+import com.saas.backend.repositories.AccommodationRequirementRepository;
 import com.saas.backend.repositories.NotificationRepository;
 import com.saas.backend.repositories.UserRepository;
 import com.saas.backend.response.NotificationResponse;
@@ -36,6 +39,8 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final AccommodationRequirementRepository accommodationRequirementRepository;
+    private final AccommodationBookingRepository accommodationBookingRepository;
 
     @Override
     @Transactional
@@ -227,7 +232,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public List<NotificationResponse> getMyNotifications(Authentication auth) {
         if (auth == null || auth.getName() == null) {
             return Collections.emptyList();
@@ -238,14 +243,19 @@ public class NotificationServiceImpl implements NotificationService {
             return Collections.emptyList();
         }
 
-        return notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId())
-                .stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+        List<Notification> rawList = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        List<NotificationResponse> responses = new java.util.ArrayList<>();
+
+        for (Notification n : rawList) {
+            if (isNotificationAllowedForUser(n, user)) {
+                responses.add(mapToResponse(n));
+            }
+        }
+        return responses;
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public long getUnreadCount(Authentication auth) {
         if (auth == null || auth.getName() == null) {
             return 0L;
@@ -256,14 +266,31 @@ public class NotificationServiceImpl implements NotificationService {
             return 0L;
         }
 
-        return notificationRepository.countByUserIdAndReadAtIsNull(user.getId());
+        List<Notification> unread = notificationRepository.findByUserIdAndReadAtIsNullOrderByCreatedAtDesc(user.getId());
+        long count = 0L;
+        for (Notification n : unread) {
+            if (isNotificationAllowedForUser(n, user)) {
+                count++;
+            }
+        }
+        return count;
     }
 
     @Override
     @Transactional
     public void markAsRead(UUID notificationId, Authentication auth) {
+        if (auth == null || auth.getName() == null) {
+            throw new AccessDeniedException("Authentication required");
+        }
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Notification not found: " + notificationId));
+
+        if (notification.getUser() == null || !notification.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You do not have permission to modify this notification");
+        }
 
         notification.setReadAt(OffsetDateTime.now());
         notification.setStatus("READ");
@@ -280,11 +307,156 @@ public class NotificationServiceImpl implements NotificationService {
 
         List<Notification> unread = notificationRepository.findByUserIdAndReadAtIsNullOrderByCreatedAtDesc(user.getId());
         OffsetDateTime now = OffsetDateTime.now();
+        List<Notification> toUpdate = new java.util.ArrayList<>();
         for (Notification n : unread) {
-            n.setReadAt(now);
-            n.setStatus("READ");
+            if (isNotificationAllowedForUser(n, user)) {
+                n.setReadAt(now);
+                n.setStatus("READ");
+                toUpdate.add(n);
+            }
         }
-        notificationRepository.saveAll(unread);
+        if (!toUpdate.isEmpty()) {
+            notificationRepository.saveAll(toUpdate);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void deleteNotification(UUID notificationId, Authentication auth) {
+        if (auth == null || auth.getName() == null) {
+            throw new AccessDeniedException("Authentication required");
+        }
+        User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found: " + notificationId));
+
+        if (notification.getUser() == null || !notification.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You do not have permission to delete this notification");
+        }
+
+        notificationRepository.delete(notification);
+    }
+
+    @Override
+    @Transactional
+    public void clearAllNotifications(Authentication auth) {
+        if (auth == null || auth.getName() == null) return;
+
+        User user = userRepository.findByEmail(auth.getName()).orElse(null);
+        if (user == null) return;
+
+        List<Notification> list = notificationRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
+        if (!list.isEmpty()) {
+            notificationRepository.deleteAll(list);
+        }
+    }
+
+    /**
+     * Strict multi-tenant isolation validator.
+     * Evaluates whether a notification legitimately belongs to the current user's tenant.
+     * If a notification was previously cross-pollinated or leaked due to legacy bugs,
+     * it purges it immediately to heal the database.
+     */
+    private boolean isNotificationAllowedForUser(Notification n, User user) {
+        if (n == null || user == null) {
+            return false;
+        }
+
+        // 1. Must be assigned to this user
+        if (n.getUser() == null || !n.getUser().getId().equals(user.getId())) {
+            return false;
+        }
+
+        boolean isPlatformAdmin = user.getRole() != null && user.getRole().getName() != null &&
+                (user.getRole().getName().toUpperCase().contains("SUPER_ADMIN") ||
+                 user.getRole().getName().toUpperCase().contains("PLATFORM_ADMIN"));
+
+        Company userCompany = user.getCompany();
+        if (userCompany == null || userCompany.getId() == null) {
+            return isPlatformAdmin;
+        }
+
+        // 2. Direct company match check
+        if (n.getCompany() != null && n.getCompany().getId() != null) {
+            if (!n.getCompany().getId().equals(userCompany.getId())) {
+                log.warn("Purging cross-tenant notification {} (company {} != user company {})",
+                        n.getId(), n.getCompany().getId(), userCompany.getId());
+                try {
+                    notificationRepository.delete(n);
+                } catch (Exception ex) {
+                    log.error("Failed to delete leaked notification: {}", ex.getMessage());
+                }
+                return false;
+            }
+            return true;
+        }
+
+        // 3. Inspect related entity for legacy notifications where company_id is null
+        if (n.getRelatedEntityType() != null && n.getRelatedEntityId() != null) {
+            String entityType = n.getRelatedEntityType();
+            UUID entityId = n.getRelatedEntityId();
+
+            if ("AccommodationRequirement".equalsIgnoreCase(entityType) || "REQUIREMENT".equalsIgnoreCase(entityType)) {
+                try {
+                    AccommodationRequirement req = accommodationRequirementRepository.findById(entityId).orElse(null);
+                    if (req != null) {
+                        Company reqCompany = null;
+                        if (req.getSafari() != null && req.getSafari().getClient().getCompany() != null) {
+                            reqCompany = req.getSafari().getClient().getCompany();
+                        } else if (req.getSafari() != null && req.getSafari().getClient() != null && req.getSafari().getClient().getCompany() != null) {
+                            reqCompany = req.getSafari().getClient().getCompany();
+                        }
+
+                        if (reqCompany != null && !reqCompany.getId().equals(userCompany.getId())) {
+                            log.warn("Purging legacy leaked requirement notification {} belonging to foreign company {}", n.getId(), reqCompany.getId());
+                            notificationRepository.delete(n);
+                            return false;
+                        }
+
+                        if (reqCompany != null && reqCompany.getId().equals(userCompany.getId())) {
+                            n.setCompany(userCompany);
+                            notificationRepository.save(n);
+                            return true;
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Error validating requirement company for notification {}: {}", n.getId(), e.getMessage());
+                }
+            } else if ("AccommodationBooking".equalsIgnoreCase(entityType) || "BOOKING".equalsIgnoreCase(entityType)) {
+                try {
+                    AccommodationBooking booking = accommodationBookingRepository.findById(entityId).orElse(null);
+                    if (booking != null) {
+                        Company bookingCompany = booking.getAccommodationRequirement().getSafari().getClient().getCompany();
+                        if (bookingCompany == null && booking.getAccommodationRequirement() != null && booking.getAccommodationRequirement().getSafari() != null) {
+                            bookingCompany = booking.getAccommodationRequirement().getSafari().getClient().getCompany();
+                        }
+
+                        if (bookingCompany != null && !bookingCompany.getId().equals(userCompany.getId())) {
+                            log.warn("Purging legacy leaked booking notification {} belonging to foreign company {}", n.getId(), bookingCompany.getId());
+                            notificationRepository.delete(n);
+                            return false;
+                        }
+
+                        if (bookingCompany != null && bookingCompany.getId().equals(userCompany.getId())) {
+                            n.setCompany(userCompany);
+                            notificationRepository.save(n);
+                            return true;
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Error validating booking company for notification {}: {}", n.getId(), e.getMessage());
+                }
+            }
+        }
+
+        // Backfill company to user's company
+        n.setCompany(userCompany);
+        try {
+            notificationRepository.save(n);
+        } catch (Exception ignored) {}
+        return true;
     }
 
     /**
@@ -299,8 +471,14 @@ public class NotificationServiceImpl implements NotificationService {
             String entityType,
             UUID entityId
     ) {
+        Company company = null;
+        if (user != null && user.getCompany() != null) {
+            company = user.getCompany();
+        }
+
         Notification notification = Notification.builder()
                 .user(user)
+                .company(company)
                 .type(type)
                 .title(title)
                 .message(message)
@@ -318,9 +496,14 @@ public class NotificationServiceImpl implements NotificationService {
      * Maps internal entity to response DTO.
      */
     private NotificationResponse mapToResponse(Notification n) {
+        UUID compId = n.getCompany() != null ? n.getCompany().getId() : (n.getUser() != null && n.getUser().getCompany() != null ? n.getUser().getCompany().getId() : null);
+        String compName = n.getCompany() != null ? n.getCompany().getName() : (n.getUser() != null && n.getUser().getCompany() != null ? n.getUser().getCompany().getName() : null);
+
         return NotificationResponse.builder()
                 .id(n.getId())
                 .userId(n.getUser() != null ? n.getUser().getId() : null)
+                .companyId(compId)
+                .companyName(compName)
                 .type(n.getType())
                 .title(n.getTitle())
                 .message(n.getMessage())

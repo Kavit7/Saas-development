@@ -127,6 +127,7 @@ const ResourceDetailView = ({
   onDeleteRequirement,
   onBookLodge,
   onRegenerateDays,
+  onAddDay,
   // Client actions
   onAddGuest,
   onAddFlight,
@@ -145,6 +146,7 @@ const ResourceDetailView = ({
   // User actions
   onToggleUserStatus,
   onResetUserPassword,
+  onPersonalizeUser,
 }) => {
   const canUpdate = can("update", permissions);
   const canCreate = can("create", permissions);
@@ -455,17 +457,21 @@ const ResourceDetailView = ({
           requirements={subData?.requirements || []}
           bookings={subData?.bookings || []}
           safariStatus={item?.status}
+          safari={item}
+          safariId={item?.id}
           canUpdate={canUpdate}
           canCreate={canCreate}
           canDelete={canDelete}
           canBook={canBookLodge}
           actionLoading={actionLoading}
           onRegenerateDays={onRegenerateDays}
+          onAddDay={onAddDay}
           onEditDay={onEditDay}
           onAddRequirement={onAddRequirement}
           onEditRequirement={onEditRequirement}
           onDeleteRequirement={onDeleteRequirement}
           onBookLodge={onBookLodge}
+          onRefresh={onRefresh}
         />
       )}
 
@@ -557,6 +563,16 @@ const ResourceDetailView = ({
                 >
                   <span>Reset Password</span>
                 </button>
+                {onPersonalizeUser && (
+                  <button
+                    type="button"
+                    disabled={actionLoading}
+                    onClick={() => onPersonalizeUser?.(item)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition shadow-2xs active:scale-95"
+                  >
+                    <span>Personalize / Support</span>
+                  </button>
+                )}
               </div>
             </div>
           )}

@@ -14,10 +14,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 public class RequirementRequest {
-    
     private UUID categoryId;
     private UUID pricetierId;
     private Integer numberOfrooms;
+    private Integer numberOfNights;
     List<RoomRequirementRequest> roomRequirements;
     private String roomPreferences;
     private String specialRequests;

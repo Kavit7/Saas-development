@@ -232,9 +232,32 @@ public class ImapMailboxClient implements MailboxClient {
     private List<EmailAttachmentDto> extractAttachments(Message message) {
         List<EmailAttachmentDto> list = new ArrayList<>();
         try {
-            Object content = message.getContent();
-            if (content instanceof Multipart multipart) {
-                collectAttachments(multipart, list);
+            if (message.isMimeType("multipart/*")) {
+                Object content = message.getContent();
+                if (content instanceof Multipart multipart) {
+                    collectAttachments(multipart, list);
+                }
+            } else {
+                // Check if the single message itself is an attachment (e.g. direct PDF / Excel)
+                String contentType = message.getContentType();
+                boolean isDoc = message.isMimeType("application/pdf")
+                        || message.isMimeType("application/vnd.ms-excel")
+                        || message.isMimeType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                        || (contentType != null && (contentType.toLowerCase().contains("pdf") || contentType.toLowerCase().contains("excel") || contentType.toLowerCase().contains("spreadsheet")));
+
+                if (isDoc) {
+                    String fileName = resolveFileName(message.getFileName(), contentType, "application/pdf");
+                    byte[] data = message.getInputStream().readAllBytes();
+                    if (data.length > 0) {
+                        list.add(EmailAttachmentDto.builder()
+                                .fileName(fileName)
+                                .contentType(contentType)
+                                .data(data)
+                                .size(data.length)
+                                .build());
+                        log.info("Extracted single-part email attachment '{}' ({} bytes, type: {})", fileName, data.length, contentType);
+                    }
+                }
             }
         } catch (Exception e) {
             log.warn("Could not extract email attachments: {}", e.getMessage());
@@ -247,26 +270,78 @@ public class ImapMailboxClient implements MailboxClient {
             BodyPart part = multipart.getBodyPart(i);
             String disposition = part.getDisposition();
             String rawFileName = part.getFileName();
+            String contentType = part.getContentType() != null ? part.getContentType() : "";
+            String lowerCt = contentType.toLowerCase();
 
-            boolean isAttachment = (disposition != null && (disposition.equalsIgnoreCase(Part.ATTACHMENT) || disposition.equalsIgnoreCase(Part.INLINE)))
-                    || (rawFileName != null && !rawFileName.isBlank());
+            boolean isDocMime = part.isMimeType("application/pdf")
+                    || part.isMimeType("application/vnd.ms-excel")
+                    || part.isMimeType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    || lowerCt.contains("pdf")
+                    || lowerCt.contains("spreadsheet")
+                    || lowerCt.contains("excel");
 
-            if (isAttachment && rawFileName != null && !rawFileName.isBlank()) {
-                String decodedName = MimeUtility.decodeText(rawFileName);
-                String contentType = part.getContentType();
+            boolean isExplicitAttachment = disposition != null && (
+                    disposition.equalsIgnoreCase(Part.ATTACHMENT) ||
+                    disposition.equalsIgnoreCase(Part.INLINE)
+            );
+
+            boolean hasNamedFile = rawFileName != null && !rawFileName.isBlank();
+
+            if (isDocMime || hasNamedFile || isExplicitAttachment) {
+                // Do not collect plain text or html body parts as attachments unless explicitly marked as attachment
+                if (!isExplicitAttachment && (part.isMimeType("text/plain") || part.isMimeType("text/html"))) {
+                    continue;
+                }
+
+                String resolvedName = resolveFileName(rawFileName, contentType, lowerCt.contains("pdf") ? "pdf" : "doc");
                 try (var is = part.getInputStream()) {
                     byte[] data = is.readAllBytes();
-                    list.add(EmailAttachmentDto.builder()
-                            .fileName(decodedName)
-                            .contentType(contentType)
-                            .data(data)
-                            .size(data.length)
-                            .build());
-                    log.info("Extracted email attachment '{}' ({} bytes, type: {})", decodedName, data.length, contentType);
+                    if (data.length > 0) {
+                        list.add(EmailAttachmentDto.builder()
+                                .fileName(resolvedName)
+                                .contentType(contentType)
+                                .data(data)
+                                .size(data.length)
+                                .build());
+                        log.info("Extracted email attachment '{}' ({} bytes, type: {})", resolvedName, data.length, contentType);
+                    }
+                } catch (Exception ex) {
+                    log.warn("Failed reading attachment stream for '{}': {}", resolvedName, ex.getMessage());
                 }
-            } else if (part.getContent() instanceof Multipart nested) {
-                collectAttachments(nested, list);
+            } else {
+                try {
+                    Object nestedContent = part.getContent();
+                    if (nestedContent instanceof Multipart nested) {
+                        collectAttachments(nested, list);
+                    } else if (nestedContent instanceof Message nestedMsg) {
+                        list.addAll(extractAttachments(nestedMsg));
+                    }
+                } catch (Exception ignored) {
+                }
             }
+        }
+    }
+
+    private String resolveFileName(String rawName, String contentType, String fallbackPrefix) {
+        String name = rawName;
+        if (name == null || name.isBlank()) {
+            if (contentType != null && contentType.toLowerCase().contains("name=")) {
+                java.util.regex.Pattern p = java.util.regex.Pattern.compile("name\\s*=\\s*\"?([^;\"]+)\"?", java.util.regex.Pattern.CASE_INSENSITIVE);
+                java.util.regex.Matcher m = p.matcher(contentType);
+                if (m.find()) {
+                    name = m.group(1).trim();
+                }
+            }
+        }
+        if (name == null || name.isBlank()) {
+            String ext = (contentType != null && (contentType.toLowerCase().contains("pdf") || fallbackPrefix.contains("pdf"))) ? ".pdf" :
+                    (contentType != null && contentType.toLowerCase().contains("spreadsheet")) ? ".xlsx" : ".bin";
+            name = "invoice_" + System.currentTimeMillis() + ext;
+        }
+        try {
+            return MimeUtility.decodeText(name);
+        } catch (Exception e) {
+            return name;
         }
     }
 

@@ -41,4 +41,12 @@ public class IncomingEmail extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "booking_id")
     private AccommodationBooking booking;
+
+    private boolean hasAttachment;
+
+    private String attachmentFileName;
+
+    private String attachmentFilePath;
+
+    private String attachmentFileType;
 }
