@@ -20,6 +20,7 @@ import com.saas.backend.models.SupportCategory;
 import com.saas.backend.models.SupportTicket;
 import com.saas.backend.models.TicketStatus;
 import com.saas.backend.models.User;
+import com.saas.backend.repositories.CompanyRepository;
 import com.saas.backend.repositories.SupportTicketRepository;
 import com.saas.backend.repositories.UserRepository;
 import com.saas.backend.response.SupportTicketResponse;
@@ -36,6 +37,7 @@ public class SupportTicketServiceImpl implements SupportTicketService {
 
     private final SupportTicketRepository supportTicketRepository;
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final AuditLogService auditLogService;
 
     private SupportTicketResponse mapToResponse(SupportTicket ticket) {
@@ -78,12 +80,32 @@ public class SupportTicketServiceImpl implements SupportTicketService {
     @Override
     @Transactional
     public SupportTicketResponse createTicket(SupportTicketRequest request, Authentication auth) {
-        User currentUser = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new AccessDeniedException("User not authenticated"));
+        boolean isSuperAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN") || a.getAuthority().equals("ROLE_PLATFORM_ADMIN"));
+
+        if (isSuperAdmin) {
+            throw new AccessDeniedException("Super Admin does not raise direct support tickets. General tickets must be raised by tenant users, or generated automatically via Account Personalization.");
+        }
+
+        User currentUser = (auth != null && auth.isAuthenticated() && !auth.getName().equalsIgnoreCase("anonymousUser"))
+                ? userRepository.findByEmail(auth.getName()).orElse(null)
+                : null;
+
+        if (currentUser == null) {
+            throw new AccessDeniedException("User must be authenticated to create a support ticket.");
+        }
 
         Company company = currentUser.getCompany();
         if (company == null) {
             throw new AccessDeniedException("User has no associated company to file a ticket under");
+        }
+
+        User raisedBy = currentUser;
+        if (raisedBy == null) {
+            raisedBy = userRepository.findByCompany(company, PageRequest.of(0, 1)).getContent().stream().findFirst().orElse(null);
+        }
+        if (raisedBy == null) {
+            throw new RuntimeException("Cannot create ticket: Company has no registered users to attach ticket to.");
         }
 
         User assignedTo = null;
@@ -93,7 +115,7 @@ public class SupportTicketServiceImpl implements SupportTicketService {
 
         SupportTicket ticket = SupportTicket.builder()
                 .company(company)
-                .raisedBy(currentUser)
+                .raisedBy(raisedBy)
                 .assignedTo(assignedTo)
                 .category(request.getCategory() != null ? request.getCategory() : SupportCategory.OTHER)
                 .subject(request.getSubject())
@@ -101,22 +123,27 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 .relatedEntityType(request.getRelatedEntityType())
                 .relatedEntityId(request.getRelatedEntityId())
                 .priority(request.getPriority() != null ? request.getPriority() : Priority.MEDIUM)
-                .status(TicketStatus.OPEN)
+                .status(request.getStatus() != null ? request.getStatus() : TicketStatus.OPEN)
+                .resolutionNotes(request.getResolutionNotes())
                 .build();
 
         SupportTicket saved = supportTicketRepository.save(ticket);
 
-        auditLogService.recordAuditLog(
-                company,
-                currentUser,
-                "CREATE_SUPPORT_TICKET",
-                "support_ticket",
-                saved.getId(),
-                null,
-                "{\"subject\":\"" + saved.getSubject() + "\",\"category\":\"" + saved.getCategory() + "\"}",
-                "0.0.0.0",
-                "Internal Web Client"
-        );
+        try {
+            auditLogService.recordAuditLog(
+                    company,
+                    currentUser,
+                    "CREATE_SUPPORT_TICKET",
+                    "support_ticket",
+                    saved.getId(),
+                    null,
+                    "{\"subject\":\"" + (saved.getSubject() != null ? saved.getSubject().replace("\"", "'") : "") + "\"}",
+                    "0.0.0.0",
+                    "Internal Web Client"
+            );
+        } catch (Exception ex) {
+            log.warn("Audit log error on ticket create: {}", ex.getMessage());
+        }
 
         return mapToResponse(saved);
     }
@@ -169,14 +196,15 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         SupportTicket ticket = supportTicketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Support ticket not found"));
 
-        User currentUser = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new AccessDeniedException("User not authenticated"));
-
         boolean isSuperAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN") || a.getAuthority().equals("ROLE_PLATFORM_ADMIN"));
 
+        User currentUser = (auth != null && auth.isAuthenticated() && !auth.getName().equalsIgnoreCase("anonymousUser"))
+                ? userRepository.findByEmail(auth.getName()).orElse(null)
+                : null;
+
         if (!isSuperAdmin) {
-            if (currentUser.getCompany() == null ||
+            if (currentUser == null || currentUser.getCompany() == null ||
                     !currentUser.getCompany().getId().equals(ticket.getCompany().getId())) {
                 throw new AccessDeniedException("Access denied to update support ticket of another company");
             }
@@ -184,6 +212,15 @@ public class SupportTicketServiceImpl implements SupportTicketService {
 
         String oldValues = "{\"status\":\"" + ticket.getStatus() + "\",\"priority\":\"" + ticket.getPriority() + "\"}";
 
+        if (request.getSubject() != null && !request.getSubject().trim().isEmpty()) {
+            ticket.setSubject(request.getSubject().trim());
+        }
+        if (request.getDescription() != null && !request.getDescription().trim().isEmpty()) {
+            ticket.setDescription(request.getDescription().trim());
+        }
+        if (request.getCategory() != null) {
+            ticket.setCategory(request.getCategory());
+        }
         if (request.getStatus() != null) {
             ticket.setStatus(request.getStatus());
             if (request.getStatus() == TicketStatus.RESOLVED || request.getStatus() == TicketStatus.CLOSED) {
@@ -205,19 +242,23 @@ public class SupportTicketServiceImpl implements SupportTicketService {
 
         SupportTicket saved = supportTicketRepository.save(ticket);
 
-        String newValues = "{\"status\":\"" + saved.getStatus() + "\",\"priority\":\"" + saved.getPriority() + "\",\"resolutionNotes\":\"" + saved.getResolutionNotes() + "\"}";
+        String newValues = "{\"status\":\"" + saved.getStatus() + "\",\"priority\":\"" + saved.getPriority() + "\"}";
 
-        auditLogService.recordAuditLog(
-                saved.getCompany(),
-                currentUser,
-                "UPDATE_SUPPORT_TICKET",
-                "support_ticket",
-                saved.getId(),
-                oldValues,
-                newValues,
-                "0.0.0.0",
-                "Internal Web Client"
-        );
+        try {
+            auditLogService.recordAuditLog(
+                    saved.getCompany(),
+                    currentUser,
+                    "UPDATE_SUPPORT_TICKET",
+                    "support_ticket",
+                    saved.getId(),
+                    oldValues,
+                    newValues,
+                    "0.0.0.0",
+                    "Internal Web Client"
+            );
+        } catch (Exception ex) {
+            log.warn("Audit log error on ticket update: {}", ex.getMessage());
+        }
 
         return mapToResponse(saved);
     }

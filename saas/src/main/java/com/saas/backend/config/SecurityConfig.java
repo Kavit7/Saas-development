@@ -38,8 +38,21 @@ public class SecurityConfig {
         .csrf(csrf -> csrf.disable())
         .cors(cors -> {})
             .authorizeHttpRequests(auth->auth
-            .requestMatchers("/api/v1/auth/**","/docs/**","/swagger-ui/**","/v3/api-docs/**", "/api/subscription-plans/active")
-            .permitAll()
+            .requestMatchers(
+                "/api/v1/auth/login", 
+                "/api/v1/auth/platform-admin/login", 
+                "/auth/login", 
+                "/docs/**", 
+                "/swagger-ui/**", 
+                "/v3/api-docs/**", 
+                "/api/subscription-plans/active"
+            ).permitAll()
+            .requestMatchers(
+                "/api/v1/auth/me", 
+                "/auth/me", 
+                "/api/v1/auth/change-password", 
+                "/auth/change-password"
+            ).authenticated()
             .anyRequest()
             .authenticated())
             .sessionManagement(session->session

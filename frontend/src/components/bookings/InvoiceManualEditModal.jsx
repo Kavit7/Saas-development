@@ -16,6 +16,7 @@ const InvoiceManualEditModal = ({
   open,
   onClose,
   invoice,
+  bookingId,
   onSuccess,
 }) => {
   const { token } = useAuth();
@@ -72,10 +73,35 @@ const InvoiceManualEditModal = ({
         paymentPlan: Array.isArray(invoice.paymentPlan) ? [...invoice.paymentPlan] : [],
       });
       setError(null);
+    } else {
+      setFormData({
+        invoiceNumber: "",
+        amount: "",
+        currency: "USD",
+        dueDate: "",
+        status: "PENDING",
+        notes: "",
+        bankDetails: {
+          bankName: "",
+          accountName: "",
+          accountNumber: "",
+          currency: "USD",
+          swiftCode: "",
+          branch: "",
+          iban: "",
+          country: "Tanzania",
+          intermediaryBankName: "",
+          intermediarySwiftCode: "",
+          lipaNamba: "",
+          notes: "",
+        },
+        paymentPlan: [],
+      });
+      setError(null);
     }
   }, [invoice, open]);
 
-  if (!open || !invoice) return null;
+  if (!open || (!invoice && !bookingId)) return null;
 
   const handleBankChange = (field, value) => {
     setFormData((prev) => ({
@@ -146,14 +172,24 @@ const InvoiceManualEditModal = ({
         })),
       };
 
-      const updated = await apiRequest(`/invoices/${invoice.id}/manual-entry`, {
-        method: "PUT",
-        body: JSON.stringify(payload),
-      }, token);
+      let updated;
+      if (invoice?.id) {
+        updated = await apiRequest(`/invoices/${invoice.id}/manual-entry`, {
+          method: "PUT",
+          body: JSON.stringify(payload),
+        }, token);
+      } else if (bookingId) {
+        updated = await apiRequest(`/invoices/booking/${bookingId}/manual`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }, token);
+      } else {
+        throw new Error("No invoice or booking context provided.");
+      }
 
       if (onSuccess) onSuccess(updated);
     } catch (err) {
-      setError(err?.message || "Failed to update invoice.");
+      setError(err?.message || "Failed to save invoice.");
     } finally {
       setLoading(false);
     }

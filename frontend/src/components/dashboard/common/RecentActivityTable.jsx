@@ -12,7 +12,7 @@ const getStatusBadge = (status) => {
   if (s.includes("CANCEL") || s.includes("INACTIVE") || s.includes("REJECT")) {
     return "bg-rose-50 text-rose-700 border-rose-200/90";
   }
-  return "bg-[#264624]/10 text-[#264624] border-[#264624]/30";
+  return "bg-[#EAF1EC] text-[#315B43] border-[#35634B]/15";
 };
 
 /**
@@ -31,10 +31,10 @@ const RecentActivityTable = ({
   viewAllLink,
 }) => {
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs font-sans">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+    <div className="overflow-hidden rounded-xl border border-[#28332C]/10 bg-white font-sans">
+      <div className="flex flex-col justify-between gap-2 border-b border-[#28332C]/10 px-5 py-4 sm:flex-row sm:items-center">
         <div>
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 font-serif-title tracking-tight">
+          <h3 className="text-base font-semibold tracking-tight text-[#28332C]">
             {title}
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
@@ -43,7 +43,7 @@ const RecentActivityTable = ({
         {viewAllLink && (
           <Link
             to={viewAllLink}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#264624] hover:text-[#1b331a] hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#35634B] hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#35634B]"
           >
             <span>View All Records</span>
             <ArrowRight size={13} weight="bold" />
@@ -52,38 +52,38 @@ const RecentActivityTable = ({
       </div>
 
       {!items || items.length === 0 ? (
-        <div className="p-8 text-center text-slate-400 text-xs">
+        <div className="p-8 text-center text-sm text-slate-500">
           No recent activity recorded yet
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-100 text-slate-400 font-bold uppercase tracking-wider text-[10px]">
-                <th className="pb-3 font-semibold">Details / Reference</th>
-                <th className="pb-3 font-semibold">Entity / Client</th>
-                <th className="pb-3 font-semibold">Date</th>
-                <th className="pb-3 font-semibold text-right">Status</th>
+          <table className="w-full min-w-[640px] text-left text-sm">
+            <thead className="bg-[#F7F8F6]">
+              <tr className="border-b border-[#28332C]/10 text-[11px] font-medium text-slate-500">
+                <th className="px-5 py-3 font-medium">Details / Reference</th>
+                <th className="px-5 py-3 font-medium">Entity / Client</th>
+                <th className="px-5 py-3 font-medium">Date</th>
+                <th className="px-5 py-3 text-right font-medium">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100/80">
+            <tbody className="divide-y divide-[#28332C]/[0.06]">
               {items.map((row, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/50 transition">
-                  <td className="py-3 font-bold text-slate-900 font-serif-title">
+                <tr key={idx} className="transition-colors hover:bg-[#F8FAF8]">
+                  <td className="px-5 py-3.5 font-medium text-[#28332C]">
                     {row.title}
                   </td>
-                  <td className="py-3 text-slate-600 font-medium truncate max-w-[180px]">
+                  <td className="max-w-[180px] truncate px-5 py-3.5 text-slate-600">
                     {row.subtitle}
                   </td>
-                  <td className="py-3 text-slate-400 font-mono text-[11px]">
+                  <td className="px-5 py-3.5 text-xs text-slate-500">
                     <div className="flex items-center gap-1">
-                      <Clock size={12} className="text-slate-400" />
+                      <Clock size={13} className="text-slate-400" />
                       <span>{row.date}</span>
                     </div>
                   </td>
-                  <td className="py-3 text-right">
+                  <td className="px-5 py-3.5 text-right">
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border shadow-2xs ${getStatusBadge(
+                      className={`inline-flex items-center rounded-md border px-2 py-1 text-[11px] font-medium ${getStatusBadge(
                         row.status
                       )}`}
                     >

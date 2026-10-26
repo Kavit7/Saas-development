@@ -12,6 +12,7 @@ import com.saas.backend.dto.SafariRequest;
 import com.saas.backend.models.Safari;
 import com.saas.backend.models.SafariStatus;
 import com.saas.backend.response.ItineraryDayResponse;
+import com.saas.backend.dto.SafariRescheduleRequest;
 import com.saas.backend.response.SafariResponse;
 
 public interface SafariService {
@@ -22,6 +23,8 @@ public interface SafariService {
     void updateItineraryDay(UUID safariId, UUID dayId, ItineraryRequest request);
     Page<SafariResponse> getAllSafari(int page, int size, String sortBy, String search, String direction, SafariStatus status, LocalDate startDate, LocalDate endDate);
     List<ItineraryDayResponse> regenerateItineraryDays(UUID safariId);
+    ItineraryDayResponse addItineraryDay(UUID safariId);
     SafariResponse updateSafariStatus(UUID safariId, SafariStatus status);
     SafariStatus recalculateAndSaveSafariStatus(Safari safari);
+    SafariResponse rescheduleSafari(UUID safariId, SafariRescheduleRequest request);
 }

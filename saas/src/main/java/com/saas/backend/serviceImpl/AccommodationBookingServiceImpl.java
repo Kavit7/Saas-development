@@ -71,12 +71,28 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
     private final ItineraryDayRepository itineraryDayRepository;
 
     private void validateBookingCompanyAccess(AccommodationBooking booking) {
-        if (booking != null &&
-            booking.getAccommodationRequirement() != null &&
-            booking.getAccommodationRequirement().getSafari() != null &&
-            booking.getAccommodationRequirement().getSafari().getClient() != null &&
-            booking.getAccommodationRequirement().getSafari().getClient().getCompany() != null) {
-            companyAccessValidator.validate(booking.getAccommodationRequirement().getSafari().getClient().getCompany().getId());
+        if (booking == null) return;
+        User currentUser = checker.checkCurrentUser();
+        if (currentUser == null) return;
+
+        boolean isSuperAdmin = currentUser.getRole() != null &&
+                "SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName().replace("ROLE_", "").trim());
+        if (isSuperAdmin) return;
+
+        if (booking.getAccommodationRequirement() != null &&
+            booking.getAccommodationRequirement().getSafari() != null) {
+            Safari safari = booking.getAccommodationRequirement().getSafari();
+            if (safari.getClient() != null && safari.getClient().getCompany() != null) {
+                companyAccessValidator.validate(safari.getClient().getCompany().getId());
+            }
+
+            boolean isSalesPerson = currentUser.getRole() != null &&
+                    currentUser.getRole().getName().toUpperCase().replace(" ", "_").contains("SALES");
+            if (isSalesPerson) {
+                if (safari.getSalesPerson() == null || !safari.getSalesPerson().getId().equals(currentUser.getId())) {
+                    throw new SecurityException("Security & Access Policy: Sales consultants may only view or manage bookings for their own safaris.");
+                }
+            }
         }
     }
 
@@ -100,7 +116,12 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         boolean isSuperAdmin = currentUser.getRole() != null &&
                 "SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName().replace("ROLE_", "").trim());
 
-        if (!isSuperAdmin && currentUser.getCompany() != null) {
+        boolean isSalesPerson = currentUser.getRole() != null &&
+                currentUser.getRole().getName().toUpperCase().replace(" ", "_").contains("SALES");
+
+        if (isSalesPerson) {
+            specification = specification.and(AccommodationBookingSpecification.hasSalesPerson(currentUser.getId()));
+        } else if (!isSuperAdmin && currentUser.getCompany() != null) {
             specification = specification.and(AccommodationBookingSpecification.hasCompany(currentUser.getCompany().getId()));
         }
 
@@ -121,6 +142,17 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         User currentUser = checker.checkCurrentUser();
         boolean isSuperAdmin = currentUser.getRole() != null &&
                 "SUPER_ADMIN".equalsIgnoreCase(currentUser.getRole().getName().replace("ROLE_", "").trim());
+
+        boolean isSalesPerson = currentUser.getRole() != null &&
+                currentUser.getRole().getName().toUpperCase().replace(" ", "_").contains("SALES");
+
+        if (isSalesPerson) {
+            Specification<AccommodationBooking> spec = AccommodationBookingSpecification.hasSalesPerson(currentUser.getId());
+            return accommodationBookingRepository.findAll(spec, Sort.by(Sort.Direction.DESC, "createdAt"))
+                    .stream()
+                    .map(this::mapToResponse)
+                    .collect(Collectors.toList());
+        }
 
         if (!isSuperAdmin && currentUser.getCompany() != null) {
             Specification<AccommodationBooking> spec = AccommodationBookingSpecification.hasCompany(currentUser.getCompany().getId());
@@ -194,25 +226,48 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
             throw new IllegalStateException("This accommodation requirement has already been booked and completed.");
         }
 
-        // Automatically infer and fallback dates if omitted from the direct request
-        LocalDate checkIn = request.getCheckIn();
-        if (checkIn == null) {
-            if (requirement.getItineraryDay() != null && requirement.getItineraryDay().getDate() != null) {
-                checkIn = requirement.getItineraryDay().getDate();
-            } else if (requirement.getSafari() != null && requirement.getSafari().getStartDate() != null) {
-                checkIn = requirement.getSafari().getStartDate();
-            } else {
-                checkIn = LocalDate.now();
-            }
+        // 1. Check if property previously declined this specific requirement
+        boolean wasDeclined = accommodationBookingRepository.findByAccommodationRequirementId(requirement.getId())
+                .stream()
+                .anyMatch(b -> b.getProperty() != null && b.getProperty().getId().equals(property.getId()) && b.getStatus() == BookingStatus.CANCELLED);
+        if (wasDeclined) {
+            throw new IllegalStateException("Property '" + property.getName() + "' previously declined this accommodation requirement and cannot be re-allocated.");
         }
 
-        LocalDate checkOut = request.getCheckOut();
-        if (checkOut == null) {
-            checkOut = checkIn.plusDays(1);
-        }
+        // Single Source of Truth: Check-in is strictly anchored to the Itinerary Day date,
+        // and Check-out is strictly Check-in + numberOfNights
+        LocalDate checkIn = (requirement.getItineraryDay() != null && requirement.getItineraryDay().getDate() != null)
+                ? requirement.getItineraryDay().getDate()
+                : (request.getCheckIn() != null ? request.getCheckIn() : (requirement.getSafari() != null && requirement.getSafari().getStartDate() != null ? requirement.getSafari().getStartDate() : LocalDate.now()));
+
+        int reqNights = (requirement.getNumberOfNights() != null && requirement.getNumberOfNights() > 0) ? requirement.getNumberOfNights() : 1;
+        LocalDate checkOut = checkIn.plusDays(reqNights);
 
         if (!checkOut.isAfter(checkIn)) {
             throw new IllegalArgumentException("Checkout date (" + checkOut + ") must be after check-in date (" + checkIn + ")");
+        }
+
+        // 2. Validate dates within Safari itinerary boundaries
+        Safari safariCheck = requirement.getSafari();
+        if (safariCheck != null) {
+            if (safariCheck.getStartDate() != null && checkIn.isBefore(safariCheck.getStartDate())) {
+                throw new IllegalArgumentException("Check-in date (" + checkIn + ") cannot be before safari start date (" + safariCheck.getStartDate() + ")");
+            }
+            if (safariCheck.getEndDate() != null && checkOut.isAfter(safariCheck.getEndDate().plusDays(1))) {
+                throw new IllegalArgumentException("Check-out date (" + checkOut + ") exceeds safari schedule end date (" + safariCheck.getEndDate() + ")");
+            }
+
+            // 3. Prevent duplicate/overlapping bookings for the same property on this safari
+            final LocalDate cIn = checkIn;
+            final LocalDate cOut = checkOut;
+            boolean hasOverlap = accommodationBookingRepository.findBySafariId(safariCheck.getId())
+                    .stream()
+                    .filter(b -> b.getProperty() != null && b.getProperty().getId().equals(property.getId()) && b.getStatus() != BookingStatus.CANCELLED)
+                    .anyMatch(b -> b.getCheckIn() != null && b.getCheckOut() != null &&
+                            cIn.isBefore(b.getCheckOut()) && cOut.isAfter(b.getCheckIn()));
+            if (hasOverlap) {
+                throw new IllegalStateException("Property '" + property.getName() + "' already has an active booking for overlapping dates in this safari.");
+            }
         }
 
         User reservationManager = null;
@@ -412,9 +467,6 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
             log.warn("Follow-up cancellation notice: {}", e.getMessage());
         }
 
-        // Auto-generate invoice if not exists
-        createOrGetBookingInvoice(booking);
-
         // Notify sales consultant and staff
         notificationService.notifyBookingConfirmed(booking);
         return mapToResponse(booking);
@@ -448,8 +500,6 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         try {
             bookingFollowUpService.cancelPendingFollowUps(booking.getId());
         } catch (Exception ignored) {}
-
-        createOrGetBookingInvoice(booking);
 
         notificationService.notifyBookingConfirmed(booking);
     }
@@ -571,49 +621,6 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
         return "ACC-BOOK-" + year + "-" + random;
     }
 
-    private void createOrGetBookingInvoice(AccommodationBooking booking) {
-        try {
-            if (!invoiceRepository.existsByAccommodationBookingId(booking.getId())) {
-                java.math.BigDecimal pricePerNight = java.math.BigDecimal.valueOf(250.00);
-                if (booking.getProperty() != null && booking.getProperty().getPriceTier() != null && booking.getProperty().getPriceTier().getMinPrice() != null) {
-                    pricePerNight = booking.getProperty().getPriceTier().getMinPrice();
-                }
-
-                long nights = 1;
-                if (booking.getCheckIn() != null && booking.getCheckOut() != null) {
-                    long diff = java.time.temporal.ChronoUnit.DAYS.between(booking.getCheckIn(), booking.getCheckOut());
-                    if (diff > 0) {
-                        nights = diff;
-                    }
-                }
-
-                int rooms = 1;
-                if (booking.getAccommodationRequirement() != null && booking.getAccommodationRequirement().getNumberOfRooms() != null) {
-                    rooms = booking.getAccommodationRequirement().getNumberOfRooms();
-                }
-
-                java.math.BigDecimal totalAmount = pricePerNight.multiply(java.math.BigDecimal.valueOf(nights * rooms));
-                String invNum = "INV-" + booking.getReferenceNumber().replace("ACC-BOOK-", "");
-
-                Invoice invoice = Invoice.builder()
-                        .accommodationBooking(booking)
-                        .invoiceNumber(invNum)
-                        .amount(totalAmount)
-                        .currency("USD")
-                        .dueDate(booking.getCheckIn() != null ? booking.getCheckIn() : LocalDate.now().plusDays(7))
-                        .status(InvoiceStatus.PENDING)
-                        .fileName(invNum + ".pdf")
-                        .filePath("/invoices/" + invNum + ".pdf")
-                        .issuedAt(OffsetDateTime.now())
-                        .build();
-
-                invoiceRepository.save(invoice);
-                log.info("Auto-generated Invoice {} for confirmed booking {}", invNum, booking.getReferenceNumber());
-            }
-        } catch (Exception e) {
-            log.warn("Could not auto-generate invoice for booking {}: {}", booking.getReferenceNumber(), e.getMessage());
-        }
-    }
 
     private void updateSafariLifecycleStatus(Safari safari) {
         if (safari == null || safari.getStatus() == SafariStatus.CANCELLED) return;

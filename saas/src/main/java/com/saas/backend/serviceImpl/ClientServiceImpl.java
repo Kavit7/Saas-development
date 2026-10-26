@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.saas.backend.AccessHelper.CompanyAccessValidator;
@@ -81,11 +82,41 @@ public class ClientServiceImpl implements ClientService {
                 .build();
     }
 
+    private User getCurrentUser() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.getName() != null) {
+                return userRepository.findByEmail(auth.getName()).orElse(null);
+            }
+        } catch (Exception ignored) {}
+        return null;
+    }
+
+    private void validateSalesPersonClientAccess(Client client) {
+        if (client == null) return;
+        User user = getCurrentUser();
+        if (user == null) return;
+        String roleName = user.getRole() != null ? user.getRole().getName().toUpperCase().replace(" ", "_") : "";
+        boolean isSalesPerson = roleName.contains("SALES");
+        if (isSalesPerson) {
+            if (client.getSalesPerson() == null || !client.getSalesPerson().getId().equals(user.getId())) {
+                throw new SecurityException("Security & Access Policy: Sales consultants may only view or manage their own clients.");
+            }
+        }
+    }
+
     @Override
     public ClientResponse createClient(UUID salesPersonId, ClientRequest request) {
         try {
             User user = userRepository.findById(salesPersonId)
                     .orElseThrow(() -> new RuntimeException("The id is not valid for the sale person"));
+
+            User currentUser = getCurrentUser();
+            boolean isCallerSalesPerson = currentUser != null && currentUser.getRole() != null &&
+                    currentUser.getRole().getName().toUpperCase().replace(" ", "_").contains("SALES");
+            if (isCallerSalesPerson) {
+                user = currentUser;
+            }
 
             if (user.getRole().getName().equalsIgnoreCase("ADMIN")) {
                 throw new RuntimeException("Admin can't add Client to its id please select Sales person");
@@ -133,7 +164,7 @@ public class ClientServiceImpl implements ClientService {
 
             String roleName = user.getRole() != null ? user.getRole().getName().toUpperCase().replace(" ", "_") : "";
             boolean isSuperAdmin = roleName.contains("SUPER_ADMIN");
-            boolean isSalesPerson = roleName.contains("SALES_PERSON");
+            boolean isSalesPerson = roleName.contains("SALES");
 
             if (isSuperAdmin) {
                 specification = (root, query, cb) -> cb.conjunction();
@@ -166,6 +197,7 @@ public class ClientServiceImpl implements ClientService {
             Client client = clientRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("No client found"));
             companyAccessValidator.validate(client.getCompany().getId());
+            validateSalesPersonClientAccess(client);
             return mapToResponse(client);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
@@ -178,6 +210,7 @@ public class ClientServiceImpl implements ClientService {
             Client client = clientRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Client not found"));
             companyAccessValidator.validate(client.getCompany().getId());
+            validateSalesPersonClientAccess(client);
 
             if (request.getFirstName() != null) client.setFirstName(request.getFirstName());
             if (request.getLastName() != null) client.setLastName(request.getLastName());
@@ -203,6 +236,7 @@ public class ClientServiceImpl implements ClientService {
                     .orElseThrow(() -> new RuntimeException("Client not found"));
 
             companyAccessValidator.validate(client.getCompany().getId());
+            validateSalesPersonClientAccess(client);
             List<Guest> guests = guestRepository.findAllByClientId(client.getId());
             return guests.stream().map(this::mapGuestToResponse).collect(Collectors.toList());
         } catch (Exception e) {

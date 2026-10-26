@@ -45,9 +45,9 @@ const DonutStatusChart = ({
   });
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between font-sans">
+    <div className="flex flex-col justify-between rounded-xl border border-[#28332C]/10 bg-white p-5 font-sans">
       <div className="mb-4">
-        <h3 className="text-base sm:text-lg font-bold text-slate-900 font-serif-title tracking-tight">
+        <h3 className="text-base font-semibold tracking-tight text-[#28332C]">
           {title}
         </h3>
         <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
@@ -63,7 +63,7 @@ const DonutStatusChart = ({
               cy={size / 2}
               r={radius}
               fill="transparent"
-              stroke="#F1F5F9"
+              stroke="#E8ECE8"
               strokeWidth={strokeWidth}
             />
 
@@ -92,10 +92,10 @@ const DonutStatusChart = ({
 
           {/* Central Summary Counter */}
           <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-            <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-serif-title tracking-tight">
+            <span className="text-2xl font-semibold tracking-tight text-[#28332C]">
               {hoveredIdx !== null ? slices[hoveredIdx]?.count : totalCount.toLocaleString()}
             </span>
-            <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <span className="text-[11px] font-medium text-slate-500">
               {hoveredIdx !== null ? slices[hoveredIdx]?.label : centerLabel}
             </span>
           </div>
@@ -111,18 +111,18 @@ const DonutStatusChart = ({
                 onMouseEnter={() => setHoveredIdx(slice.index)}
                 onMouseLeave={() => setHoveredIdx(null)}
                 className={`flex items-center justify-between sm:justify-start gap-3 p-2 rounded-xl text-xs transition cursor-pointer ${
-                  isHovered ? "bg-slate-50 font-semibold" : "hover:bg-slate-50/60"
+                  isHovered ? "bg-[#F2F4F0] font-medium" : "hover:bg-[#F8FAF8]"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span
-                    className="h-2.5 w-2.5 rounded-full shrink-0 shadow-2xs"
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
                     style={{ backgroundColor: slice.color || "#264624" }}
                   />
                   <span className="text-slate-700">{slice.label}</span>
                 </div>
-                <div className="flex items-center gap-2 font-mono text-[11px] text-slate-500">
-                  <span className="font-bold text-slate-900">{slice.count}</span>
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <span className="font-medium text-slate-700">{slice.count}</span>
                   <span className="text-slate-400">({slice.percent}%)</span>
                 </div>
               </div>

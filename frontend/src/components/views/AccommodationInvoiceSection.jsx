@@ -289,17 +289,28 @@ const AccommodationInvoiceSection = ({
             When the lodge emails back with an invoice attachment (.pdf or .xlsx), the system will automatically extract bank coordinates and payment milestones. You can also upload their invoice document directly here.
           </p>
           {canManage && (
-            <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#264624] text-white text-xs font-bold hover:bg-[#1b331a] transition active:scale-95 cursor-pointer shadow-xs">
-              <UploadSimple size={16} weight="bold" />
-              <span>Upload Lodge Bill (PDF / Excel)</span>
-              <input
-                type="file"
-                accept=".pdf,.xlsx,.xls"
-                className="hidden"
-                onChange={handleFileUpload}
-                disabled={uploading}
-              />
-            </label>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#264624] text-white text-xs font-bold hover:bg-[#1b331a] transition active:scale-95 cursor-pointer shadow-xs">
+                <UploadSimple size={16} weight="bold" />
+                <span>Upload Lodge Bill (PDF / Excel)</span>
+                <input
+                  type="file"
+                  accept=".pdf,.xlsx,.xls"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={uploading}
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => setEditModalOpen(true)}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition active:scale-95 shadow-2xs"
+              >
+                <PencilSimple size={16} weight="bold" />
+                <span>Enter Invoice Details Manually</span>
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -528,17 +539,16 @@ const AccommodationInvoiceSection = ({
       )}
 
       {/* Edit Modal */}
-      {invoice && (
-        <InvoiceManualEditModal
-          open={editModalOpen}
-          onClose={() => setEditModalOpen(false)}
-          invoice={invoice}
-          onSuccess={(updated) => {
-            setInvoice(updated);
-            setEditModalOpen(false);
-          }}
-        />
-      )}
+      <InvoiceManualEditModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        bookingId={booking?.id}
+        invoice={invoice}
+        onSuccess={(updated) => {
+          setInvoice(updated);
+          setEditModalOpen(false);
+        }}
+      />
 
       {/* Verify Modal */}
       {invoice && (

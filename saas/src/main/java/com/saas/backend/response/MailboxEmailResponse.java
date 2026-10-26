@@ -28,4 +28,7 @@ public class MailboxEmailResponse {
     private String propertyName;
     private String safariReference;
     private String clientName;
+    private boolean hasAttachment;
+    private String attachmentFileName;
+    private String attachmentFileType;
 }

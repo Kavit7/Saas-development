@@ -82,6 +82,15 @@ public class AuditLogServiceImpl implements AuditLogService {
         return auditLogRepository.findByCompany_Id(currentUser.getCompany().getId(), pageable).map(this::mapToResponse);
     }
 
+    private String ensureJson(String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+        String trimmed = value.trim();
+        if ((trimmed.startsWith("{") && trimmed.endsWith("}")) || (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+            return trimmed;
+        }
+        return "{\"value\":\"" + trimmed.replace("\"", "\\\"") + "\"}";
+    }
+
     @Override
     @Transactional
     public void recordAuditLog(Company company, User user, String action, String entityType, UUID entityId, String oldValues, String newValues, String ipAddress, String userAgent) {
@@ -92,8 +101,8 @@ public class AuditLogServiceImpl implements AuditLogService {
                     .action(action)
                     .entityType(entityType)
                     .entityId(entityId)
-                    .oldValues(oldValues)
-                    .newValues(newValues)
+                    .oldValues(ensureJson(oldValues))
+                    .newValues(ensureJson(newValues))
                     .ipAddress(ipAddress)
                     .userAgent(userAgent)
                     .build();

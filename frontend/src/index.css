@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 @theme {
-  --color-safari-green: #264624;
-  --color-safari-green-dark: #1b331a;
-  --color-safari-green-light: #345c31;
-  --color-safari-earth: #7A5229;
-  --color-safari-earth-dark: #5c3d1e;
-  --color-safari-earth-light: #8C6239;
-  --color-safari-sand: #EDE7DC;
-  --color-safari-khaki: #F5F2EB;
-  --color-safari-ivory: #FAF8F5;
+  --color-safari-green: #35634b;
+  --color-safari-green-dark: #284c39;
+  --color-safari-green-light: #4c795f;
+  --color-safari-earth: #78664f;
+  --color-safari-earth-dark: #5c4d3c;
+  --color-safari-earth-light: #958068;
+  --color-safari-sand: #e9ece7;
+  --color-safari-khaki: #f2f4f0;
+  --color-safari-ivory: #fafbf9;
 }
 
 :root {
-  font-family: 'Calibri Light', Calibri, 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   line-height: 1.6;
-  font-weight: 300;
-  color: #2D241E;
-  background: #FFFFFF;
+  font-weight: 400;
+  color: #28332c;
+  background: #f4f6f3;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -25,8 +25,7 @@
 }
 
 h1, h2, h3, h4, .font-serif-title, .font-title {
-  font-family: Arial, Helvetica, sans-serif;
-  font-weight: bold;
+  font-family: inherit;
 }
 
 html,
@@ -40,8 +39,8 @@ body,
 body {
   min-height: 100vh;
   overflow-x: hidden;
-  background: #F7F5F0;
-  color: #2D241E;
+  background: #f4f6f3;
+  color: #28332c;
 }
 
 * {
@@ -67,10 +66,10 @@ svg {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(38, 70, 36, 0.35);
+  background: rgba(53, 99, 75, 0.28);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(122, 82, 41, 0.08);
+  background: rgba(40, 51, 44, 0.04);
 }

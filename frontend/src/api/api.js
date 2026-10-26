@@ -25,13 +25,30 @@ export const apiRequest = async (path, options = {}, token = null) => {
     },
   });
 
-  const data = await response.json().catch(() => undefined);
-
-  if (!response.ok) {
-    throw new Error(data?.details || data?.message || "Request failed");
+  if (response.status === 204) {
+    return "Done";
   }
 
-  return response.status === 204 ? "Done" : data;
+  const text = await response.text().catch(() => "");
+  let data;
+  try {
+    data = text ? JSON.parse(text) : undefined;
+  } catch {
+    data = { message: text };
+  }
+
+  if (!response.ok) {
+    const errorMsg =
+      data?.details ||
+      data?.message ||
+      data?.error ||
+      (typeof data === "string" ? data : "") ||
+      (typeof text === "string" && text.length < 300 ? text : "") ||
+      "Request failed";
+    throw new Error(errorMsg);
+  }
+
+  return data;
 };
 
 export const loginAuth = (payload) => {

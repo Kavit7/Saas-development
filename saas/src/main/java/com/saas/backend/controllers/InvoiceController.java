@@ -1,6 +1,7 @@
 package com.saas.backend.controllers;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.http.HttpHeaders;
@@ -23,6 +24,7 @@ import com.saas.backend.dto.InvoiceVerificationRequest;
 import com.saas.backend.models.InvoiceStatus;
 import com.saas.backend.response.InvoiceResponse;
 import com.saas.backend.service.InvoiceService;
+import com.saas.backend.service.PaymentReminderService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -38,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 public class InvoiceController {
 
     private final InvoiceService invoiceService;
+    private final PaymentReminderService paymentReminderService;
 
     @GetMapping
     @Operation(summary = "Get list of invoices with optional filters")
@@ -81,12 +84,23 @@ public class InvoiceController {
 
     @PutMapping("/{id}/manual-entry")
     @Operation(summary = "Manually enter or adjust banking coordinates and payment schedule")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RESERVATION_MANAGER', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESERVATION_MANAGER', 'SALES_PERSON', 'SUPER_ADMIN')")
     public ResponseEntity<InvoiceResponse> updateInvoiceManually(
             @PathVariable UUID id,
             @Valid @RequestBody InvoiceManualUpdateRequest request
     ) {
         InvoiceResponse response = invoiceService.updateInvoiceManually(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/booking/{bookingId}/manual")
+    @Operation(summary = "Manually record or update lodge invoice for an accommodation booking")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESERVATION_MANAGER', 'SALES_PERSON', 'SUPER_ADMIN')")
+    public ResponseEntity<InvoiceResponse> createOrUpdateInvoiceForBooking(
+            @PathVariable UUID bookingId,
+            @Valid @RequestBody InvoiceManualUpdateRequest request
+    ) {
+        InvoiceResponse response = invoiceService.createOrUpdateInvoiceForBooking(bookingId, request);
         return ResponseEntity.ok(response);
     }
 
@@ -120,5 +134,13 @@ public class InvoiceController {
                 .contentType(mediaType)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
                 .body(data);
+    }
+
+    @PostMapping("/trigger-payment-reminders")
+    @Operation(summary = "Manually execute payment deadline reminder batch for all sales persons and reservation managers")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESERVATION_MANAGER', 'SUPER_ADMIN', 'SALES_PERSON', 'SALES')")
+    public ResponseEntity<Map<String, Object>> triggerPaymentReminders() {
+        Map<String, Object> result = paymentReminderService.executePaymentRemindersBatch();
+        return ResponseEntity.ok(result);
     }
 }

@@ -1,5 +1,9 @@
 package com.saas.backend.serviceImpl;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -39,6 +43,7 @@ public class MailboxServiceImpl implements MailboxService {
     private final AccommodationBookingRepository bookingRepository;
     private final IncomingEmailService incomingEmailService;
     private final CurrentUserChecker currentUserChecker;
+    private final com.saas.backend.service.InvoiceService invoiceService;
 
     @Override
     @Transactional(readOnly = true)
@@ -50,10 +55,23 @@ public class MailboxServiceImpl implements MailboxService {
         List<IncomingEmail> emails;
         if (!isSuperAdmin && currentUser != null && currentUser.getCompany() != null) {
             UUID companyId = currentUser.getCompany().getId();
-            if (bookingId != null) {
-                emails = incomingEmailRepository.findByBookingIdAndCompanyIdOrderByReceivedAtDesc(bookingId, companyId);
+            boolean isSalesPerson = currentUser.getRole() != null &&
+                    currentUser.getRole().getName().toUpperCase().replace(" ", "_").contains("SALES");
+
+            if (isSalesPerson) {
+                // Sales consultant strictly sees emails relating only to their own safaris/bookings
+                if (bookingId != null) {
+                    emails = incomingEmailRepository.findByBookingIdAndSalesPersonIdAndCompanyIdOrderByReceivedAtDesc(bookingId, currentUser.getId(), companyId);
+                } else {
+                    emails = incomingEmailRepository.findBySalesPersonIdAndCompanyIdOrderByReceivedAtDesc(currentUser.getId(), companyId);
+                }
             } else {
-                emails = incomingEmailRepository.findByCompanyIdOrderByReceivedAtDesc(companyId);
+                // Reservation Manager & Company Admin see emails for their company
+                if (bookingId != null) {
+                    emails = incomingEmailRepository.findByBookingIdAndCompanyIdOrderByReceivedAtDesc(bookingId, companyId);
+                } else {
+                    emails = incomingEmailRepository.findByCompanyIdOrderByReceivedAtDesc(companyId);
+                }
             }
         } else {
             if (bookingId != null) {
@@ -235,6 +253,9 @@ public class MailboxServiceImpl implements MailboxService {
                 .propertyName(propName)
                 .safariReference(safariRef)
                 .clientName(clientName)
+                .hasAttachment(email.isHasAttachment())
+                .attachmentFileName(email.getAttachmentFileName())
+                .attachmentFileType(email.getAttachmentFileType())
                 .build();
     }
 
@@ -275,7 +296,56 @@ public class MailboxServiceImpl implements MailboxService {
                 .status(inv.getStatus())
                 .fileName(inv.getFileName())
                 .filePath(inv.getFilePath())
+                .fileType(inv.getFileType())
                 .issuedAt(inv.getIssuedAt())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] getEmailAttachmentBytes(UUID id) {
+        IncomingEmail email = incomingEmailRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Email message not found with ID: " + id));
+
+        if (email.getAttachmentFilePath() != null) {
+            try {
+                Path path = Paths.get(email.getAttachmentFilePath());
+                if (Files.exists(path) && Files.size(path) > 0) {
+                    return Files.readAllBytes(path);
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // Fallback: If this email has an associated booking with an invoice, stream the invoice file!
+        if (email.getBooking() != null) {
+            Invoice inv = invoiceRepository.findByAccommodationBookingId(email.getBooking().getId()).orElse(null);
+            if (inv != null) {
+                return invoiceService.getInvoiceFileBytes(inv.getId());
+            }
+        }
+
+        throw new ResourceNotFoundException("No downloadable file attachment found on email message: " + id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getEmailAttachmentFileName(UUID id) {
+        IncomingEmail email = incomingEmailRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Email message not found with ID: " + id));
+        if (email.getAttachmentFileName() != null && !email.getAttachmentFileName().isBlank()) {
+            return email.getAttachmentFileName();
+        }
+        if (email.getBooking() != null) {
+            return "Invoice_" + email.getBooking().getReferenceNumber() + ".pdf";
+        }
+        return "attachment.pdf";
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public String getEmailAttachmentFileType(UUID id) {
+        IncomingEmail email = incomingEmailRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Email message not found with ID: " + id));
+        return email.getAttachmentFileType() != null ? email.getAttachmentFileType() : "application/pdf";
     }
 }

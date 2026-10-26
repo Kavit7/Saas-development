@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -56,6 +58,26 @@ public class MailboxController {
     public ResponseEntity<MailboxEmailResponse> getEmailById(@PathVariable UUID id) {
         MailboxEmailResponse email = mailboxService.getEmailById(id);
         return ResponseEntity.ok(email);
+    }
+
+    @GetMapping("/emails/{id}/attachment")
+    @Operation(summary = "Download attachment from incoming email")
+    public ResponseEntity<byte[]> downloadEmailAttachment(@PathVariable UUID id) {
+        byte[] data = mailboxService.getEmailAttachmentBytes(id);
+        String fileName = mailboxService.getEmailAttachmentFileName(id);
+        String fileType = mailboxService.getEmailAttachmentFileType(id);
+
+        MediaType mediaType;
+        try {
+            mediaType = MediaType.parseMediaType(fileType);
+        } catch (Exception ex) {
+            mediaType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+
+        return ResponseEntity.ok()
+                .contentType(mediaType)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"")
+                .body(data);
     }
 
     @PostMapping("/sync")

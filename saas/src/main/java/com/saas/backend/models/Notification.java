@@ -7,6 +7,8 @@ import java.util.UUID;
 @Entity @Table(name="notifications")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Notification extends BaseEntity {
+    @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="company_id")
+    private Company company;
     @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="user_id", nullable=false)
     private User user;
     private String type;

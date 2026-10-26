@@ -36,7 +36,7 @@ public class SupportTicketController {
     private final SupportTicketService supportTicketService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'SALES_PERSON', 'RESERVATION_MANAGER', 'GUIDE')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SALES_PERSON', 'RESERVATION_MANAGER', 'GUIDE')")
     @Operation(summary = "Raise a new support ticket")
     public ResponseEntity<SupportTicketResponse> createTicket(
             @RequestBody SupportTicketRequest request,
@@ -68,7 +68,7 @@ public class SupportTicketController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'RESERVATION_MANAGER')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'RESERVATION_MANAGER', 'SALES_PERSON', 'GUIDE')")
     @Operation(summary = "Update, assign, or resolve support ticket")
     public ResponseEntity<SupportTicketResponse> updateTicket(
             @PathVariable UUID id,

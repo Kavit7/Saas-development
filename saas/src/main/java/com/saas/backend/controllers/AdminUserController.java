@@ -39,7 +39,7 @@ public class AdminUserController {
             UserResponse response = userServiceImpl.createAdmin(userRequest);
             return ResponseEntity.ok(Map.of("message", "User Added successfully", "data", response, "id", response.getId(), "role", response.getRole(), "status", response.getStatus(), "created_at", response.getCreatedAt()));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", true, "message", e.getMessage() != null ? e.getMessage() : "Failed to create user"));
         }
     }   
 
@@ -47,14 +47,18 @@ public class AdminUserController {
     @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
     public ResponseEntity<?> getAllUsers(
             @RequestParam (defaultValue = "0") int page,
-            @RequestParam (defaultValue = "100") int size,
-            @RequestParam (defaultValue = "email") String sortBy,
-            @RequestParam (defaultValue = "asc") String direction) {
+            @RequestParam (defaultValue = "20") int size,
+            @RequestParam (defaultValue = "createdAt") String sortBy,
+            @RequestParam (defaultValue = "desc") String direction,
+            @RequestParam (required = false) String role,
+            @RequestParam (required = false) String company,
+            @RequestParam (required = false) String status,
+            @RequestParam (required = false) String search) {
         try {
-            Page<UserResponse> pag = userServiceImpl.getAllUsers(page, size, sortBy, direction);
+            Page<UserResponse> pag = userServiceImpl.getAllUsers(page, size, sortBy, direction, role, company, status, search);
             return ResponseEntity.ok(Map.of("message", "User Loaded Successfully", "data", pag));   
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", true, "message", e.getMessage() != null ? e.getMessage() : "Failed to load users"));
         }
     }
 
@@ -65,7 +69,7 @@ public class AdminUserController {
             UserResponse user = userServiceImpl.getUserById(id, auth);
             return ResponseEntity.ok(Map.of("Message", "Loaded Successfully", "data", user));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", true, "message", e.getMessage() != null ? e.getMessage() : "Failed to load user"));
         }
     }
 
@@ -76,7 +80,7 @@ public class AdminUserController {
             UserResponse user = userServiceImpl.updateUserStatus(id, request, auth);
             return ResponseEntity.ok(Map.of("message", "Status updated successfully", "data", user));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", true, "message", e.getMessage() != null ? e.getMessage() : "Failed to update status"));
         }
     }
 
@@ -87,7 +91,7 @@ public class AdminUserController {
             UserResponse user = userServiceImpl.updateUser(id, request, auth);
             return ResponseEntity.ok(Map.of("message", "User updated successfully", "data", user));
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", true, "message", e.getMessage() != null ? e.getMessage() : "Failed to update user"));
         }
     }
 
@@ -98,7 +102,36 @@ public class AdminUserController {
             Map<String, Object> result = userServiceImpl.triggerPasswordResetForUser(id, auth);
             return ResponseEntity.ok(result);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of("error", true, "message", e.getMessage() != null ? e.getMessage() : "Failed to reset password"));
+        }
+    }
+
+    @PostMapping("/user/{id}/personalize")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public ResponseEntity<?> personalizeUser(
+            @PathVariable UUID id,
+            @RequestBody com.saas.backend.dto.AccountPersonalizationRequest request,
+            Authentication auth) {
+        try {
+            Map<String, Object> result = userServiceImpl.personalizeUserAccount(id, request, auth);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", true, "message", e.getMessage() != null ? e.getMessage() : "Personalization failed"));
+        }
+    }
+
+    @PostMapping("/user/{id}/impersonate")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public ResponseEntity<?> impersonateUser(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body,
+            Authentication auth) {
+        try {
+            String reason = body != null ? body.get("reason") : null;
+            Map<String, Object> result = userServiceImpl.impersonateUser(id, reason, auth);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", true, "message", e.getMessage() != null ? e.getMessage() : "Failed to impersonate user"));
         }
     }
 }

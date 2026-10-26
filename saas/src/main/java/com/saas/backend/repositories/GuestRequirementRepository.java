@@ -15,4 +15,6 @@ public interface GuestRequirementRepository extends JpaRepository<GuestRequireme
     boolean existsByGuestIdAndRequirementType(UUID id,RequirementType requirementType);
 
     List<GuestRequirement> findAllByGuestId(UUID guestId);
+
+    List<GuestRequirement> findByGuestIdIn(List<UUID> guestIds);
 }

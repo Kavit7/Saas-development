@@ -24,7 +24,7 @@ const TrendAreaChart = ({
 
   if (!data || data.length === 0) {
     return (
-      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-xs flex items-center justify-center text-slate-400 text-sm">
+      <div className="flex items-center justify-center rounded-xl border border-[#28332C]/10 bg-white p-6 text-sm text-slate-500">
         No trend data available
       </div>
     );
@@ -64,20 +64,20 @@ const TrendAreaChart = ({
   const gridSteps = [1, 0.66, 0.33, 0];
 
   return (
-    <div className="rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between font-sans">
+    <div className="flex flex-col justify-between rounded-xl border border-[#28332C]/10 bg-white p-5 font-sans">
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
         <div>
-          <h3 className="text-base sm:text-lg font-bold text-slate-900 font-serif-title tracking-tight">
+          <h3 className="text-base font-semibold tracking-tight text-[#28332C]">
             {title}
           </h3>
           <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
         </div>
 
         {hoveredIndex !== null && (
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900 text-white text-xs font-semibold shadow-xs animate-in fade-in">
+          <div className="inline-flex items-center gap-1.5 rounded-md bg-[#F2F4F0] px-3 py-1 text-xs font-medium text-[#28332C] animate-in fade-in">
             <span className="text-slate-300">{data[hoveredIndex]?.label}:</span>
-            <span className="font-bold text-emerald-400">
+            <span className="font-semibold text-[#35634B]">
               {valuePrefix}
               {Number(data[hoveredIndex]?.value || 0).toLocaleString()} {valueSuffix}
             </span>
@@ -110,15 +110,15 @@ const TrendAreaChart = ({
                   y1={yPos}
                   x2={width - paddingX}
                   y2={yPos}
-                  stroke="#F1F5F9"
-                  strokeWidth="1.5"
+                  stroke="#E8ECE8"
+                  strokeWidth="1"
                   strokeDasharray={idx === gridSteps.length - 1 ? "none" : "3,3"}
                 />
                 <text
                   x={paddingX - 10}
                   y={yPos + 3.5}
                   fontSize="10"
-                  fill="#94A3B8"
+                  fill="#839087"
                   textAnchor="end"
                   className="font-mono font-medium"
                 >
@@ -168,8 +168,8 @@ const TrendAreaChart = ({
                   x={pt.x}
                   y={height - 8}
                   fontSize="11"
-                  fill={isHovered ? "#0F172A" : "#64748B"}
-                  fontWeight={isHovered ? "700" : "500"}
+                  fill={isHovered ? "#28332C" : "#68736B"}
+                  fontWeight={isHovered ? "600" : "400"}
                   textAnchor="middle"
                 >
                   {pt.item.label}
