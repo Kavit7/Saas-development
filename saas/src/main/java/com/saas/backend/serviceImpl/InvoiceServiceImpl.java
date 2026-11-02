@@ -49,6 +49,7 @@ import com.saas.backend.repositories.AccommodationBookingRepository;
 import com.saas.backend.repositories.InvoiceRepository;
 import com.saas.backend.repositories.UserRepository;
 import com.saas.backend.response.InvoiceResponse;
+import com.saas.backend.service.FileStorageService;
 import com.saas.backend.service.InvoiceDocumentParser;
 import com.saas.backend.service.InvoiceService;
 import com.saas.backend.service.NotificationService;
@@ -67,6 +68,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     private final InvoiceDocumentParser invoiceDocumentParser;
     private final NotificationService notificationService;
     private final ObjectMapper objectMapper;
+    private final FileStorageService fileStorageService;
 
     @Value("${app.upload.dir:uploads}")
     private String uploadBaseDir;
@@ -359,13 +361,15 @@ public class InvoiceServiceImpl implements InvoiceService {
         Invoice invoice = invoiceRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Invoice not found: " + id));
 
-        if (invoice.getFilePath() != null) {
+        if (invoice.getFilePath() != null && !invoice.getFilePath().isBlank()) {
             try {
-                Path path = Paths.get(invoice.getFilePath());
-                if (Files.exists(path) && Files.size(path) > 0) {
-                    return Files.readAllBytes(path);
+                byte[] bytes = fileStorageService.loadFile(invoice.getFilePath());
+                if (bytes != null && bytes.length > 0) {
+                    return bytes;
                 }
-            } catch (Exception ignored) {}
+            } catch (Exception ex) {
+                log.warn("Could not load invoice bytes via storage service for '{}': {}", invoice.getFilePath(), ex.getMessage());
+            }
         }
 
         // Dynamically generate official PDF invoice on the fly
@@ -375,11 +379,9 @@ public class InvoiceServiceImpl implements InvoiceService {
                     ? invoice.getInvoiceNumber().replaceAll("[^a-zA-Z0-9.-]", "_")
                     : ("INV-" + invoice.getId().toString().substring(0, 8));
             UUID bookingId = (invoice.getAccommodationBooking() != null) ? invoice.getAccommodationBooking().getId() : invoice.getId();
-            Path dir = Paths.get(uploadBaseDir, "invoices", bookingId.toString());
-            Files.createDirectories(dir);
-            Path filePath = dir.resolve(invNum + ".pdf");
-            Files.write(filePath, pdfBytes);
-            invoice.setFilePath(filePath.toAbsolutePath().toString());
+            String key = "invoices/" + bookingId + "/" + invNum + ".pdf";
+            String savedPath = fileStorageService.storeFile(key, pdfBytes, "application/pdf");
+            invoice.setFilePath(savedPath);
             if (invoice.getFileName() == null || invoice.getFileName().isBlank()) {
                 invoice.setFileName(invNum + ".pdf");
             }
@@ -388,7 +390,7 @@ public class InvoiceServiceImpl implements InvoiceService {
             }
             invoiceRepository.save(invoice);
         } catch (Exception ex) {
-            log.warn("Could not cache generated invoice PDF to disk: {}", ex.getMessage());
+            log.warn("Could not cache generated invoice PDF to storage: {}", ex.getMessage());
         }
         return pdfBytes;
     }
@@ -574,23 +576,12 @@ public class InvoiceServiceImpl implements InvoiceService {
     }
 
     private String storeInvoiceFile(UUID bookingId, String originalFileName, byte[] data) {
-        try {
-            String sanitized = originalFileName != null
-                    ? originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_")
-                    : "invoice.pdf";
+        String sanitized = originalFileName != null
+                ? originalFileName.replaceAll("[^a-zA-Z0-9._-]", "_")
+                : "invoice.pdf";
 
-            Path targetDir = Paths.get(uploadBaseDir, "invoices", bookingId.toString());
-            Files.createDirectories(targetDir);
-
-            Path targetFile = targetDir.resolve(System.currentTimeMillis() + "_" + sanitized);
-            Files.write(targetFile, data, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-
-            return targetFile.toAbsolutePath().toString();
-
-        } catch (IOException e) {
-            log.error("Failed to store invoice file: {}", e.getMessage(), e);
-            throw new RuntimeException("Could not persist invoice file: " + e.getMessage(), e);
-        }
+        String key = "invoices/" + bookingId + "/" + System.currentTimeMillis() + "_" + sanitized;
+        return fileStorageService.storeFile(key, data, "application/pdf");
     }
 
     private InvoiceResponse mapToResponse(Invoice inv) {

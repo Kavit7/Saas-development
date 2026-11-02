@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import com.saas.backend.config.JwtService;
 import com.saas.backend.dto.ChangePasswordRequest;
 import com.saas.backend.dto.LoginRequest;
+import com.saas.backend.dto.UpdateProfileRequest;
 import com.saas.backend.models.PlatformAdmin;
 import com.saas.backend.models.User;
 import com.saas.backend.repositories.PlatformAdminRepository;
@@ -208,6 +209,79 @@ public class AuthServiceImpl implements AuthService {
             pa.setPasswordExpire(null);
             platformAdminRepository.save(pa);
             return Map.of("message", "Password successfully changed. You may now continue using the system.");
+        }
+
+        throw new UsernameNotFoundException("User not found: " + auth.getName());
+    }
+
+    @Override
+    public UserResponse updateCurrentUserProfile(UpdateProfileRequest request, Authentication auth) {
+        if (auth == null || !auth.isAuthenticated()) {
+            throw new AccessDeniedException("Not authenticated");
+        }
+
+        User user = userRepository.findByEmail(auth.getName()).orElse(null);
+        if (user != null) {
+            if (request.getFirstName() != null && !request.getFirstName().trim().isEmpty()) {
+                user.setFirstName(request.getFirstName().trim());
+            }
+            if (request.getLastName() != null && !request.getLastName().trim().isEmpty()) {
+                user.setLastName(request.getLastName().trim());
+            }
+            if (request.getPhone() != null) {
+                user.setPhone(request.getPhone().trim());
+            }
+            if (request.getGender() != null) {
+                user.setGender(request.getGender());
+            }
+            userRepository.save(user);
+
+            return UserResponse.builder()
+                    .id(user.getId())
+                    .email(user.getEmail())
+                    .firstName(user.getFirstName())
+                    .lastName(user.getLastName())
+                    .gender(user.getGender())
+                    .phone(user.getPhone())
+                    .role(user.getRole() != null ? user.getRole().getName() : null)
+                    .status(user.getStatus())
+                    .companyId(user.getCompany() != null ? user.getCompany().getId() : null)
+                    .companyName(user.getCompany() != null ? user.getCompany().getName() : null)
+                    .mustChangePassword(user.getMustChangePassword())
+                    .passwordExpire(user.getPasswordExpire())
+                    .createdAt(user.getCreatedAt())
+                    .updatedAt(user.getUpdatedAt())
+                    .build();
+        }
+
+        PlatformAdmin pa = platformAdminRepository.findByEmail(auth.getName()).orElse(null);
+        if (pa != null) {
+            if (request.getFirstName() != null && !request.getFirstName().trim().isEmpty()) {
+                pa.setFirstName(request.getFirstName().trim());
+            }
+            if (request.getLastName() != null && !request.getLastName().trim().isEmpty()) {
+                pa.setLastName(request.getLastName().trim());
+            }
+            if (request.getPhone() != null) {
+                pa.setPhone(request.getPhone().trim());
+            }
+            platformAdminRepository.save(pa);
+
+            return UserResponse.builder()
+                    .id(pa.getId())
+                    .email(pa.getEmail())
+                    .firstName(pa.getFirstName())
+                    .lastName(pa.getLastName())
+                    .phone(pa.getPhone())
+                    .role(pa.getPlatformRole() != null ? pa.getPlatformRole().name() : "SUPER_ADMIN")
+                    .status(com.saas.backend.models.UserStatus.ACTIVE)
+                    .companyId(null)
+                    .companyName("PLATFORM_ADMIN")
+                    .mustChangePassword(false)
+                    .passwordExpire(pa.getPasswordExpire())
+                    .createdAt(pa.getCreatedAt())
+                    .updatedAt(pa.getUpdatedAt())
+                    .build();
         }
 
         throw new UsernameNotFoundException("User not found: " + auth.getName());

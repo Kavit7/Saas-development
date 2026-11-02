@@ -1149,6 +1149,13 @@ export const resources = {
                 showInTable: true,
             },
             {
+                name: "targetRole",
+                label: "Department / Role",
+                type: "text",
+                editable: false,
+                showInTable: true,
+            },
+            {
                 name: "priority",
                 label: "Priority",
                 type: "select",

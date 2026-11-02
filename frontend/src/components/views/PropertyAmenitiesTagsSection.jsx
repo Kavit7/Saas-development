@@ -125,9 +125,9 @@ const PropertyAmenitiesTagsSection = ({
                   setShowAddAmenityModal(true);
                 }}
                 disabled={loading || submittingAction}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#264624] text-white hover:bg-[#1b331a] transition active:scale-95 shadow-2xs disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#264624] via-[#2D532B] to-[#35634B] text-white shadow-xs hover:shadow-md hover:shadow-[#264624]/20 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer border border-white/10"
               >
-                <Plus size={14} weight="bold" />
+                <Plus size={13} weight="bold" />
                 <span>Assign Amenities</span>
               </button>
             )}
@@ -225,9 +225,9 @@ const PropertyAmenitiesTagsSection = ({
                   setShowAddTagModal(true);
                 }}
                 disabled={loading || submittingAction}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#264624] text-white hover:bg-[#1b331a] transition active:scale-95 shadow-2xs disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#264624] via-[#2D532B] to-[#35634B] text-white shadow-xs hover:shadow-md hover:shadow-[#264624]/20 transition-all active:scale-[0.98] disabled:opacity-50 cursor-pointer border border-white/10"
               >
-                <Plus size={14} weight="bold" />
+                <Plus size={13} weight="bold" />
                 <span>Assign Tags</span>
               </button>
             )}

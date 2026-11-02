@@ -22,6 +22,7 @@ public class SupportTicketRequest {
     private String subject;
     private String description;
     private SupportCategory category;
+    private String targetRole;
     private Priority priority;
     private TicketStatus status;
     private String resolutionNotes;
