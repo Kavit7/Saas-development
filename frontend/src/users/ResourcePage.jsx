@@ -431,13 +431,19 @@ const ResourcePage = ({
         });
       } else if (resource === "safaris") {
         const clientId = item.clientId || item.client?.id;
-        const [daysRes, reqsRes, bookingsRes, guestsRes, flightsRes] = await Promise.allSettled([
+        const [safariRes, daysRes, reqsRes, bookingsRes, guestsRes, flightsRes] = await Promise.allSettled([
+          getAllData(`/safari/${item.id}`, token),
           getAllData(`/safari/${item.id}/itineraryDays`, token),
           getAllData(`/api/v1/accommodation-requirements/safari/${item.id}`, token),
           getAllData(`/accommodation-bookings/by-safari/${item.id}`, token),
           clientId ? getAllData(`/client/${clientId}/guests`, token) : Promise.resolve([]),
           clientId ? getAllData(`/client-flight/${clientId}/view`, token) : Promise.resolve([]),
         ]);
+        const freshSafari = safariRes.status === "fulfilled" ? (safariRes.value?.data || safariRes.value) : null;
+        if (freshSafari && freshSafari.id) {
+          setSelectedItem(freshSafari);
+        }
+
         const days = daysRes.status === "fulfilled" ? daysRes.value?.data || daysRes.value || [] : [];
         const reqs = reqsRes.status === "fulfilled" ? reqsRes.value?.data || reqsRes.value || [] : [];
         const bookings = bookingsRes.status === "fulfilled" ? bookingsRes.value?.data || bookingsRes.value || [] : [];
@@ -449,22 +455,6 @@ const ResourcePage = ({
           guests: guestsRes.status === "fulfilled" ? guestsRes.value?.data || guestsRes.value || [] : [],
           flights: flightsRes.status === "fulfilled" ? flightsRes.value?.data || flightsRes.value || [] : [],
         });
-
-        // Dynamically compute and reflect safari status
-        if (days.length > 0) {
-          const allDestSet = days.every(
-            (d) => d.destination && !d.destination.toLowerCase().includes("not set") && !d.destination.toLowerCase().includes("pending")
-          );
-          const allBooked = allDestSet && days.every((d) => {
-            const req = reqs.find((r) => String(r.itineraryDayId) === String(d.id));
-            const b = bookings.find(
-              (bk) => (req && bk.requirementId && String(bk.requirementId) === String(req.id)) || (bk.checkIn && bk.checkIn === d.date)
-            );
-            return (b && String(b.status || "").toUpperCase() === "CONFIRMED") || (req && (String(req.status || "").toUpperCase() === "COMPLETED" || String(req.status || "").toUpperCase() === "CONFIRMED"));
-          });
-          const computedStatus = allBooked ? "COMPLETED" : allDestSet ? "CONFIRMED" : "DRAFT";
-          setSelectedItem((prev) => (prev ? { ...prev, status: computedStatus } : prev));
-        }
       } else if (resource === "properties") {
         try {
           const propRes = await getAllData(`/properties/${item.id}`, token);
@@ -579,7 +569,9 @@ const ResourcePage = ({
         let putUrl = `${updateEndpoint || apiBasePath}/${formConfig.initialValues.id}`;
         let payload = { ...formData };
 
-        if (resource === "clients") {
+        if (resource === "safaris") {
+          putUrl = `/safari/${formConfig.initialValues.id}`;
+        } else if (resource === "clients") {
           putUrl = `/client/${formConfig.initialValues.id}`;
         } else if (resource === "room-types") {
           putUrl = `/api/v1/room-types/${formConfig.initialValues.id}?name=${encodeURIComponent(formData.name)}`;
@@ -882,6 +874,40 @@ const ResourcePage = ({
     }
   };
 
+  const handleSendBookingReminder = async () => {
+    if (!selectedItem) return;
+    setActionLoading(true);
+    try {
+      let res;
+      try {
+        res = await apiRequest(`/accommodation-bookings/${selectedItem.id}/send-reminder`, {
+          method: "POST",
+        }, token);
+      } catch {
+        res = await apiRequest(`/api/v1/accommodation-bookings/${selectedItem.id}/send-reminder`, {
+          method: "POST",
+        }, token);
+      }
+      setSelectedItem(res);
+      setAlertModal({
+        open: true,
+        title: "Reminder Sent",
+        message: `Kikumbusho cha barua pepe kimetumwa kwa mafanikio kwa ${res.propertyName || "hoteli"}.`,
+        type: "success",
+      });
+      loadData();
+    } catch (err) {
+      setAlertModal({
+        open: true,
+        title: "Reminder Failed",
+        message: err.message || "Failed to dispatch follow-up reminder.",
+        type: "error",
+      });
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handleConfirmBookingSuccess = (updated) => {
     setSelectedItem(updated);
     setAlertModal({
@@ -1044,7 +1070,9 @@ const ResourcePage = ({
     setActionLoading(true);
     try {
       let delUrl = deleteEndpoint || apiBasePath;
-      if (resource === "room-types") {
+      if (resource === "safaris") {
+        delUrl = `/safari/${deleteModal.item.id}`;
+      } else if (resource === "room-types") {
         delUrl = `/api/v1/room-types/${deleteModal.item.id}`;
       } else {
         delUrl = `${delUrl}/${deleteModal.item.id}`;
@@ -1060,8 +1088,10 @@ const ResourcePage = ({
       setDeleteModal({ open: false, item: null });
       setAlertModal({
         open: true,
-        title: "Deleted",
-        message: `${singularName} deleted successfully`,
+        title: resource === "safaris" ? "Archived" : "Deleted",
+        message: resource === "safaris"
+          ? "Safari soft-deleted and preserved in history."
+          : `${singularName} deleted successfully`,
         type: "success",
       });
       loadData();
@@ -1449,6 +1479,7 @@ const ResourcePage = ({
           onRemovePropertyTag={handleRemovePropertyTag}
           onBookLodge={handleBookLodge}
           onSendBooking={handleSendBooking}
+          onSendReminderBooking={handleSendBookingReminder}
           onConfirmBookingSuccess={handleConfirmBookingSuccess}
           onDeclineBooking={handleDeclineBooking}
           onToggleUserStatus={handleToggleUserStatus}
@@ -1771,8 +1802,12 @@ const ResourcePage = ({
       {/* POPUP 2: Confirmation Dialog Strictly for Delete Actions */}
       <ConfirmModal
         open={deleteModal.open}
-        title="Confirm Deletion"
-        message={`Are you sure you want to delete this ${singularName.toLowerCase()}? This action cannot be reversed.`}
+        title={resource === "safaris" ? "Archive Safari" : "Confirm Deletion"}
+        message={
+          resource === "safaris"
+            ? "Are you sure you want to delete this safari? It will be soft-deleted and securely preserved in your historical records."
+            : `Are you sure you want to delete this ${singularName.toLowerCase()}? This action cannot be reversed.`
+        }
         loading={actionLoading}
         onConfirm={confirmDelete}
         onCancel={() => setDeleteModal({ open: false, item: null })}

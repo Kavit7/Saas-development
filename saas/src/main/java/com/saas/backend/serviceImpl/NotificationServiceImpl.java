@@ -197,6 +197,55 @@ public class NotificationServiceImpl implements NotificationService {
 
     @Override
     @Transactional
+    public void notifySafariRescheduled(com.saas.backend.models.Safari safari, List<AccommodationBooking> bookings, boolean emailsDispatched) {
+        if (safari == null) return;
+        String safariRef = safari.getReferenceNumber() != null ? safari.getReferenceNumber() : "SAFARI";
+        int bookingCount = bookings != null ? bookings.size() : 0;
+        String emailStatusNote = emailsDispatched
+                ? "Amendment notices have been emailed to partner lodges."
+                : "Partner lodges have NOT been emailed yet. Manual outreach recommended.";
+
+        String message = String.format("Safari %s dates were rescheduled. %d accommodation booking(s) affected. %s",
+                safariRef, bookingCount, emailStatusNote);
+
+        // 1. Notify Sales Consultant
+        if (safari.getSalesPerson() != null) {
+            saveNotification(
+                    safari.getSalesPerson(),
+                    "SAFARI_RESCHEDULED",
+                    "Safari Rescheduled: " + safariRef,
+                    message,
+                    Priority.HIGH,
+                    "Safari",
+                    safari.getId()
+            );
+        }
+
+        // 2. Notify assigned Reservation Managers on affected bookings
+        if (bookings != null) {
+            bookings.stream()
+                    .map(AccommodationBooking::getReservationManager)
+                    .filter(java.util.Objects::nonNull)
+                    .distinct()
+                    .forEach(rm -> {
+                        if (safari.getSalesPerson() == null || !rm.getId().equals(safari.getSalesPerson().getId())) {
+                            saveNotification(
+                                    rm,
+                                    "SAFARI_RESCHEDULED",
+                                    "Action Required: Safari Rescheduled " + safariRef,
+                                    message + " Please verify room availability for the updated dates.",
+                                    Priority.HIGH,
+                                    "Safari",
+                                    safari.getId()
+                            );
+                        }
+                    });
+        }
+        log.info("Dispatched in-app safari rescheduled alerts for: {}", safariRef);
+    }
+
+    @Override
+    @Transactional
     public void notifyFollowUp(AccommodationBooking booking) {
         String propName = booking.getProperty() != null ? booking.getProperty().getName() : "Lodge";
         String refNo = booking.getReferenceNumber() != null ? booking.getReferenceNumber() : "REF";

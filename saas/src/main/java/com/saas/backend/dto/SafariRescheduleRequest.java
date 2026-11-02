@@ -15,4 +15,5 @@ public class SafariRescheduleRequest {
     @NotNull(message = "New start date is required")
     private LocalDate newStartDate;
     private String reason;
+    private Boolean dispatchLodgeNotices;
 }

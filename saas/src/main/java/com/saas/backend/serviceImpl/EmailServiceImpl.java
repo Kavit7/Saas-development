@@ -83,6 +83,35 @@ public class EmailServiceImpl implements EmailService {
     }
 
     @Override
+    public void sendLodgeAmendmentNotice(
+            AccommodationBooking booking,
+            java.time.LocalDate oldCheckIn,
+            java.time.LocalDate oldCheckOut,
+            java.time.LocalDate newCheckIn,
+            java.time.LocalDate newCheckOut,
+            String reason) {
+
+        String propertyEmail = booking.getProperty() != null ? booking.getProperty().getContactEmail() : null;
+        if (propertyEmail == null || propertyEmail.isBlank()) {
+            log.warn("Cannot send lodge amendment notice: Property email is missing for booking {}", booking.getReferenceNumber());
+            return;
+        }
+
+        String subject = "AMENDMENT REQUEST: Dates Rescheduled - " + booking.getReferenceNumber();
+        List<Guest> guests = fetchGuestsForBooking(booking);
+        Map<UUID, List<GuestRequirement>> guestRequirements = fetchGuestRequirements(guests);
+
+        String htmlBody = emailTemplateBuilder.buildAmendmentHtml(
+                booking, oldCheckIn, oldCheckOut, newCheckIn, newCheckOut, reason, guests, guestRequirements, systemEmail);
+        String plainTextBody = emailTemplateBuilder.buildAmendmentPlainText(
+                booking, oldCheckIn, oldCheckOut, newCheckIn, newCheckOut, reason, guests, guestRequirements, systemEmail);
+
+        sendEmail(propertyEmail, subject, plainTextBody, htmlBody);
+        log.info("Successfully dispatched lodge amendment email for booking {} to {}",
+                booking.getReferenceNumber(), propertyEmail);
+    }
+
+    @Override
     public Map<String, String> generateBookingEmailPreview(AccommodationBooking booking) {
         String propertyEmail = (booking.getProperty() != null && booking.getProperty().getContactEmail() != null)
                 ? booking.getProperty().getContactEmail()
@@ -215,6 +244,26 @@ public class EmailServiceImpl implements EmailService {
             log.error("Failed to send multipart email to {}: {}", recipient, e.getMessage());
             throw new RuntimeException("Failed to send email to " + recipient, e);
         }
+    }
+
+    @Override
+    public void sendReservationManagerBookingFollowUpAlert(User rm, List<AccommodationBooking> pendingBookings) {
+        if (rm == null || rm.getEmail() == null || rm.getEmail().isBlank()) {
+            log.warn("Cannot send RM booking follow-up alert: RM or email is missing");
+            return;
+        }
+        if (pendingBookings == null || pendingBookings.isEmpty()) {
+            return;
+        }
+
+        int totalCount = pendingBookings.size();
+        String subject = "🔔 Follow-up Required: " + totalCount + " provisional lodge booking(s) awaiting confirmation";
+        String htmlBody = emailTemplateBuilder.buildReservationManagerBookingFollowUpAlertHtml(rm, pendingBookings, systemEmail);
+        String plainTextBody = emailTemplateBuilder.buildReservationManagerBookingFollowUpAlertPlainText(rm, pendingBookings, systemEmail);
+
+        sendEmail(rm.getEmail(), subject, plainTextBody, htmlBody);
+        log.info("Successfully dispatched booking follow-up digest email to RM {} ({}) covering {} bookings",
+                rm.getFirstName(), rm.getEmail(), totalCount);
     }
 
     private List<Guest> fetchGuestsForBooking(AccommodationBooking booking) {

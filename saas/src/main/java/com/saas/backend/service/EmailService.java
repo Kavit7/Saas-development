@@ -37,4 +37,18 @@ public interface EmailService {
             com.saas.backend.dto.IncomingMailMessage reply,
             com.saas.backend.dto.EmailAnalysisResult analysis
     );
+
+    void sendLodgeAmendmentNotice(
+            AccommodationBooking booking,
+            java.time.LocalDate oldCheckIn,
+            java.time.LocalDate oldCheckOut,
+            java.time.LocalDate newCheckIn,
+            java.time.LocalDate newCheckOut,
+            String reason
+    );
+
+    void sendReservationManagerBookingFollowUpAlert(
+            User rm,
+            List<AccommodationBooking> pendingBookings
+    );
 }

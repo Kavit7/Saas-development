@@ -1,5 +1,6 @@
 package com.saas.backend.serviceImpl;
 
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -646,6 +647,182 @@ public class EmailTemplateBuilder {
             sb.append(consultant.getFirstName()).append(" ").append(consultant.getLastName()).append("\n");
         } else {
             sb.append("Reservations Operations Desk\n");
+        }
+        if (company != null && company.getName() != null) {
+            sb.append(company.getName()).append("\n");
+        }
+        sb.append("Email: ").append(systemEmail).append("\n");
+
+        return sb.toString();
+    }
+
+    public String buildAmendmentHtml(
+            AccommodationBooking booking,
+            LocalDate oldCheckIn,
+            LocalDate oldCheckOut,
+            LocalDate newCheckIn,
+            LocalDate newCheckOut,
+            String reason,
+            List<Guest> guests,
+            Map<UUID, List<GuestRequirement>> guestRequirements,
+            String systemEmail) {
+
+        AccommodationRequirement req = booking.getAccommodationRequirement();
+        Safari safari = req != null ? req.getSafari() : null;
+        Client client = safari != null ? safari.getClient() : null;
+        User consultant = resolveConsultant(booking, safari);
+        Company company = resolveCompany(consultant, client);
+
+        String bookingRef = escapeHtml(booking.getReferenceNumber());
+        String propName = booking.getProperty() != null && booking.getProperty().getName() != null
+                ? escapeHtml(booking.getProperty().getName())
+                : "Lodge Reservations Team";
+
+        String oldCheckInStr = oldCheckIn != null ? oldCheckIn.format(DATE_FORMATTER) : "N/A";
+        String oldCheckOutStr = oldCheckOut != null ? oldCheckOut.format(DATE_FORMATTER) : "N/A";
+        String newCheckInStr = newCheckIn != null ? newCheckIn.format(DATE_FORMATTER) : "N/A";
+        String newCheckOutStr = newCheckOut != null ? newCheckOut.format(DATE_FORMATTER) : "N/A";
+
+        long newNights = (newCheckIn != null && newCheckOut != null) ? java.time.temporal.ChronoUnit.DAYS.between(newCheckIn, newCheckOut) : 0;
+        String nightsStr = newNights > 0 ? (newNights + (newNights == 1 ? " night" : " nights")) : "1 night";
+
+        String safariRef = safari != null && safari.getReferenceNumber() != null ? escapeHtml(safari.getReferenceNumber()) : "N/A";
+        String clientName = client != null ? escapeHtml(client.getFirstName() + " " + client.getLastName()) : "Safari Client";
+        String reasonStr = (reason != null && !reason.isBlank()) ? escapeHtml(reason) : "Safari schedule optimization";
+
+        String roomRowsHtml = buildRoomRowsHtml(req);
+        String guestRowsHtml = buildGuestRowsHtml(guests, client, guestRequirements);
+        String consultantBlock = buildConsultantSignatureHtml(consultant, company, systemEmail);
+
+        return String.format("""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reservation Amendment Notice - %s</title>
+</head>
+<body style="margin: 0; padding: 24px 0; background-color: #F8FAFC; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #0F172A; line-height: 1.55;">
+  <center style="width: 100%%; table-layout: fixed;">
+    <div style="max-width: 640px; margin: 0 auto; background-color: #FFFFFF; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08); border: 1px solid #E2E8F0; text-align: left;">
+      <div style="background-color: #D97706; height: 6px; width: 100%%;"></div>
+      <div style="padding: 24px 32px 16px 32px; border-bottom: 1px solid #F1F5F9;">
+        <span style="display: inline-block; font-size: 11px; font-weight: 700; color: #B45309; background-color: #FEF3C7; padding: 4px 10px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Booking Amendment / Date Change Notice</span>
+        <h1 style="margin: 12px 0 4px 0; font-size: 20px; font-weight: 700; color: #0F172A;">Reservation Dates Rescheduled</h1>
+        <p style="margin: 0; font-size: 13px; color: #64748B;">Booking Reference: <strong style="color: #0F172A;">%s</strong> &bull; Safari: <strong style="color: #0F172A;">%s</strong></p>
+      </div>
+
+      <div style="padding: 24px 32px;">
+        <p style="margin: 0 0 16px 0; font-size: 14px; color: #334155;">
+          Dear <strong>%s</strong>,
+        </p>
+        <p style="margin: 0 0 20px 0; font-size: 14px; color: #334155;">
+          Please be advised that the travel schedule for <strong>%s</strong> has been revised. We kindly request an amendment to our existing reservation for the new dates detailed below.
+        </p>
+
+        <!-- DATE CHANGE HIGHLIGHT BOX -->
+        <div style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 18px 20px; margin-bottom: 24px;">
+          <table width="100%%" cellpadding="0" cellspacing="0" border="0" style="font-size: 13px;">
+            <tr>
+              <td style="padding-bottom: 10px; color: #92400E; font-weight: 600; width: 40%%;">PREVIOUS DATES:</td>
+              <td style="padding-bottom: 10px; color: #78350F; text-decoration: line-through;">%s &rarr; %s</td>
+            </tr>
+            <tr>
+              <td style="padding-bottom: 10px; color: #065F46; font-weight: 700; width: 40%%;">NEW REQUESTED DATES:</td>
+              <td style="padding-bottom: 10px; color: #065F46; font-weight: 700; font-size: 14px;">%s &rarr; %s (%s)</td>
+            </tr>
+            <tr>
+              <td style="color: #92400E; font-weight: 600;">REASON FOR CHANGE:</td>
+              <td style="color: #451A03;">%s</td>
+            </tr>
+          </table>
+        </div>
+
+        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: #0F172A; text-transform: uppercase; letter-spacing: 0.5px;">Room Requirements</h3>
+        <table width="100%%" cellpadding="8" cellspacing="0" border="0" style="margin-bottom: 20px; font-size: 13px; border-collapse: collapse; border: 1px solid #E2E8F0;">
+          %s
+        </table>
+
+        <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: 700; color: #0F172A; text-transform: uppercase; letter-spacing: 0.5px;">Guest Manifest</h3>
+        <table width="100%%" cellpadding="8" cellspacing="0" border="0" style="margin-bottom: 24px; font-size: 13px; border-collapse: collapse; border: 1px solid #E2E8F0;">
+          %s
+        </table>
+
+        <div style="background-color: #EFF6FF; border-left: 4px solid #3B82F6; padding: 14px 16px; border-radius: 4px; margin-bottom: 24px;">
+          <strong style="color: #1E40AF; font-size: 13px; display: block; margin-bottom: 4px;">Action Required &bull; Availability Re-check</strong>
+          <span style="color: #1E3A8A; font-size: 13px; line-height: 1.5;">
+            Please reply directly to this email confirming whether you have room availability for these new dates, and indicate your amended voucher/confirmation reference.
+          </span>
+        </div>
+
+        %s
+      </div>
+    </div>
+  </center>
+</body>
+</html>
+""",
+                bookingRef,
+                bookingRef,
+                safariRef,
+                propName,
+                clientName,
+                oldCheckInStr, oldCheckOutStr,
+                newCheckInStr, newCheckOutStr, nightsStr,
+                reasonStr,
+                roomRowsHtml,
+                guestRowsHtml,
+                consultantBlock
+        );
+    }
+
+    public String buildAmendmentPlainText(
+            AccommodationBooking booking,
+            LocalDate oldCheckIn,
+            LocalDate oldCheckOut,
+            LocalDate newCheckIn,
+            LocalDate newCheckOut,
+            String reason,
+            List<Guest> guests,
+            Map<UUID, List<GuestRequirement>> guestRequirements,
+            String systemEmail) {
+
+        AccommodationRequirement req = booking.getAccommodationRequirement();
+        Safari safari = req != null ? req.getSafari() : null;
+        Client client = safari != null ? safari.getClient() : null;
+        User consultant = resolveConsultant(booking, safari);
+        Company company = resolveCompany(consultant, client);
+
+        String bookingRef = booking.getReferenceNumber() != null ? booking.getReferenceNumber() : "REF";
+        String safariRef = safari != null && safari.getReferenceNumber() != null ? safari.getReferenceNumber() : "N/A";
+        String propName = booking.getProperty() != null && booking.getProperty().getName() != null ? booking.getProperty().getName() : "Lodge Reservations Team";
+        String clientName = client != null ? (client.getFirstName() + " " + client.getLastName()) : "Safari Client";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("BOOKING AMENDMENT & DATE CHANGE NOTICE\n");
+        sb.append("======================================\n\n");
+        sb.append("Dear ").append(propName).append(",\n\n");
+        sb.append("Please be advised that the travel dates for client '").append(clientName)
+          .append("' (Safari Ref: ").append(safariRef).append(") have been rescheduled.\n\n");
+
+        sb.append("AMENDMENT DETAILS:\n");
+        sb.append("   - Booking Reference:       ").append(bookingRef).append("\n");
+        sb.append("   - Previous Dates:          ").append(oldCheckIn != null ? oldCheckIn.format(DATE_FORMATTER) : "N/A")
+          .append(" to ").append(oldCheckOut != null ? oldCheckOut.format(DATE_FORMATTER) : "N/A").append("\n");
+        sb.append("   - NEW REQUESTED DATES:     ").append(newCheckIn != null ? newCheckIn.format(DATE_FORMATTER) : "N/A")
+          .append(" to ").append(newCheckOut != null ? newCheckOut.format(DATE_FORMATTER) : "N/A").append("\n");
+        if (reason != null && !reason.isBlank()) {
+            sb.append("   - Reason:                  ").append(reason.trim()).append("\n");
+        }
+        sb.append("\n");
+
+        sb.append("ACTION REQUIRED:\n");
+        sb.append("Please reply directly to this email to confirm room availability for these new dates.\n");
+        sb.append("Kindly maintain reference '").append(bookingRef).append("' in the subject line.\n\n");
+
+        sb.append("Best regards,\n");
+        if (consultant != null) {
+            sb.append(consultant.getFirstName()).append(" ").append(consultant.getLastName()).append("\n");
         }
         if (company != null && company.getName() != null) {
             sb.append(company.getName()).append("\n");
@@ -1665,6 +1842,196 @@ public class EmailTemplateBuilder {
             }
         }
 
+        sb.append("---\nCentral Reservations Platform\n").append(systemEmail).append("\n");
+        return sb.toString();
+    }
+
+    /**
+     * Builds HTML digest email sent to Reservation Managers listing all provisional lodge
+     * bookings that are pending response or overdue for follow-up.
+     */
+    public String buildReservationManagerBookingFollowUpAlertHtml(
+            User rm,
+            List<AccommodationBooking> bookings,
+            String systemEmail) {
+
+        String rmName = rm != null && rm.getFirstName() != null ? escapeHtml(rm.getFirstName()) : "Reservation Manager";
+        int totalPending = bookings != null ? bookings.size() : 0;
+        String timestampStr = OffsetDateTime.now().format(TIMESTAMP_FORMATTER);
+
+        StringBuilder rowsHtml = new StringBuilder();
+        if (bookings != null) {
+            for (AccommodationBooking b : bookings) {
+                String propName = b.getProperty() != null && b.getProperty().getName() != null
+                        ? escapeHtml(b.getProperty().getName()) : "Partner Lodge";
+                String propEmail = b.getProperty() != null && b.getProperty().getContactEmail() != null
+                        ? escapeHtml(b.getProperty().getContactEmail()) : "N/A";
+                String bookRef = b.getReferenceNumber() != null ? escapeHtml(b.getReferenceNumber()) : "N/A";
+
+                AccommodationRequirement req = b.getAccommodationRequirement();
+                Safari safari = req != null ? req.getSafari() : null;
+                String safariRef = safari != null && safari.getReferenceNumber() != null ? escapeHtml(safari.getReferenceNumber()) : "N/A";
+                Client client = safari != null ? safari.getClient() : null;
+                String clientName = client != null
+                        ? escapeHtml((client.getFirstName() != null ? client.getFirstName() : "") + " " + (client.getLastName() != null ? client.getLastName() : "")).trim()
+                        : "Direct Client";
+
+                String checkInStr = b.getCheckIn() != null ? b.getCheckIn().format(DATE_FORMATTER) : "TBD";
+                String checkOutStr = b.getCheckOut() != null ? b.getCheckOut().format(DATE_FORMATTER) : "TBD";
+
+                long hoursPending = 0;
+                if (b.getRequestedAt() != null) {
+                    hoursPending = java.time.Duration.between(b.getRequestedAt(), OffsetDateTime.now()).toHours();
+                }
+                String pendingStr = hoursPending >= 24
+                        ? (hoursPending / 24) + "d " + (hoursPending % 24) + "h pending"
+                        : hoursPending + "h pending";
+
+                rowsHtml.append("""
+                    <tr style="border-bottom: 1px solid #E2D9CC;">
+                      <td style="padding: 10px 12px; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 13px; color: #1F1916;">
+                        <strong style="color: #264624;">%s</strong><br>
+                        <span style="font-size: 11px; color: #7D6B5C;">Safari: %s &bull; Client: %s</span>
+                      </td>
+                      <td style="padding: 10px 12px; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 13px; color: #1F1916;">
+                        <strong>%s</strong><br>
+                        <span style="font-size: 11px; color: #7D6B5C;">%s</span>
+                      </td>
+                      <td style="padding: 10px 12px; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 12px; color: #1F1916; white-space: nowrap;">
+                        In: %s<br>Out: %s
+                      </td>
+                      <td style="padding: 10px 12px; font-family: 'Calibri Light', Calibri, sans-serif; font-size: 12px; white-space: nowrap;">
+                        <span style="display: inline-block; background-color: #FEF3C7; color: #92400E; padding: 2px 8px; border-radius: 9999px; font-weight: bold; border: 1px solid #FDE68A;">
+                          %s
+                        </span>
+                      </td>
+                    </tr>
+                """.formatted(bookRef, safariRef, clientName, propName, propEmail, checkInStr, checkOutStr, pendingStr));
+            }
+        }
+
+        return """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>Booking Follow-Up Digest</title>
+            </head>
+            <body style="margin: 0; padding: 0; background-color: #F5EFEB; font-family: 'Calibri Light', Calibri, Arial, sans-serif; color: #1F1916;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%%" style="background-color: #F5EFEB; padding: 24px 0;">
+                <tr>
+                  <td align="center">
+                    <table role="presentation" cellpadding="0" cellspacing="0" width="680" style="max-width: 680px; background-color: #FAF8F4; border: 1px solid #E2D9CC; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
+                      <tr>
+                        <td style="background-color: #264624; padding: 24px 32px; color: #FFFFFF;">
+                          <div style="font-family: Arial, Helvetica, sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #C5A059; margin-bottom: 6px;">
+                            Reservations Department &bull; Operational Alert
+                          </div>
+                          <div style="font-family: Georgia, serif; font-size: 22px; font-weight: bold; line-height: 1.3;">
+                            Lodge Booking Follow-up Digest
+                          </div>
+                          <div style="font-size: 13px; color: #D1E7DD; margin-top: 4px;">
+                            %d provisional booking(s) awaiting hotel response &bull; Generated %s
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td style="padding: 24px 32px 16px 32px;">
+                          <p style="margin: 0 0 12px 0; font-size: 14px; line-height: 1.6; color: #1F1916;">
+                            Dear <strong>%s</strong>,
+                          </p>
+                          <p style="margin: 0 0 16px 0; font-size: 13px; line-height: 1.6; color: #4A3B32;">
+                            The following lodge reservation requests have been submitted but have not yet received an official confirmation or availability reply. Please review these files in the platform to either <strong>dispatch a 1-click follow-up reminder email</strong> to the property or <strong>re-allocate to an alternative lodge</strong> if required.
+                          </p>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td style="padding: 0 32px 20px 32px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" width="100%%" style="border: 1px solid #E2D9CC; border-radius: 8px; overflow: hidden; background-color: #FFFFFF; border-collapse: collapse;">
+                            <thead>
+                              <tr style="background-color: #EDE7DC; text-align: left;">
+                                <th style="padding: 10px 12px; font-family: Arial, Helvetica, sans-serif; font-size: 11px; text-transform: uppercase; color: #5C4A3E; letter-spacing: 0.5px;">Booking & Safari</th>
+                                <th style="padding: 10px 12px; font-family: Arial, Helvetica, sans-serif; font-size: 11px; text-transform: uppercase; color: #5C4A3E; letter-spacing: 0.5px;">Property Contact</th>
+                                <th style="padding: 10px 12px; font-family: Arial, Helvetica, sans-serif; font-size: 11px; text-transform: uppercase; color: #5C4A3E; letter-spacing: 0.5px;">Dates</th>
+                                <th style="padding: 10px 12px; font-family: Arial, Helvetica, sans-serif; font-size: 11px; text-transform: uppercase; color: #5C4A3E; letter-spacing: 0.5px;">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              %s
+                            </tbody>
+                          </table>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td style="padding: 0 32px 24px 32px;">
+                          <div style="background-color: #EDE7DC; border-left: 4px solid #264624; padding: 14px 18px; border-radius: 4px; font-size: 12px; line-height: 1.6; color: #1F1916;">
+                            <strong>Quick Actions Available in System:</strong>
+                            <ul style="margin: 6px 0 0 0; padding-left: 18px;">
+                              <li><strong>Trigger Email Reminder:</strong> In the Safari Itinerary or Accommodation Booking view, click <em>"Send Reminder to Lodge"</em> to automatically dispatch a formatted follow-up notice.</li>
+                              <li><strong>Change Hotel:</strong> If the lodge is unresponsive or fully booked, click <em>"Change Lodge"</em> to cancel this request and allocate an alternative partner immediately.</li>
+                            </ul>
+                          </div>
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td style="background-color: #FAF8F4; border-top: 1px solid #E2D9CC; padding: 16px 32px; font-size: 11px; color: #7D6B5C; text-align: center;">
+                          This is an automated operational notification generated by the Central Safari Reservations Management System.<br>
+                          Inquiries &amp; System Administration: %s
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </body>
+            </html>
+        """.formatted(totalPending, timestampStr, rmName, rowsHtml.toString(), systemEmail != null ? escapeHtml(systemEmail) : "support@safarisystem.com");
+    }
+
+    public String buildReservationManagerBookingFollowUpAlertPlainText(
+            User rm,
+            List<AccommodationBooking> bookings,
+            String systemEmail) {
+
+        String rmName = rm != null && rm.getFirstName() != null ? rm.getFirstName() : "Reservation Manager";
+        int totalPending = bookings != null ? bookings.size() : 0;
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("LODGE BOOKING FOLLOW-UP DIGEST\n");
+        sb.append("====================================================\n\n");
+        sb.append("Hello ").append(rmName).append(",\n\n");
+        sb.append("You have ").append(totalPending).append(" accommodation booking request(s) awaiting property confirmation:\n\n");
+
+        if (bookings != null) {
+            for (AccommodationBooking b : bookings) {
+                String propName = b.getProperty() != null && b.getProperty().getName() != null ? b.getProperty().getName() : "Lodge";
+                String propEmail = b.getProperty() != null && b.getProperty().getContactEmail() != null ? b.getProperty().getContactEmail() : "N/A";
+                String bookRef = b.getReferenceNumber() != null ? b.getReferenceNumber() : "REF";
+                AccommodationRequirement req = b.getAccommodationRequirement();
+                Safari safari = req != null ? req.getSafari() : null;
+                String safariRef = safari != null && safari.getReferenceNumber() != null ? safari.getReferenceNumber() : "N/A";
+
+                long hoursPending = 0;
+                if (b.getRequestedAt() != null) {
+                    hoursPending = java.time.Duration.between(b.getRequestedAt(), OffsetDateTime.now()).toHours();
+                }
+
+                sb.append(" - ").append(bookRef).append(" | Safari: ").append(safariRef)
+                  .append(" | Lodge: ").append(propName).append(" (").append(propEmail).append(")\n")
+                  .append("   Check-in: ").append(b.getCheckIn()).append(" to ").append(b.getCheckOut())
+                  .append(" | Pending: ").append(hoursPending).append("h\n\n");
+            }
+        }
+
+        sb.append("ACTIONS:\n");
+        sb.append("Log into the platform to:\n");
+        sb.append("1. Send a follow-up reminder email with one click.\n");
+        sb.append("2. Re-allocate to an alternative partner lodge directly.\n\n");
         sb.append("---\nCentral Reservations Platform\n").append(systemEmail).append("\n");
         return sb.toString();
     }

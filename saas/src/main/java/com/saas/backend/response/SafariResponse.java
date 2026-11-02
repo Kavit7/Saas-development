@@ -27,6 +27,8 @@ public class SafariResponse {
     private Integer numberOfPassengers;
     private SafariStatus status;
     private String notes;
+    private Boolean deleted;
+    private OffsetDateTime deletedAt;
     private OffsetDateTime createdAt;
     private OffsetDateTime updatedAt;
 }

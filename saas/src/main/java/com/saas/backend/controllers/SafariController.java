@@ -163,4 +163,39 @@ public class SafariController {
                 )
         );
     }
+
+    @GetMapping("/{safariId}")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
+    public ResponseEntity<?> getSafariById(@PathVariable UUID safariId) {
+        SafariResponse safari = safariServiceImpl.getSafariById(safariId);
+        return ResponseEntity.ok(Map.of("message", "Safari details loaded successfully", "data", safari));
+    }
+
+    @PutMapping("/{safariId}")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
+    public ResponseEntity<?> updateSafari(@PathVariable UUID safariId, @RequestBody SafariRequest request) {
+        SafariResponse updatedSafari = safariServiceImpl.updateSafari(safariId, request);
+        return ResponseEntity.ok(Map.of("message", "Safari successfully updated", "data", updatedSafari));
+    }
+
+    @PutMapping("/company/{safariId}")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','RESERVATION_MANAGER','SUPER_ADMIN')")
+    public ResponseEntity<?> updateCompanySafari(@PathVariable UUID safariId, @RequestBody SafariRequest request) {
+        SafariResponse updatedSafari = safariServiceImpl.updateSafari(safariId, request);
+        return ResponseEntity.ok(Map.of("message", "Safari successfully updated", "data", updatedSafari));
+    }
+
+    @DeleteMapping("/{safariId}")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','SUPER_ADMIN')")
+    public ResponseEntity<?> deleteSafari(@PathVariable UUID safariId) {
+        safariServiceImpl.softDeleteSafari(safariId);
+        return ResponseEntity.ok(Map.of("message", "Safari successfully soft-deleted (archived in history)"));
+    }
+
+    @DeleteMapping("/company/{safariId}")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_PERSON','SUPER_ADMIN')")
+    public ResponseEntity<?> deleteCompanySafari(@PathVariable UUID safariId) {
+        safariServiceImpl.softDeleteSafari(safariId);
+        return ResponseEntity.ok(Map.of("message", "Safari successfully soft-deleted (archived in history)"));
+    }
 }
