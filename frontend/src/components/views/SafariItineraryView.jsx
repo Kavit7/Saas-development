@@ -336,10 +336,10 @@ const SafariItineraryView = ({
                 onClick={onAddDay}
                 disabled={actionLoading}
                 title="Safely append an extra day to the end of the safari schedule"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#264624] text-white hover:bg-[#1b331a] transition active:scale-95 disabled:opacity-50 shadow-2xs"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-[#264624] to-[#35634B] text-white hover:from-[#1b331a] hover:to-[#284c39] transition active:scale-95 disabled:opacity-50 shadow-2xs"
               >
-                <Plus size={14} weight="bold" />
-                <span>+ Add Extra Day</span>
+                <Plus size={13} weight="bold" />
+                <span>Add Day</span>
               </button>
             )}
 
@@ -795,10 +795,10 @@ const SafariItineraryView = ({
             type="button"
             onClick={onAddDay}
             disabled={actionLoading}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white border border-[#264624]/40 text-[#264624] hover:bg-[#264624]/5 text-xs font-bold transition active:scale-95 shadow-2xs hover:shadow-xs disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#264624]/30 text-[#264624] hover:bg-[#264624]/5 text-xs font-semibold transition active:scale-95 shadow-2xs hover:shadow-xs disabled:opacity-50 cursor-pointer"
           >
-            <Plus size={16} weight="bold" />
-            <span>Add Extra Day to Safari (Extend Itinerary Safely)</span>
+            <Plus size={14} weight="bold" />
+            <span>Add Extra Day</span>
           </button>
         </div>
       )}

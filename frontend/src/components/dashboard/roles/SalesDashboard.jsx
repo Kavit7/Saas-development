@@ -2,7 +2,7 @@ import { Compass, UsersThree, Target, UserCheck, CurrencyDollar, Plus } from "@p
 import StatCard from "../common/StatCard";
 import TrendAreaChart from "../charts/TrendAreaChart";
 import DonutStatusChart from "../charts/DonutStatusChart";
-import BarMetricChart from "../charts/BarMetricChart";
+import CategoryDemandChart from "../charts/CategoryDemandChart";
 import QuickActions from "../common/QuickActions";
 import RecentActivityTable from "../common/RecentActivityTable";
 
@@ -130,10 +130,11 @@ const SalesDashboard = ({ stats }) => {
       </div>
 
       {/* 3. Monthly Benchmark Progress Bars */}
-      <BarMetricChart
+      <CategoryDemandChart
         items={targetBars}
         title="Monthly Quota & Targets"
         subtitle="Tracking your individual sales deliverables for this month"
+        badgeText="Active Targets"
       />
 
       {/* 4. Action Shortcuts */}

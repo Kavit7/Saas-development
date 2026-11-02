@@ -27,6 +27,7 @@ import com.saas.backend.repositories.IncomingEmailRepository;
 import com.saas.backend.repositories.InvoiceRepository;
 import com.saas.backend.response.InvoiceResponse;
 import com.saas.backend.response.MailboxEmailResponse;
+import com.saas.backend.service.FileStorageService;
 import com.saas.backend.service.IncomingEmailService;
 import com.saas.backend.service.MailboxService;
 
@@ -43,6 +44,7 @@ public class MailboxServiceImpl implements MailboxService {
     private final AccommodationBookingRepository bookingRepository;
     private final IncomingEmailService incomingEmailService;
     private final CurrentUserChecker currentUserChecker;
+    private final FileStorageService fileStorageService;
     private final com.saas.backend.service.InvoiceService invoiceService;
 
     @Override
@@ -307,11 +309,11 @@ public class MailboxServiceImpl implements MailboxService {
         IncomingEmail email = incomingEmailRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Email message not found with ID: " + id));
 
-        if (email.getAttachmentFilePath() != null) {
+        if (email.getAttachmentFilePath() != null && !email.getAttachmentFilePath().isBlank()) {
             try {
-                Path path = Paths.get(email.getAttachmentFilePath());
-                if (Files.exists(path) && Files.size(path) > 0) {
-                    return Files.readAllBytes(path);
+                byte[] bytes = fileStorageService.loadFile(email.getAttachmentFilePath());
+                if (bytes != null && bytes.length > 0) {
+                    return bytes;
                 }
             } catch (Exception ignored) {}
         }

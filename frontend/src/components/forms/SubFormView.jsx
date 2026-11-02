@@ -169,6 +169,7 @@ const SubFormView = ({
               : "Save Day Destination"
           }
           loading={loading}
+          embedded={true}
         />
       </div>
     </div>

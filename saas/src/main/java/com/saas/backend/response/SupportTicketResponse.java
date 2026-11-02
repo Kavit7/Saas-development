@@ -26,6 +26,7 @@ public class SupportTicketResponse {
     private UUID assignedToId;
     private String assignedToName;
     private String assignedToEmail;
+    private String targetRole;
     private SupportCategory category;
     private String subject;
     private String description;

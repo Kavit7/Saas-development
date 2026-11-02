@@ -59,6 +59,9 @@ public class IncomingEmailServiceImpl
     private final com.saas.backend.repositories.UserRepository
             userRepository;
 
+    private final com.saas.backend.service.FileStorageService
+            fileStorageService;
+
     @org.springframework.beans.factory.annotation.Value("${app.upload.dir:uploads}")
     private String uploadBaseDir = "uploads";
 
@@ -205,19 +208,17 @@ public class IncomingEmailServiceImpl
                 String safeMsgId = (email.getMessageId() != null)
                         ? email.getMessageId().replaceAll("[^a-zA-Z0-9.-]", "_")
                         : "msg_" + System.currentTimeMillis();
-                Path attDir = Paths.get(uploadBaseDir, "email-attachments", safeMsgId);
-                Files.createDirectories(attDir);
                 String safeName = (first.getFileName() != null && !first.getFileName().isBlank())
                         ? first.getFileName().replaceAll("[^a-zA-Z0-9.-]", "_")
                         : "attachment.pdf";
-                Path attFile = attDir.resolve(safeName);
+                String key = "email-attachments/" + safeMsgId + "/" + safeName;
                 if (first.getData() != null && first.getData().length > 0) {
-                    Files.write(attFile, first.getData());
-                    incomingEmail.setAttachmentFilePath(attFile.toAbsolutePath().toString());
-                    log.info("Persisted email attachment to {}", attFile.toAbsolutePath());
+                    String storedPath = fileStorageService.storeFile(key, first.getData(), first.getContentType());
+                    incomingEmail.setAttachmentFilePath(storedPath);
+                    log.info("Persisted email attachment to storage: {}", storedPath);
                 }
             } catch (Exception ex) {
-                log.warn("Failed to persist email attachment to disk: {}", ex.getMessage());
+                log.warn("Failed to persist email attachment to storage: {}", ex.getMessage());
             }
         }
         incomingEmailRepository.save(incomingEmail);

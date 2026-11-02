@@ -533,17 +533,17 @@ const UserCreateModal = ({
             type="button"
             onClick={handleSubmit}
             disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#264624] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-md hover:bg-[#1b331a] transition cursor-pointer disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#264624] via-[#2D532B] to-[#35634B] px-5 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs hover:shadow-md hover:shadow-[#264624]/20 transition-all cursor-pointer disabled:opacity-60 active:scale-[0.98] border border-white/10"
           >
             {submitting ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                <span>Creating User...</span>
+                <span>Creating...</span>
               </>
             ) : (
               <>
-                <UserPlus size={18} weight="bold" />
-                <span>Create User Account</span>
+                <UserPlus size={17} weight="bold" />
+                <span>Create User</span>
               </>
             )}
           </button>

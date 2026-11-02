@@ -2,7 +2,7 @@ import { Bed, Buildings, ShieldCheck, Tag, CalendarBlank, CheckSquareOffset } fr
 import StatCard from "../common/StatCard";
 import TrendAreaChart from "../charts/TrendAreaChart";
 import DonutStatusChart from "../charts/DonutStatusChart";
-import BarMetricChart from "../charts/BarMetricChart";
+import CategoryDemandChart from "../charts/CategoryDemandChart";
 import QuickActions from "../common/QuickActions";
 import RecentActivityTable from "../common/RecentActivityTable";
 
@@ -130,7 +130,7 @@ const ReservationDashboard = ({ stats }) => {
       </div>
 
       {/* 3. Category Allocation Bars */}
-      <BarMetricChart
+      <CategoryDemandChart
         items={categoryBars}
         title="Lodging Category Demand"
         subtitle="Distribution of room requirements across accommodation categories"

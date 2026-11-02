@@ -3,6 +3,7 @@ package com.saas.backend.config;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -18,8 +19,9 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * DataInitializer
- * Automatically seeds baseline platform and company entities when the application starts.
- * Ensures any developer who clones the project can immediately authenticate and test all role workflows.
+ * Controls baseline platform, roles, subscription plans, and optional sample entities on startup.
+ * Controlled via environment variables (APP_SEED_ENABLED, APP_SEED_SAMPLE_DATA, etc.)
+ * for hosting security.
  */
 @Component
 @RequiredArgsConstructor
@@ -42,14 +44,43 @@ public class DataInitializer implements CommandLineRunner {
     private final SafariRepository safariRepository;
     private final PasswordEncoder passwordEncoder;
 
+    @Value("${app.seed.enabled:false}")
+    private boolean seedEnabled;
+
+    @Value("${app.seed.sample-data:false}")
+    private boolean seedSampleData;
+
+    @Value("${app.seed.default-password:Password123!}")
+    private String defaultPassword;
+
+    @Value("${app.seed.super-admin.email:superadmin@platform.com}")
+    private String superAdminEmail;
+
+    @Value("${app.seed.super-admin.password:}")
+    private String superAdminPassword;
+
+    @Value("${app.seed.super-admin.first-name:Platform}")
+    private String superAdminFirstName;
+
+    @Value("${app.seed.super-admin.last-name:SuperAdmin}")
+    private String superAdminLastName;
+
+    @Value("${app.seed.super-admin.phone:+255 700 000 001}")
+    private String superAdminPhone;
+
     public static final String DEFAULT_PASSWORD = "Password123!";
 
     @Override
     @Transactional
     public void run(String... args) {
-        log.info("Checking and seeding default system data...");
+        if (!seedEnabled) {
+            log.info("[SECURITY] DataInitializer: Seeding is DISABLED (app.seed.enabled=false). No default or mock data will be initialized.");
+            return;
+        }
 
-        // 1. Roles
+        log.warn("[SECURITY ALERT] DataInitializer is active (app.seed.enabled=true). If deploying to PRODUCTION, disable APP_SEED_ENABLED immediately after initial setup!");
+
+        // 1. Roles (Essential baseline system roles required for authorization)
         Role superAdminRole = getOrCreateRole("SUPER_ADMIN", "super admin", "Platform Super Administrator");
         Role adminRole = getOrCreateRole("ADMIN", "admin", "Company Administrator");
         Role rmRole = getOrCreateRole("RESERVATION_MANAGER", "reservation manager", "Reservation Manager");
@@ -84,66 +115,82 @@ public class DataInitializer implements CommandLineRunner {
         entFeatures.put("custom_branding", true);
         SubscriptionPlan entPlan = getOrCreatePlan("Enterprise Plan", new BigDecimal("399.00"), 100, entFeatures);
 
-        // 3. Default Companies (with 3 different subscription tiers)
-        Company serengeti = getOrCreateCompany(
-                "Serengeti Expeditions Ltd",
-                "serengeti-expeditions",
-                "contact@serengetiexpeditions.com",
-                "+255 754 100 200",
-                "Tanzania",
-                "Africa/Dar_es_Salaam",
-                entPlan
-        );
+        // 3. Platform Super Admin (Uses custom secure credentials if specified in environment)
+        String effectiveSuperAdminPassword = (superAdminPassword != null && !superAdminPassword.isBlank())
+                ? superAdminPassword
+                : defaultPassword;
 
-        Company kilimanjaro = getOrCreateCompany(
-                "Kilimanjaro Trekking & Safaris",
-                "kilimanjaro-safaris",
-                "info@kilimanjarosafaris.com",
-                "+255 754 300 400",
-                "Tanzania",
-                "Africa/Dar_es_Salaam",
-                proPlan
-        );
+        if (superAdminPassword == null || superAdminPassword.isBlank()) {
+            log.warn("[SECURITY WARNING] APP_SEED_SUPER_ADMIN_PASSWORD is not set! Using default password '{}' for Platform Super Admin.", defaultPassword);
+        }
 
-        Company zanzibar = getOrCreateCompany(
-                "Zanzibar Blue Travel",
-                "zanzibar-travel",
-                "hello@zanzibartravel.com",
-                "+255 754 500 600",
-                "Tanzania",
-                "Africa/Dar_es_Salaam",
-                starterPlan
-        );
-
-        // 4. Platform Super Admin
         seedPlatformAdmin(
-                "superadmin@platform.com",
-                DEFAULT_PASSWORD,
-                "Platform",
-                "SuperAdmin",
-                "+255 700 000 001",
+                superAdminEmail,
+                effectiveSuperAdminPassword,
+                superAdminFirstName,
+                superAdminLastName,
+                superAdminPhone,
                 PlatformRole.SUPER_ADMIN
         );
 
-        // 5. Company Users for all Roles
-        // -- Company 1: Serengeti Expeditions (Enterprise)
-        seedUser("admin@serengeti.com", DEFAULT_PASSWORD, "Amara", "Kiprotich", Gender.FEMALE, "+255 754 111 001", adminRole, serengeti);
-        seedUser("rm@serengeti.com", DEFAULT_PASSWORD, "David", "Mollel", Gender.MALE, "+255 754 111 002", rmRole, serengeti);
-        User salesUser = seedUser("sales@serengeti.com", DEFAULT_PASSWORD, "Neema", "Mwangi", Gender.FEMALE, "+255 754 111 003", saleRole, serengeti);
-        seedUser("guide@serengeti.com", DEFAULT_PASSWORD, "Juma", "Baraka", Gender.MALE, "+255 754 111 004", guideRole, serengeti);
-        seedUser("superadmin@serengeti.com", DEFAULT_PASSWORD, "Kavit", "SuperAdmin", Gender.MALE, "+255 754 111 000", superAdminRole, serengeti);
+        // 4. Sample / Mock Data (Companies, Users, Operational Entities)
+        if (seedSampleData) {
+            log.info("Seeding sample companies, users, and operational data (app.seed.sample-data=true)...");
 
-        // -- Company 2: Kilimanjaro Trekking (Professional)
-        seedUser("admin@kilimanjaro.com", DEFAULT_PASSWORD, "Kelvin", "Tarimo", Gender.MALE, "+255 754 333 001", adminRole, kilimanjaro);
-        seedUser("sales@kilimanjaro.com", DEFAULT_PASSWORD, "Amina", "Mushi", Gender.FEMALE, "+255 754 333 002", saleRole, kilimanjaro);
+            // Default Companies (with 3 different subscription tiers)
+            Company serengeti = getOrCreateCompany(
+                    "Serengeti Expeditions Ltd",
+                    "serengeti-expeditions",
+                    "contact@serengetiexpeditions.com",
+                    "+255 754 100 200",
+                    "Tanzania",
+                    "Africa/Dar_es_Salaam",
+                    entPlan
+            );
 
-        // -- Company 3: Zanzibar Blue Travel (Starter)
-        seedUser("admin@zanzibar.com", DEFAULT_PASSWORD, "Fatma", "Said", Gender.FEMALE, "+255 754 555 001", adminRole, zanzibar);
+            Company kilimanjaro = getOrCreateCompany(
+                    "Kilimanjaro Trekking & Safaris",
+                    "kilimanjaro-safaris",
+                    "info@kilimanjarosafaris.com",
+                    "+255 754 300 400",
+                    "Tanzania",
+                    "Africa/Dar_es_Salaam",
+                    proPlan
+            );
 
-        // 6. Sample Operational Telemetry & Seed Entities
-        seedOperationalData(serengeti, salesUser);
+            Company zanzibar = getOrCreateCompany(
+                    "Zanzibar Blue Travel",
+                    "zanzibar-travel",
+                    "hello@zanzibartravel.com",
+                    "+255 754 500 600",
+                    "Tanzania",
+                    "Africa/Dar_es_Salaam",
+                    starterPlan
+            );
 
-        log.info("Default system data seeded successfully.");
+            // Company Users for all Roles
+            // -- Company 1: Serengeti Expeditions (Enterprise)
+            seedUser("admin@serengeti.com", defaultPassword, "Amara", "Kiprotich", Gender.FEMALE, "+255 754 111 001", adminRole, serengeti);
+            seedUser("rm@serengeti.com", defaultPassword, "David", "Mollel", Gender.MALE, "+255 754 111 002", rmRole, serengeti);
+            User salesUser = seedUser("sales@serengeti.com", defaultPassword, "Neema", "Mwangi", Gender.FEMALE, "+255 754 111 003", saleRole, serengeti);
+            seedUser("guide@serengeti.com", defaultPassword, "Juma", "Baraka", Gender.MALE, "+255 754 111 004", guideRole, serengeti);
+            seedUser("superadmin@serengeti.com", defaultPassword, "Kavit", "SuperAdmin", Gender.MALE, "+255 754 111 000", superAdminRole, serengeti);
+
+            // -- Company 2: Kilimanjaro Trekking (Professional)
+            seedUser("admin@kilimanjaro.com", defaultPassword, "Kelvin", "Tarimo", Gender.MALE, "+255 754 333 001", adminRole, kilimanjaro);
+            seedUser("sales@kilimanjaro.com", defaultPassword, "Amina", "Mushi", Gender.FEMALE, "+255 754 333 002", saleRole, kilimanjaro);
+
+            // -- Company 3: Zanzibar Blue Travel (Starter)
+            seedUser("admin@zanzibar.com", defaultPassword, "Fatma", "Said", Gender.FEMALE, "+255 754 555 001", adminRole, zanzibar);
+
+            // Sample Operational Telemetry & Seed Entities
+            seedOperationalData(serengeti, salesUser);
+            log.info("Sample operational data seeded successfully.");
+        } else {
+            log.info("[SECURITY] Sample companies and operational test data SKIPPED (app.seed.sample-data=false). Database kept clean for production.");
+        }
+
+        log.info("System data initialization completed successfully.");
     }
 
     private Role getOrCreateRole(String canonicalName, String alternateName, String description) {

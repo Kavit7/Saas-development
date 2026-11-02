@@ -26,9 +26,9 @@ const ClientSubdataView = ({
             <button
               type="button"
               onClick={onAddGuest}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-[#264624] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1b331a] transition shadow-2xs"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#264624] via-[#2D532B] to-[#35634B] px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:shadow-md hover:shadow-[#264624]/20 transition-all active:scale-[0.98] cursor-pointer border border-white/10"
             >
-              <Plus size={14} weight="bold" />
+              <Plus size={13} weight="bold" />
               <span>Add Guest</span>
             </button>
           )}
@@ -130,9 +130,9 @@ const ClientSubdataView = ({
           <button
             type="button"
             onClick={onAddFlight}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-[#264624] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1b331a] transition shadow-2xs"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-[#264624] via-[#2D532B] to-[#35634B] px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:shadow-md hover:shadow-[#264624]/20 transition-all active:scale-[0.98] cursor-pointer border border-white/10"
           >
-            <Plus size={14} weight="bold" />
+            <Plus size={13} weight="bold" />
             <span>Add Flight</span>
           </button>
         )}
