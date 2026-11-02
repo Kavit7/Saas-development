@@ -51,14 +51,35 @@ Unaweza kutumia akaunti zifuatazo moja kwa moja kwenye skrini ya kuingia (`/logi
 
 ---
 
-## 5. Jinsi Seeding Inavyofanya Kazi (Automated & Manual)
+## 5. Jinsi Seeding na Usalama wa Mazingira (Hosting Security) Inavyofanya Kazi
 
-### A. Automatic Boot Seeding (`DataInitializer.java`)
-Mradi una class ya `com.saas.backend.config.DataInitializer` inayotekelezwa kiotomatiki wakati backend ya Spring Boot inapoanza (`CommandLineRunner`). 
-- Inakagua kama roles, plans, makampuni au watumiaji tayari wapo.
-- Ikiwa database ni mpya, inajaza taarifa zote mara moja bila kuingiliana na data iliyopo (Idempotent).
+### A. Udhibiti wa Data Seeding kupitia Environment Variables
+Kwa usalama wa mfumo unapouhost (Production / Hosting), `DataInitializer.java` imelindwa na sasa inatii variable zifuatazo:
 
-### B. Manual SQL Seeding (`seed_default_credentials.sql`)
+| Variable | Chaguo-msingi (Default) | Maelezo na Matumizi |
+| :--- | :--- | :--- |
+| `APP_SEED_ENABLED` | `false` | **Swichi Kuu**: Ikiwa `false`, mfumo **HAUTATENGENEZA** data yoyote wala akaunti chaguomsingi wakati server inawaka. Huu ndio msingi salama wa production. |
+| `APP_SEED_SAMPLE_DATA` | `false` | Ikiwa `true`, inaseed makampuni ya mfano (Serengeti, Kilimanjaro, Zanzibar), wateja bandia, na safari. Kwenye production, iache `false`. |
+| `APP_SEED_SUPER_ADMIN_EMAIL` | `superadmin@platform.com` | Barua pepe utakayotumia kuanzisha Platform Super Admin wa kwanza. |
+| `APP_SEED_SUPER_ADMIN_PASSWORD` | *(tupu)* | **Password maalum salama** ya Super Admin. Usipotaja hii, mfumo utakumbusha na kutumia default. |
+| `APP_SEED_DEFAULT_PASSWORD` | `Password123!` | Password ya akaunti za mfano za majaribio (kwa ajili ya developer mazingira ya ndani tu). |
+
+> [!WARNING]
+> **Tahadhari Muhimu ya Hosting / Production:**
+> Unapohost mfumo kwenye server ya uzalishaji (Production):
+> 1. Weka `APP_SEED_ENABLED=true`, `APP_SEED_SAMPLE_DATA=false`, na weka `APP_SEED_SUPER_ADMIN_PASSWORD=PasswordYakoImara!` wakati wa kuanzisha mfumo kwa mara ya kwanza.
+> 2. Mara tu Super Admin akishatengenezwa na server ikawaka, badilisha mara moja kuwa `APP_SEED_ENABLED=false`. Hii inazuia mtu yeyote asijue au kutumia akaunti za majaribio!
+
+### B. Mazingira ya Ndani ya Developer (Local Development)
+Kwenye faili lako la `saas/.env` au mizizi ya mradi (`.env`):
+```env
+APP_SEED_ENABLED=true
+APP_SEED_SAMPLE_DATA=true
+APP_SEED_DEFAULT_PASSWORD=Password123!
+```
+Hii inamwezesha developer kupata mara moja akaunti na data zote za majaribio zilizotajwa kwenye jedwali hapo juu.
+
+### C. Manual SQL Seeding (`seed_default_credentials.sql`)
 Ikiwa unataka ku-seed database moja kwa moja kupitia terminal au SQL client (DBeaver/pgAdmin/psql):
 
 ```bash
@@ -67,7 +88,60 @@ psql -U postgres -h localhost -d saas_db -f saas/src/main/resources/db/seed_defa
 
 ---
 
-## 6. Jinsi ya Kujaribu Kuingia (Frontend & API)
+## 6. Docker & Docker Compose Setup
+
+Mradi sasa una `Dockerfile` kamili za multi-stage pamoja na `docker-compose.yml`:
+- **Postgres (pgvector/pgvector:pg16)**: Database yenye uwezo wa AI na pgvector.
+- **Backend (Spring Boot + Java 25)**: Inaendesha API kwenye port `8080` ikiwa na user salama asiye na haki za root (`springboot`).
+- **Frontend (Vite + React + Nginx)**: Inahudumia React SPA kwenye port `5173` na ina Nginx proxy.
+
+Kuwasha mfumo mzima kupitia Docker:
+```bash
+# 1. Nakili .env.example kwenda .env
+cp .env.example .env
+
+# 2. Washa vyombo vyote
+docker compose up -d --build
+```
+
+---
+
+## 7. Mfumo wa Kuhifadhi Mafaili (File Storage: Local vs Cloudflare R2)
+
+Mradi una huduma ya kisasa ya kuhifadhi mafaili (`FileStorageService`) inayobadilika kiotomatiki kulingana na mazingira:
+
+### A. Local Development (Mazingira ya Ndani)
+Kwenye `.env`:
+```env
+STORAGE_TYPE=local
+UPLOAD_DIR=uploads
+```
+Mafaili yote (k.m. PDF za Invoices, viambatisho vya email) yanahifadhiwa kwenye folder la ndani la `uploads/`. Hakuna haja ya mtandao wala akaunti ya nje.
+
+### B. Production Hosting (Cloudflare R2 Object Storage)
+Ili kuzuia mafaili yasipotee wakati containers za Docker zinapozimwa, zikirestart au kuhama server, unatumia **Cloudflare R2** (ambayo inaendana 100% na standard ya S3 bila gharama za egress bandwidth):
+
+Kwenye production `.env`:
+```env
+STORAGE_TYPE=r2
+R2_ACCOUNT_ID=account_id_yako_kutoka_cloudflare
+R2_BUCKET_NAME=jina_la_bucket_lako
+R2_ACCESS_KEY_ID=access_key_kutoka_cloudflare_r2_token
+R2_SECRET_ACCESS_KEY=secret_key_kutoka_cloudflare_r2_token
+# (Hiari) URL ya Public CDN/Domain ukiiunganisha kwenye bucket
+R2_PUBLIC_URL=https://media.kampuniyako.com
+```
+
+> [!TIP]
+> **Jinsi ya Kupata Taarifa za Cloudflare R2:**
+> 1. Ingia kwenye Dashboard ya Cloudflare: nenda **R2 Object Storage**.
+> 2. Bonyeza **Create Bucket** na weka jina (k.m. `saas-production-files`).
+> 3. Kwenye ukurasa wa R2, bonyeza **Manage R2 API Tokens** -> **Create API Token**.
+> 4. Chagua ruhusa ya **Object Read & Write**, kisha nakili **Access Key ID**, **Secret Access Key**, na **Account ID**.
+
+---
+
+## 8. Jinsi ya Kujaribu Kuingia (Frontend & API)
 
 ### Kuingia kupitia Frontend:
 1. Washa frontend (`cd frontend && npm run dev`).

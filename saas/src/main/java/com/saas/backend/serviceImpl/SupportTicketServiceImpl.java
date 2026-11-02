@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import com.saas.backend.repositories.UserRepository;
 import com.saas.backend.response.SupportTicketResponse;
 import com.saas.backend.service.AuditLogService;
 import com.saas.backend.service.SupportTicketService;
+import com.saas.backend.specification.SupportTicketSpecification;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +64,7 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 .assignedToId(ticket.getAssignedTo() != null ? ticket.getAssignedTo().getId() : null)
                 .assignedToName(assignedToName)
                 .assignedToEmail(assignedToEmail)
+                .targetRole(ticket.getTargetRole())
                 .category(ticket.getCategory())
                 .subject(ticket.getSubject())
                 .description(ticket.getDescription())
@@ -75,6 +78,25 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 .createdAt(ticket.getCreatedAt())
                 .updatedAt(ticket.getUpdatedAt())
                 .build();
+    }
+
+    private String resolveTargetRole(SupportCategory category, String requestedTargetRole) {
+        if (requestedTargetRole != null && !requestedTargetRole.trim().isEmpty()) {
+            return requestedTargetRole.trim().toUpperCase().replace("ROLE_", "");
+        }
+        if (category == null) return "ADMIN";
+        switch (category) {
+            case BOOKING_ISSUE:
+                return "RESERVATION_MANAGER";
+            case TECHNICAL:
+                return "PLATFORM_ADMIN";
+            case PAYMENT_ISSUE:
+            case ACCOUNT_ISSUE:
+            case LOGIN_ISSUE:
+            case OTHER:
+            default:
+                return "ADMIN";
+        }
     }
 
     @Override
@@ -113,17 +135,21 @@ public class SupportTicketServiceImpl implements SupportTicketService {
             assignedTo = userRepository.findById(request.getAssignedToId()).orElse(null);
         }
 
+        SupportCategory category = request.getCategory() != null ? request.getCategory() : SupportCategory.OTHER;
+        String targetRole = resolveTargetRole(category, request.getTargetRole());
+
         SupportTicket ticket = SupportTicket.builder()
                 .company(company)
                 .raisedBy(raisedBy)
                 .assignedTo(assignedTo)
-                .category(request.getCategory() != null ? request.getCategory() : SupportCategory.OTHER)
+                .targetRole(targetRole)
+                .category(category)
                 .subject(request.getSubject())
                 .description(request.getDescription())
                 .relatedEntityType(request.getRelatedEntityType())
                 .relatedEntityId(request.getRelatedEntityId())
                 .priority(request.getPriority() != null ? request.getPriority() : Priority.MEDIUM)
-                .status(request.getStatus() != null ? request.getStatus() : TicketStatus.OPEN)
+                .status(TicketStatus.OPEN)
                 .resolutionNotes(request.getResolutionNotes())
                 .build();
 
@@ -156,8 +182,20 @@ public class SupportTicketServiceImpl implements SupportTicketService {
 
         Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
 
+        TicketStatus ticketStatus = null;
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                ticketStatus = TicketStatus.valueOf(status.trim().toUpperCase());
+            } catch (Exception ignored) {}
+        }
+
         if (isSuperAdmin) {
-            return supportTicketRepository.findAll(pageable).map(this::mapToResponse);
+            // Super Admin ONLY sees Platform/Technical escalation tickets across SaaS
+            Specification<SupportTicket> spec = SupportTicketSpecification.isPlatformTicket();
+            if (ticketStatus != null) {
+                spec = spec.and(SupportTicketSpecification.hasStatus(ticketStatus));
+            }
+            return supportTicketRepository.findAll(spec, pageable).map(this::mapToResponse);
         }
 
         User currentUser = userRepository.findByEmail(auth.getName())
@@ -167,7 +205,25 @@ public class SupportTicketServiceImpl implements SupportTicketService {
             throw new AccessDeniedException("User has no associated company");
         }
 
-        return supportTicketRepository.findByCompany_Id(currentUser.getCompany().getId(), pageable).map(this::mapToResponse);
+        UUID companyId = currentUser.getCompany().getId();
+        String userRole = currentUser.getRole() != null ? currentUser.getRole().getName() : "";
+        String roleNorm = userRole.toUpperCase().replace("ROLE_", "").trim();
+
+        Specification<SupportTicket> spec;
+        if ("ADMIN".equals(roleNorm) || "COMPANY_ADMIN".equals(roleNorm) || "SUPER_ADMIN".equals(roleNorm)) {
+            // Company Admin sees all tickets within their company
+            spec = SupportTicketSpecification.isVisibleForCompanyAdmin(companyId);
+        } else {
+            // Regular Staff (Sales, Reservation Manager, Guide):
+            // ONLY sees tickets raised by them, assigned to them, or queued for their targetRole within their company
+            spec = SupportTicketSpecification.isVisibleForStaff(companyId, currentUser.getId(), roleNorm);
+        }
+
+        if (ticketStatus != null) {
+            spec = spec.and(SupportTicketSpecification.hasStatus(ticketStatus));
+        }
+
+        return supportTicketRepository.findAll(spec, pageable).map(this::mapToResponse);
     }
 
     @Override
@@ -179,11 +235,36 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         boolean isSuperAdmin = auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_SUPER_ADMIN") || a.getAuthority().equals("ROLE_PLATFORM_ADMIN"));
 
-        if (!isSuperAdmin) {
-            User currentUser = userRepository.findByEmail(auth.getName()).orElse(null);
-            if (currentUser == null || currentUser.getCompany() == null ||
-                    !currentUser.getCompany().getId().equals(ticket.getCompany().getId())) {
-                throw new AccessDeniedException("Access denied to support ticket of another company");
+        if (isSuperAdmin) {
+            boolean isPlatform = "PLATFORM_ADMIN".equalsIgnoreCase(ticket.getTargetRole()) ||
+                    ticket.getCategory() == SupportCategory.TECHNICAL;
+            if (!isPlatform) {
+                throw new AccessDeniedException("Access denied: Platform Admin can only inspect platform technical escalation tickets.");
+            }
+            return mapToResponse(ticket);
+        }
+
+        User currentUser = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new AccessDeniedException("User not authenticated"));
+
+        if (currentUser.getCompany() == null || !currentUser.getCompany().getId().equals(ticket.getCompany().getId())) {
+            throw new AccessDeniedException("Access denied to support ticket of another company");
+        }
+
+        String userRole = currentUser.getRole() != null ? currentUser.getRole().getName() : "";
+        String roleNorm = userRole.toUpperCase().replace("ROLE_", "").trim();
+
+        boolean isCompanyAdmin = "ADMIN".equals(roleNorm) || "COMPANY_ADMIN".equals(roleNorm);
+        if (!isCompanyAdmin) {
+            boolean isRaisedByMe = ticket.getRaisedBy() != null && ticket.getRaisedBy().getId().equals(currentUser.getId());
+            boolean isAssignedToMe = ticket.getAssignedTo() != null && ticket.getAssignedTo().getId().equals(currentUser.getId());
+            boolean isForMyRole = ticket.getTargetRole() != null && ticket.getTargetRole().equalsIgnoreCase(roleNorm);
+            boolean isLegacyMatch = ticket.getTargetRole() == null && (
+                ("RESERVATION_MANAGER".equalsIgnoreCase(roleNorm) && ticket.getCategory() == SupportCategory.BOOKING_ISSUE)
+            );
+
+            if (!isRaisedByMe && !isAssignedToMe && !isForMyRole && !isLegacyMatch) {
+                throw new AccessDeniedException("Access denied: You do not have permission to view this ticket.");
             }
         }
 
@@ -203,10 +284,38 @@ public class SupportTicketServiceImpl implements SupportTicketService {
                 ? userRepository.findByEmail(auth.getName()).orElse(null)
                 : null;
 
-        if (!isSuperAdmin) {
+        if (isSuperAdmin) {
+            boolean isPlatform = "PLATFORM_ADMIN".equalsIgnoreCase(ticket.getTargetRole()) ||
+                    ticket.getCategory() == SupportCategory.TECHNICAL;
+            if (!isPlatform) {
+                throw new AccessDeniedException("Access denied: Platform Admin can only update platform technical escalation tickets.");
+            }
+        } else {
             if (currentUser == null || currentUser.getCompany() == null ||
                     !currentUser.getCompany().getId().equals(ticket.getCompany().getId())) {
                 throw new AccessDeniedException("Access denied to update support ticket of another company");
+            }
+        }
+
+        String userRole = currentUser != null && currentUser.getRole() != null ? currentUser.getRole().getName() : "";
+        String roleNorm = userRole.toUpperCase().replace("ROLE_", "").trim();
+        boolean isCompanyAdmin = "ADMIN".equals(roleNorm) || "COMPANY_ADMIN".equals(roleNorm);
+        boolean isDesignatedRole = ticket.getTargetRole() != null && ticket.getTargetRole().equalsIgnoreCase(roleNorm);
+        boolean isAlreadyAssigned = ticket.getAssignedTo() != null && currentUser != null && ticket.getAssignedTo().getId().equals(currentUser.getId());
+
+        // Status change / resolution authorization
+        if (request.getStatus() != null && request.getStatus() != ticket.getStatus()) {
+            boolean canChangeStatus = isSuperAdmin || isCompanyAdmin || isDesignatedRole || isAlreadyAssigned;
+            if (!canChangeStatus) {
+                throw new AccessDeniedException("Forbidden: Only designated department resolvers or administrators can change ticket status.");
+            }
+        }
+
+        // Resolution notes authorization
+        if (request.getResolutionNotes() != null && !request.getResolutionNotes().trim().isEmpty()) {
+            boolean canResolve = isSuperAdmin || isCompanyAdmin || isDesignatedRole || isAlreadyAssigned;
+            if (!canResolve) {
+                throw new AccessDeniedException("Forbidden: Only designated department resolvers or administrators can submit resolution notes.");
             }
         }
 
@@ -220,24 +329,43 @@ public class SupportTicketServiceImpl implements SupportTicketService {
         }
         if (request.getCategory() != null) {
             ticket.setCategory(request.getCategory());
+            if (request.getTargetRole() == null || request.getTargetRole().trim().isEmpty()) {
+                ticket.setTargetRole(resolveTargetRole(request.getCategory(), null));
+            }
         }
+        if (request.getTargetRole() != null && !request.getTargetRole().trim().isEmpty()) {
+            if (isSuperAdmin || isCompanyAdmin) {
+                ticket.setTargetRole(request.getTargetRole().trim().toUpperCase().replace("ROLE_", ""));
+            }
+        }
+
+        // Auto-capture assignedTo resolver when ticket is in progress or resolved
+        if (request.getStatus() == TicketStatus.IN_PROGRESS || request.getStatus() == TicketStatus.RESOLVED) {
+            if (currentUser != null && (ticket.getAssignedTo() == null || isCompanyAdmin || isDesignatedRole)) {
+                ticket.setAssignedTo(currentUser);
+            }
+        }
+
         if (request.getStatus() != null) {
             ticket.setStatus(request.getStatus());
             if (request.getStatus() == TicketStatus.RESOLVED || request.getStatus() == TicketStatus.CLOSED) {
                 ticket.setResolvedAt(OffsetDateTime.now());
+                if (currentUser != null && ticket.getAssignedTo() == null) {
+                    ticket.setAssignedTo(currentUser);
+                }
             }
         }
         if (request.getPriority() != null) {
             ticket.setPriority(request.getPriority());
         }
-        if (request.getAssignedToId() != null) {
+        if (request.getAssignedToId() != null && (isSuperAdmin || isCompanyAdmin)) {
             User assigned = userRepository.findById(request.getAssignedToId()).orElse(null);
             if (assigned != null) {
                 ticket.setAssignedTo(assigned);
             }
         }
         if (request.getResolutionNotes() != null) {
-            ticket.setResolutionNotes(request.getResolutionNotes());
+            ticket.setResolutionNotes(request.getResolutionNotes().trim());
         }
 
         SupportTicket saved = supportTicketRepository.save(ticket);

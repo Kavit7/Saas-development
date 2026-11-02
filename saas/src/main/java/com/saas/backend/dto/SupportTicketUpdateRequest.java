@@ -21,6 +21,7 @@ public class SupportTicketUpdateRequest {
     private String subject;
     private String description;
     private SupportCategory category;
+    private String targetRole;
     private TicketStatus status;
     private Priority priority;
     private UUID assignedToId;

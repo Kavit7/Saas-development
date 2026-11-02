@@ -13,6 +13,8 @@ public class SupportTicket extends BaseEntity {
     private User raisedBy;
     @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="assigned_to")
     private User assignedTo;
+    @Column(name="target_role")
+    private String targetRole;
     @Enumerated(EnumType.STRING) private SupportCategory category;
     private String subject;
     @Column(columnDefinition="TEXT") private String description;

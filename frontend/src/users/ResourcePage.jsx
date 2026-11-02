@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 
 import DynamicTable from "../components/tables/DynamicTable";
+import SafariCardsView from "../components/views/SafariCardsView";
 import DedicatedFormView from "../components/forms/DedicatedFormView";
 import AccommodationFormView from "../components/forms/AccommodationFormView";
 import SubFormView from "../components/forms/SubFormView";
@@ -70,6 +71,31 @@ const ResourcePage = ({
       ? title.slice(0, -1)
       : title || "Record");
 
+  const getShortActionLabel = (name) => {
+    if (!name) return "New";
+    const trimmed = name.trim();
+    const specialMap = {
+      "Accommodation Requirement": "Requirement",
+      "Accommodation Booking": "Booking",
+      "Accommodation Inquiry": "Inquiry",
+      "Guest Special Occasion": "Occasion",
+      "Property Category": "Category",
+      "Subscription Plan": "Plan",
+      "Support Ticket": "Ticket",
+      "Price Tier": "Price Tier",
+      "Room Type": "Room Type",
+      "Flight Detail": "Flight",
+    };
+    if (specialMap[trimmed]) {
+      return `New ${specialMap[trimmed]}`;
+    }
+    const words = trimmed.split(/\s+/);
+    if (words.length > 2) {
+      return `New ${words[words.length - 1]}`;
+    }
+    return `New ${trimmed}`;
+  };
+
   // Navigation / View Mode: "list" | "detail" | "form" | "accommodation-form" | "sub-form"
   const [viewMode, setViewMode] = useState("list");
 
@@ -86,13 +112,13 @@ const ResourcePage = ({
   });
   const [sortField, setSortField] = useState(table?.defaultSort || (resource === "properties" ? "name" : "createdAt"));
   const [sortDirection, setSortDirection] = useState(table?.defaultDirection || (resource === "properties" ? "asc" : "desc"));
-  const [pageSize, setPageSize] = useState(20);
+  const [pageSize, setPageSize] = useState(resource === "safaris" ? 8 : 20);
   const [page, setPage] = useState(0);
   const [pageInfo, setPageInfo] = useState({
     totalPages: 1,
     totalElements: 0,
     number: 0,
-    size: 20,
+    size: resource === "safaris" ? 8 : 20,
   });
 
   useEffect(() => {
@@ -434,7 +460,7 @@ const ResourcePage = ({
             const b = bookings.find(
               (bk) => (req && bk.requirementId && String(bk.requirementId) === String(req.id)) || (bk.checkIn && bk.checkIn === d.date)
             );
-            return (b && String(bk.status || "").toUpperCase() === "CONFIRMED") || (req && (String(req.status || "").toUpperCase() === "COMPLETED" || String(req.status || "").toUpperCase() === "CONFIRMED"));
+            return (b && String(b.status || "").toUpperCase() === "CONFIRMED") || (req && (String(req.status || "").toUpperCase() === "COMPLETED" || String(req.status || "").toUpperCase() === "CONFIRMED"));
           });
           const computedStatus = allBooked ? "COMPLETED" : allDestSet ? "CONFIRMED" : "DRAFT";
           setSelectedItem((prev) => (prev ? { ...prev, status: computedStatus } : prev));
@@ -1431,8 +1457,52 @@ const ResourcePage = ({
         />
       )}
 
-      {/* 5. MAIN TABLE LIST VIEW */}
+      {/* 5. MAIN LIST VIEW (CARDS FOR SAFARI, TABLE FOR OTHERS) */}
       {viewMode === "list" && (
+        resource === "safaris" ? (
+          <SafariCardsView
+            items={items}
+            totalElements={pageInfo.totalElements}
+            totalPages={pageInfo.totalPages}
+            page={page}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            onPageSizeChange={(newSize) => {
+              setPageSize(newSize);
+              setPage(0);
+            }}
+            loading={loading}
+            searchTerm={searchTerm}
+            onSearchChange={(term) => {
+              setSearchTerm(term);
+              setPage(0);
+            }}
+            statusFilter={filtersState.status || ""}
+            onStatusFilterChange={(val) => {
+              setFiltersState((prev) => ({ ...prev, status: val }));
+              setPage(0);
+            }}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSortChange={(field, dir) => {
+              setSortField(field);
+              setSortDirection(dir);
+              setPage(0);
+            }}
+            canCreate={can("create", permissions)}
+            onCreate={() => {
+              setFormConfig({
+                mode: "create",
+                initialValues: {},
+                title: `Add New ${singularName}`,
+              });
+              setViewMode("form");
+            }}
+            actions={table?.actions || []}
+            permissions={permissions}
+            onAction={handleAction}
+          />
+        ) : (
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl border border-[#28332C]/10 bg-white">
             <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1460,10 +1530,12 @@ const ResourcePage = ({
                     });
                     setViewMode("form");
                   }}
-                  className="inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-lg bg-[#35634B] px-4 py-2 text-sm font-medium text-white transition hover:bg-[#284C39] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#35634B] sm:self-auto"
+                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#264624] via-[#2D532B] to-[#35634B] px-4 py-2.5 text-xs sm:text-sm font-semibold text-white shadow-xs hover:shadow-md hover:shadow-[#264624]/20 active:scale-[0.98] transition-all cursor-pointer border border-white/10"
                 >
-                  <Plus size={17} />
-                  <span>Create {singularName}</span>
+                  <span className="flex h-5 w-5 items-center justify-center rounded-lg bg-white/20 text-white transition-transform group-hover:scale-110">
+                    <Plus size={13} weight="bold" />
+                  </span>
+                  <span>{getShortActionLabel(singularName)}</span>
                 </button>
               )}
             </div>
@@ -1684,6 +1756,7 @@ const ResourcePage = ({
             </div>
           </div>
         </div>
+        )
       )}
 
       {/* POPUP 1: Feedback Modal Strictly for Error & Success Messages */}

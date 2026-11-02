@@ -68,6 +68,9 @@ const AuthProvider = ({ children }) => {
         phone: userProfile?.phone,
         companyName: userProfile?.companyName,
         status: userProfile?.status,
+        gender: userProfile?.gender,
+        createdAt: userProfile?.createdAt,
+        updatedAt: userProfile?.updatedAt,
       };
     } catch (error) {
       console.error("Failed to decode token:", error);
