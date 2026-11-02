@@ -2,6 +2,7 @@ package com.saas.backend.models;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Entity @Table(name="safaris")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
@@ -16,4 +17,10 @@ public class Safari extends BaseEntity {
     private Integer numberOfPassengers;
     @Enumerated(EnumType.STRING) private SafariStatus status;
     @Column(columnDefinition="TEXT") private String notes;
+
+    @Builder.Default
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private Boolean deleted = false;
+
+    private OffsetDateTime deletedAt;
 }

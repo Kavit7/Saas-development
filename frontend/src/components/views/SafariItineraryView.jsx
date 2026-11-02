@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { 
   Compass, 
   CalendarBlank, 
@@ -13,10 +13,11 @@ import {
   XCircle,
   ArrowsClockwise,
   LockKey,
+  PaperPlaneTilt,
   X
 } from "@phosphor-icons/react";
 import { useAuth } from "../../hooks/useAuth";
-import { updateData } from "../../api/api";
+import { updateData, apiRequest } from "../../api/api";
 
 const getStatusBadgeClass = (status) => {
   const s = String(status || "").toUpperCase();
@@ -73,8 +74,88 @@ const SafariItineraryView = ({
   const [rescheduleOpen, setRescheduleOpen] = useState(false);
   const [newStartDate, setNewStartDate] = useState("");
   const [rescheduleReason, setRescheduleReason] = useState("");
+  const [dispatchLodgeNotices, setDispatchLodgeNotices] = useState(true);
   const [rescheduling, setRescheduling] = useState(false);
   const [rescheduleError, setRescheduleError] = useState(null);
+
+  // Follow-up reminder & lodge re-allocation state
+  const [reminderLoadingId, setReminderLoadingId] = useState(null);
+  const [reallocatingId, setReallocatingId] = useState(null);
+  const [reminderFeedback, setReminderFeedback] = useState(null);
+
+  const handleSendReminderToLodge = async (booking) => {
+    if (!booking || !booking.id) return;
+    setReminderLoadingId(booking.id);
+    setReminderFeedback(null);
+    try {
+      let res;
+      try {
+        res = await apiRequest(`/accommodation-bookings/${booking.id}/send-reminder`, {
+          method: "POST",
+        }, token);
+      } catch {
+        res = await apiRequest(`/api/v1/accommodation-bookings/${booking.id}/send-reminder`, {
+          method: "POST",
+        }, token);
+      }
+      setReminderFeedback({
+        type: "success",
+        message: `Kikumbusho cha barua pepe kimetumwa kwa mafanikio kwa ${booking.propertyName || "hoteli"}!`,
+      });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setReminderFeedback({
+        type: "error",
+        message: err?.message || "Imeshindikana kutuma kikumbusho cha booking kwa lodge.",
+      });
+    } finally {
+      setReminderLoadingId(null);
+    }
+  };
+
+  const handleChangeLodge = async (booking, req, day) => {
+    if (!booking || !booking.id) return;
+    const propName = booking.propertyName || "hoteli ya sasa";
+    const dayLabel = day?.dayNumber ? `Siku ya ${day.dayNumber}` : "siku hii";
+    const confirmMsg = `Je, una uhakika unataka kubadilisha hoteli ya ${dayLabel}? Booking ya sasa ya '${propName}' itakataliwa/kufutwa na utaweza kuchagua na kubook hoteli nyingine mara moja.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    setReallocatingId(booking.id);
+    setReminderFeedback(null);
+    try {
+      try {
+        await apiRequest(`/accommodation-bookings/${booking.id}/decline`, {
+          method: "POST",
+        }, token);
+      } catch {
+        await apiRequest(`/api/v1/accommodation-bookings/${booking.id}/decline`, {
+          method: "POST",
+        }, token);
+      }
+      setReminderFeedback({
+        type: "success",
+        message: `Booking ya ${propName} imefutwa. Chagua hoteli mpya sasa.`,
+      });
+      if (onBookLodge) {
+        onBookLodge(req, day);
+      } else if (onRefresh) {
+        onRefresh();
+      }
+    } catch (err) {
+      setReminderFeedback({
+        type: "error",
+        message: err?.message || "Imeshindikana kughairi booking ya awali kwa ajili ya kubadilisha.",
+      });
+    } finally {
+      setReallocatingId(null);
+    }
+  };
+
+  const activeBookings = useMemo(() => {
+    return (bookings || []).filter(
+      (b) => b && String(b.status || "").toUpperCase() !== "CANCELLED"
+    );
+  }, [bookings]);
 
   const resolvedSafariId = safariId || safari?.id || (days.length > 0 && days[0].safariId) || (requirements.length > 0 && requirements[0].safariId);
 
@@ -84,6 +165,7 @@ const SafariItineraryView = ({
       : (days.length > 0 ? formatDisplayDate(days[0].date) : "");
     setNewStartDate(currentStart);
     setRescheduleReason("");
+    setDispatchLodgeNotices(true);
     setRescheduleError(null);
     setRescheduleOpen(true);
   };
@@ -102,16 +184,15 @@ const SafariItineraryView = ({
     setRescheduleError(null);
     try {
       let res;
+      const payload = {
+        newStartDate,
+        reason: rescheduleReason.trim() || undefined,
+        dispatchLodgeNotices: Boolean(dispatchLodgeNotices),
+      };
       try {
-        res = await updateData(`/safari/${resolvedSafariId}/reschedule`, {
-          newStartDate,
-          reason: rescheduleReason.trim() || undefined,
-        }, token);
+        res = await updateData(`/safari/${resolvedSafariId}/reschedule`, payload, token);
       } catch {
-        res = await updateData(`/api/v1/safari/${resolvedSafariId}/reschedule`, {
-          newStartDate,
-          reason: rescheduleReason.trim() || undefined,
-        }, token);
+        res = await updateData(`/api/v1/safari/${resolvedSafariId}/reschedule`, payload, token);
       }
       setRescheduleOpen(false);
       if (onRefresh) {
@@ -192,12 +273,15 @@ const SafariItineraryView = ({
   const isDayConfirmed = (day) => {
     const req = getRequirementCoveringDay(day);
     const b = getBookingForDay(day, req);
-    const bookingConfirmed = b && String(b.status || "").toUpperCase() === "CONFIRMED";
-    const reqConfirmed = req && (
-      String(req.status || "").toUpperCase() === "COMPLETED" ||
-      String(req.status || "").toUpperCase() === "CONFIRMED"
+    if (b) {
+      return String(b.status || "").toUpperCase() === "CONFIRMED";
+    }
+    return Boolean(
+      req && (
+        String(req.status || "").toUpperCase() === "COMPLETED" ||
+        String(req.status || "").toUpperCase() === "CONFIRMED"
+      )
     );
-    return bookingConfirmed || reqConfirmed;
   };
 
   // Sequential progression helper: Day N can only be edited if Day N-1 is configured or covered
@@ -256,17 +340,31 @@ const SafariItineraryView = ({
   // Status Badge Class & Label
   const effectiveStatus = (safariStatus || "").toUpperCase();
   const getSafariStatusBadge = () => {
-    if (effectiveStatus === "COMPLETED" || allBookingsConfirmed) {
+    if (effectiveStatus === "CANCELLED") {
+      return {
+        label: "CANCELLED",
+        desc: "Safari Cancelled",
+        cls: "bg-rose-50 text-rose-800 border-rose-300",
+      };
+    }
+    if (effectiveStatus === "IN_PROGRESS") {
+      return {
+        label: "IN PROGRESS",
+        desc: "Safari Expedition Active",
+        cls: "bg-indigo-50 text-indigo-800 border-indigo-300",
+      };
+    }
+    if (effectiveStatus === "COMPLETED") {
       return {
         label: "COMPLETED",
-        desc: "All Day Bookings Confirmed",
-        cls: "bg-emerald-50 text-emerald-800 border-emerald-300",
+        desc: "Safari Expedition Concluded",
+        cls: "bg-blue-50 text-blue-800 border-blue-300",
       };
     }
     if (effectiveStatus === "CONFIRMED" || allDestinationsConfigured) {
       return {
         label: "CONFIRMED",
-        desc: "All Destinations Configured",
+        desc: pendingCount > 0 ? `${pendingCount} booking(s) pending re-confirmation` : "All Destinations Configured",
         cls: "bg-[#264624]/10 text-[#264624] border-[#264624]/30",
       };
     }
@@ -372,6 +470,33 @@ const SafariItineraryView = ({
         </div>
       </div>
 
+      {/* Follow-up Reminder / Action Feedback Banner */}
+      {reminderFeedback && (
+        <div
+          className={`flex items-center justify-between p-3.5 rounded-xl border text-xs font-medium animate-in fade-in duration-150 ${
+            reminderFeedback.type === "success"
+              ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+              : "bg-rose-50 border-rose-200 text-rose-800"
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {reminderFeedback.type === "success" ? (
+              <CheckCircle size={18} weight="bold" className="text-emerald-600 shrink-0" />
+            ) : (
+              <XCircle size={18} weight="bold" className="text-rose-600 shrink-0" />
+            )}
+            <span>{reminderFeedback.message}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setReminderFeedback(null)}
+            className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition cursor-pointer"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       {/* 2. List of Scheduled Itinerary Days */}
       {days.map((day) => {
         const req = requirements.find((r) => String(r.itineraryDayId) === String(day.id));
@@ -379,13 +504,6 @@ const SafariItineraryView = ({
         const isDestinationConfigured = day.destination && day.destination !== "Destination not set";
 
         const isBookingConfirmed = booking && String(booking.status || "").toUpperCase() === "CONFIRMED";
-        const isRequirementConfirmed =
-          isBookingConfirmed ||
-          (req && (
-            String(req.status || "").toUpperCase() === "COMPLETED" ||
-            String(req.status || "").toUpperCase() === "CONFIRMED"
-          ));
-
         const isBookingDeclined =
           booking &&
           (String(booking.status || "").toUpperCase() === "CANCELLED" ||
@@ -397,17 +515,26 @@ const SafariItineraryView = ({
           booking.notes.includes("[MANUAL REVIEW REQUIRED]");
 
         const isBookingPending =
-          !isRequirementConfirmed &&
+          !isBookingConfirmed &&
           !isBookingDeclined &&
-          booking &&
           (
-            String(booking.status || "").toUpperCase() === "PROVISIONAL" ||
-            String(booking.status || "").toUpperCase() === "DRAFT" ||
+            (booking && (
+              String(booking.status || "").toUpperCase() === "PROVISIONAL" ||
+              String(booking.status || "").toUpperCase() === "DRAFT"
+            )) ||
             (req && (
               String(req.status || "").toUpperCase() === "IN_PROGRESS" ||
-              String(req.status || "").toUpperCase() === "AWAITING_RESPONSE"
+              String(req.status || "").toUpperCase() === "AWAITING_RESPONSE" ||
+              String(req.status || "").toUpperCase() === "PENDING"
             ))
           );
+
+        const isRequirementConfirmed =
+          isBookingConfirmed ||
+          (!booking && req && (
+            String(req.status || "").toUpperCase() === "COMPLETED" ||
+            String(req.status || "").toUpperCase() === "CONFIRMED"
+          ));
 
         return (
           <div
@@ -704,14 +831,61 @@ const SafariItineraryView = ({
 
                     {/* Pending / In-progress booking */}
                     {isBookingPending && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
-                        <ArrowsClockwise size={14} weight="bold" className="text-amber-600 animate-spin" />
-                        <span>
-                          {String(booking?.status || "").toUpperCase() === "PROVISIONAL"
-                            ? `Inquiry Dispatched${booking.propertyName ? ` (${booking.propertyName})` : ""}`
-                            : `Draft Booking Allocated${booking?.propertyName ? ` (${booking.propertyName})` : ""}`}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
+                          <ArrowsClockwise size={14} weight="bold" className="text-amber-600 animate-spin" />
+                          <span>
+                            {String(booking?.status || "").toUpperCase() === "PROVISIONAL"
+                              ? (booking?.notes && booking.notes.includes("RESCHEDULED")
+                                  ? `Rescheduled — Awaiting Confirmation${booking.propertyName ? ` (${booking.propertyName})` : ""}`
+                                  : `Inquiry Dispatched${booking.propertyName ? ` (${booking.propertyName})` : ""}`)
+                              : `Draft Booking Allocated${booking?.propertyName ? ` (${booking.propertyName})` : ""}`}
+                          </span>
                         </span>
-                      </span>
+
+                        {/* Follow-up reminder dispatched badge */}
+                        {booking?.notes && booking.notes.includes("[Reminder sent") && (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 text-[11px] font-semibold">
+                            <PaperPlaneTilt size={11} weight="bold" />
+                            <span>Reminder Sent</span>
+                          </span>
+                        )}
+
+                        {/* Quick action buttons for RM / Admin when booking is PROVISIONAL */}
+                        {booking && String(booking.status || "").toUpperCase() === "PROVISIONAL" && !isSalesPerson && (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleSendReminderToLodge(booking)}
+                              disabled={reminderLoadingId === booking.id || reallocatingId === booking.id}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition active:scale-95 shadow-2xs disabled:opacity-50 cursor-pointer"
+                              title="Tuma barua pepe ya kikumbusho cha follow-up kwa hoteli"
+                            >
+                              {reminderLoadingId === booking.id ? (
+                                <ArrowsClockwise size={13} className="animate-spin" />
+                              ) : (
+                                <PaperPlaneTilt size={13} weight="bold" />
+                              )}
+                              <span>{reminderLoadingId === booking.id ? "Inatuma..." : "Send Reminder to Lodge"}</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleChangeLodge(booking, req, day)}
+                              disabled={reminderLoadingId === booking.id || reallocatingId === booking.id}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-slate-300 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 hover:text-slate-900 transition active:scale-95 shadow-2xs disabled:opacity-50 cursor-pointer"
+                              title="Badilisha hoteli ya siku hii: ghairi booking ya sasa na uchague hoteli mpya mara moja"
+                            >
+                              {reallocatingId === booking.id ? (
+                                <ArrowsClockwise size={13} className="animate-spin" />
+                              ) : (
+                                <ArrowsClockwise size={13} weight="bold" />
+                              )}
+                              <span>Change Lodge</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     {/* Confirmed booking */}
@@ -747,11 +921,39 @@ const SafariItineraryView = ({
                         </div>
 
                         {covBooking && (
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-wrap items-center gap-2">
                             <span className="font-semibold text-emerald-800 bg-emerald-100/90 border border-emerald-300 px-2.5 py-1 rounded-lg text-[11px]">
                               {covBooking.propertyName || "Lodge Allocated"}
                               {covBooking.status ? ` • ${covBooking.status}` : ""}
                             </span>
+
+                            {String(covBooking.status || "").toUpperCase() === "PROVISIONAL" && !isSalesPerson && (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleSendReminderToLodge(covBooking)}
+                                  disabled={reminderLoadingId === covBooking.id}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-600 text-white text-[11px] font-bold hover:bg-amber-700 transition active:scale-95 shadow-2xs disabled:opacity-50 cursor-pointer"
+                                  title="Tuma barua pepe ya kikumbusho cha follow-up kwa hoteli"
+                                >
+                                  {reminderLoadingId === covBooking.id ? (
+                                    <ArrowsClockwise size={11} className="animate-spin" />
+                                  ) : (
+                                    <PaperPlaneTilt size={11} weight="bold" />
+                                  )}
+                                  <span>Send Reminder</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleChangeLodge(covBooking, coveringReq, day)}
+                                  disabled={reallocatingId === covBooking.id}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-slate-300 bg-white text-slate-700 text-[11px] font-bold hover:bg-slate-50 transition active:scale-95 shadow-2xs disabled:opacity-50 cursor-pointer"
+                                  title="Badilisha hoteli"
+                                >
+                                  <span>Change</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>
@@ -872,6 +1074,48 @@ const SafariItineraryView = ({
                   className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-800 font-medium focus:border-[#264624] focus:ring-1 focus:ring-[#264624] outline-hidden transition shadow-2xs resize-none"
                 />
               </div>
+
+              {/* Partner Lodge Notices & Availability Checkbox */}
+              {activeBookings.length > 0 && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-900">
+                      Affected Partner Lodges ({activeBookings.length})
+                    </span>
+                    <span className="text-[10px] uppercase font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                      Re-check required
+                    </span>
+                  </div>
+                  <ul className="text-[11px] text-amber-950/80 list-disc list-inside space-y-0.5">
+                    {activeBookings.slice(0, 4).map((b, idx) => (
+                      <li key={b.id || idx} className="truncate">
+                        {b.property?.name || "Partner Lodge"} ({b.referenceNumber || "Booking"})
+                      </li>
+                    ))}
+                    {activeBookings.length > 4 && (
+                      <li className="text-amber-700 font-semibold italic">
+                        +{activeBookings.length - 4} more accommodation booking(s)
+                      </li>
+                    )}
+                  </ul>
+                  <label className="flex items-start gap-2.5 pt-2 border-t border-amber-200/80 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={dispatchLodgeNotices}
+                      onChange={(e) => setDispatchLodgeNotices(e.target.checked)}
+                      className="mt-0.5 rounded border-amber-300 text-[#264624] focus:ring-[#264624]"
+                    />
+                    <div className="text-[11px]">
+                      <span className="font-bold text-amber-950 block">
+                        Email Amendment Requests to Partner Lodges
+                      </span>
+                      <span className="text-amber-800/90 block">
+                        Automatically notifies partner lodges to check room availability for the updated dates.
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              )}
 
               <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
                 <button

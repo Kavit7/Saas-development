@@ -38,6 +38,11 @@ public interface NotificationService {
     void notifyManualReviewRequired(AccommodationBooking booking, String reason);
 
     /**
+     * Triggered when a safari is rescheduled and associated lodge bookings need re-confirmation.
+     */
+    void notifySafariRescheduled(com.saas.backend.models.Safari safari, List<AccommodationBooking> bookings, boolean emailsDispatched);
+
+    /**
      * Triggered for automated or manual follow-ups on pending accommodation requests.
      */
     void notifyFollowUp(AccommodationBooking booking);

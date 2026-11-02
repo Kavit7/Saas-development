@@ -37,4 +37,26 @@ public interface AccommodationBookingRepository extends JpaRepository<Accommodat
 
     @Query("SELECT b FROM AccommodationBooking b WHERE b.accommodationRequirement.safari.client.company.id = :companyId ORDER BY b.createdAt DESC")
     List<AccommodationBooking> findAllByCompanyId(@Param("companyId") UUID companyId);
+
+    @Query("SELECT b FROM AccommodationBooking b " +
+           "LEFT JOIN FETCH b.accommodationRequirement ar " +
+           "LEFT JOIN FETCH ar.safari s " +
+           "LEFT JOIN FETCH s.client c " +
+           "LEFT JOIN FETCH c.company comp " +
+           "LEFT JOIN FETCH b.property p " +
+           "WHERE b.status = com.saas.backend.models.BookingStatus.PROVISIONAL " +
+           "AND (s IS NULL OR s.status NOT IN (com.saas.backend.models.SafariStatus.CANCELLED, com.saas.backend.models.SafariStatus.COMPLETED)) " +
+           "ORDER BY b.requestedAt ASC")
+    List<AccommodationBooking> findAllPendingProvisionalBookings();
+
+    @Query("SELECT b FROM AccommodationBooking b " +
+           "LEFT JOIN FETCH b.accommodationRequirement ar " +
+           "LEFT JOIN FETCH ar.safari s " +
+           "LEFT JOIN FETCH s.client c " +
+           "LEFT JOIN FETCH b.property p " +
+           "WHERE b.status = com.saas.backend.models.BookingStatus.PROVISIONAL " +
+           "AND s.client.company.id = :companyId " +
+           "AND (s IS NULL OR s.status NOT IN (com.saas.backend.models.SafariStatus.CANCELLED, com.saas.backend.models.SafariStatus.COMPLETED)) " +
+           "ORDER BY b.requestedAt ASC")
+    List<AccommodationBooking> findPendingProvisionalByCompanyId(@Param("companyId") UUID companyId);
 }

@@ -27,4 +27,7 @@ public interface SafariService {
     SafariResponse updateSafariStatus(UUID safariId, SafariStatus status);
     SafariStatus recalculateAndSaveSafariStatus(Safari safari);
     SafariResponse rescheduleSafari(UUID safariId, SafariRescheduleRequest request);
+    SafariResponse updateSafari(UUID safariId, SafariRequest request);
+    void softDeleteSafari(UUID safariId);
+    SafariResponse getSafariById(UUID safariId);
 }

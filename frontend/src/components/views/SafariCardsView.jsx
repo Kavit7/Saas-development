@@ -134,6 +134,15 @@ const getStatusConfig = (status) => {
         operationalText: "Confirmed (Lodging in progress)",
         highlightRow: "",
       };
+    case "IN_PROGRESS":
+      return {
+        label: "In Progress",
+        pillClass:
+          "bg-indigo-50 text-indigo-700 border border-indigo-200/90 font-medium",
+        dotColor: "bg-indigo-500",
+        operationalText: "Safari Currently Active",
+        highlightRow: "",
+      };
     case "DRAFT":
       return {
         label: "Draft",

@@ -45,4 +45,11 @@ public class SafariSpecification {
      public static Specification<Safari> hasEndDate(LocalDate date){
         return (root,query,cb)-> cb.equal(root.get("endDate"),date);
     }
+
+    public static Specification<Safari> isNotDeleted() {
+        return (root, query, cb) -> cb.or(
+            cb.isNull(root.get("deleted")),
+            cb.isFalse(root.get("deleted"))
+        );
+    }
 }

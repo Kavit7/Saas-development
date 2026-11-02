@@ -141,6 +141,7 @@ const ResourceDetailView = ({
   onRemovePropertyTag,
   // Booking actions
   onSendBooking,
+  onSendReminderBooking,
   onConfirmBookingSuccess,
   onDeclineBooking,
   // User actions
@@ -520,6 +521,7 @@ const ResourceDetailView = ({
                 canManage={!isSalesPerson && (canUpdate || canCreate || normalizedRole === "ADMIN" || normalizedRole === "RESERVATION_MANAGER" || normalizedRole === "SUPER_ADMIN")}
                 loading={actionLoading}
                 onSend={onSendBooking}
+                onSendReminder={onSendReminderBooking}
                 onConfirmSuccess={onConfirmBookingSuccess}
                 onDecline={onDeclineBooking}
               />

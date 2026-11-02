@@ -224,10 +224,11 @@ export const resources = {
                 name: "status",
                 label: "Status",
                 type: "select",
-                editable: false,
+                editable: true,
                 options: [
                     { label: "Draft", value: "DRAFT" },
                     { label: "Confirmed", value: "CONFIRMED" },
+                    { label: "In Progress", value: "IN_PROGRESS" },
                     { label: "Completed", value: "COMPLETED" },
                     { label: "Cancelled", value: "CANCELLED" },
                 ],
