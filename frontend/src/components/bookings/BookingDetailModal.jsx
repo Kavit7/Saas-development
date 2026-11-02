@@ -73,6 +73,31 @@ const BookingDetailModal = ({
     }
   };
 
+  // Handler for sending follow-up reminder to lodge
+  const handleSendReminder = async () => {
+    setActionLoading(true);
+    setError(null);
+    try {
+      let res;
+      try {
+        res = await apiRequest(`/accommodation-bookings/${booking.id}/send-reminder`, {
+          method: "POST",
+        }, token);
+      } catch {
+        res = await apiRequest(`/api/v1/accommodation-bookings/${booking.id}/send-reminder`, {
+          method: "POST",
+        }, token);
+      }
+      if (onUpdated) onUpdated(res);
+      alert(`Kikumbusho cha barua pepe kimetumwa kwa mafanikio kwa ${booking.propertyName || "hoteli"}!`);
+      onClose();
+    } catch (err) {
+      setError(err?.message || "Failed to dispatch follow-up reminder.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case "CONFIRMED":
@@ -229,9 +254,19 @@ const BookingDetailModal = ({
                   </button>
                 )}
 
-                {/* 2. If PROVISIONAL -> Can Confirm with code or Decline */}
+                {/* 2. If PROVISIONAL -> Can Send Reminder, Confirm with code or Decline */}
                 {booking.status === "PROVISIONAL" && (
                   <>
+                    <button
+                      type="button"
+                      onClick={handleSendReminder}
+                      disabled={actionLoading}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold hover:bg-amber-700 transition active:scale-95 shadow-xs disabled:opacity-50"
+                    >
+                      <PaperPlaneTilt size={15} weight="bold" />
+                      <span>{actionLoading ? "Sending Reminder..." : "Send Reminder to Lodge"}</span>
+                    </button>
+
                     <button
                       type="button"
                       onClick={handleDecline}
@@ -239,7 +274,7 @@ const BookingDetailModal = ({
                       className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-bold hover:bg-rose-100 transition active:scale-95 disabled:opacity-50"
                     >
                       <XCircle size={15} weight="bold" />
-                      <span>Decline</span>
+                      <span>Decline / Change</span>
                     </button>
 
                     <button

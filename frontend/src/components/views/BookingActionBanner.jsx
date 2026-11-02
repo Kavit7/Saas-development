@@ -23,6 +23,7 @@ const BookingActionBanner = ({
   onSend,
   onConfirmSuccess,
   onDecline,
+  onSendReminder,
 }) => {
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
@@ -111,9 +112,21 @@ const BookingActionBanner = ({
               </button>
             )}
 
-            {/* PROVISIONAL -> Confirm or Decline */}
+            {/* PROVISIONAL -> Send Reminder, Confirm or Decline */}
             {isProvisional && (
               <>
+                {onSendReminder && (
+                  <button
+                    type="button"
+                    onClick={onSendReminder}
+                    disabled={loading}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-amber-700 transition active:scale-95 shadow-2xs disabled:opacity-50"
+                  >
+                    <PaperPlaneTilt size={15} weight="bold" />
+                    <span>Send Reminder to Lodge</span>
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={onDecline}
@@ -121,7 +134,7 @@ const BookingActionBanner = ({
                   className="inline-flex items-center gap-1 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-2 text-xs font-bold text-rose-700 hover:bg-rose-100 transition active:scale-95 disabled:opacity-50"
                 >
                   <XCircle size={15} weight="bold" />
-                  <span>Decline</span>
+                  <span>Decline / Change</span>
                 </button>
 
                 <button

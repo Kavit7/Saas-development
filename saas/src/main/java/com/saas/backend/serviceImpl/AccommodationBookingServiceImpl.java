@@ -431,6 +431,51 @@ public class AccommodationBookingServiceImpl implements AccommodationBookingServ
 
     @Override
     @Transactional
+    public AccommodationBookingResponse sendBookingReminder(UUID bookingId) {
+        AccommodationBooking booking = accommodationBookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Accommodation booking not found: " + bookingId));
+        validateBookingCompanyAccess(booking);
+
+        if (booking.getStatus() != BookingStatus.PROVISIONAL && booking.getStatus() != BookingStatus.DRAFT) {
+            throw new IllegalStateException("Only PROVISIONAL or pending bookings can receive follow-up reminders. Current status: " + booking.getStatus());
+        }
+
+        Property property = booking.getProperty();
+        if (property == null || property.getContactEmail() == null || property.getContactEmail().isBlank()) {
+            throw new IllegalStateException("Property does not have a contact email configured.");
+        }
+
+        // Send reminder email to property
+        try {
+            emailService.sendBookingReminder(booking);
+            log.info("Dispatched booking reminder email for {} to {}", booking.getReferenceNumber(), property.getContactEmail());
+        } catch (Exception e) {
+            log.warn("Could not dispatch live reminder email to {}: {}", property.getContactEmail(), e.getMessage());
+        }
+
+        // Record follow up
+        try {
+            bookingFollowUpService.createReminder(booking);
+        } catch (Exception e) {
+            log.warn("Follow-up schedule notice: {}", e.getMessage());
+        }
+
+        // Append reminder timestamp to notes
+        String timestamp = OffsetDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        String updatedNotes = (booking.getNotes() != null && !booking.getNotes().isBlank())
+                ? booking.getNotes() + "\n[Reminder sent to " + property.getContactEmail() + " at " + timestamp + "]"
+                : "[Reminder sent to " + property.getContactEmail() + " at " + timestamp + "]";
+        booking.setNotes(updatedNotes);
+        booking = accommodationBookingRepository.save(booking);
+
+        // Notify RM and staff
+        notificationService.notifyFollowUp(booking);
+
+        return mapToResponse(booking);
+    }
+
+    @Override
+    @Transactional
     public AccommodationBookingResponse confirmBooking(UUID bookingId, String confirmationNumber) {
         AccommodationBooking booking = accommodationBookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Accommodation booking not found: " + bookingId));

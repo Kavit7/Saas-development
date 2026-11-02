@@ -40,6 +40,7 @@ import lombok.RequiredArgsConstructor;
 public class AccommodationBookingController {
 
     private final AccommodationBookingService accommodationBookingService;
+    private final com.saas.backend.service.BookingFollowUpService bookingFollowUpService;
 
     /**
      * Lists accommodation bookings with pagination, search, status filtering, and multi-tenant security.
@@ -167,5 +168,27 @@ public class AccommodationBookingController {
     public ResponseEntity<AccommodationBookingResponse> declineBooking(@PathVariable UUID bookingId) {
         AccommodationBookingResponse response = accommodationBookingService.declineBooking(bookingId);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Sends follow-up reminder email to property (PROVISIONAL/DRAFT).
+     */
+    @PostMapping("/{bookingId}/send-reminder")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESERVATION_MANAGER')")
+    @Operation(summary = "Send follow-up reminder email to lodge/property")
+    public ResponseEntity<AccommodationBookingResponse> sendBookingReminder(@PathVariable UUID bookingId) {
+        AccommodationBookingResponse response = accommodationBookingService.sendBookingReminder(bookingId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Manually triggers the automated booking follow-up scan across companies.
+     */
+    @PostMapping("/follow-ups/scan")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RESERVATION_MANAGER', 'SUPER_ADMIN')")
+    @Operation(summary = "Trigger follow-up reminder scan for pending bookings")
+    public ResponseEntity<Map<String, Object>> scanBookingFollowUps() {
+        Map<String, Object> summary = bookingFollowUpService.executeBookingFollowUpsBatch();
+        return ResponseEntity.ok(summary);
     }
 }

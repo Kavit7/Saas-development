@@ -85,6 +85,11 @@ public interface AccommodationBookingService {
     void markForManualReview(AccommodationBooking booking, IncomingMailMessage email, String reviewReason);
 
     /**
+     * Sends a follow-up reminder email to the property and records follow-up history.
+     */
+    AccommodationBookingResponse sendBookingReminder(UUID bookingId);
+
+    /**
      * Generates a preview of the email (subject, html, plain text, recipient) that will be sent to the lodge.
      */
     java.util.Map<String, String> getBookingEmailPreview(java.util.UUID bookingId);

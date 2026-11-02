@@ -17,4 +17,6 @@ public interface BookingFollowUpService {
     void cancelPendingFollowUps(
             UUID bookingId
     );
+
+    java.util.Map<String, Object> executeBookingFollowUpsBatch();
 }
