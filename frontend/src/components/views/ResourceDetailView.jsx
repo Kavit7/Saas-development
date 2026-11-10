@@ -165,6 +165,7 @@ const ResourceDetailView = ({
   const canBookLodge =
     !isSalesPerson &&
     (normalizedRole === "ADMIN" ||
+      normalizedRole === "COMPANY_ADMIN" ||
       normalizedRole === "SUPER_ADMIN" ||
       normalizedRole === "PLATFORM_ADMIN" ||
       normalizedRole === "RESERVATION_MANAGER" ||

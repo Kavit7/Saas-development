@@ -517,16 +517,8 @@ const SafariItineraryView = ({
         const isBookingPending =
           !isBookingConfirmed &&
           !isBookingDeclined &&
-          (
-            (booking && (
-              String(booking.status || "").toUpperCase() === "PROVISIONAL" ||
-              String(booking.status || "").toUpperCase() === "DRAFT"
-            )) ||
-            (req && (
-              String(req.status || "").toUpperCase() === "IN_PROGRESS" ||
-              String(req.status || "").toUpperCase() === "AWAITING_RESPONSE" ||
-              String(req.status || "").toUpperCase() === "PENDING"
-            ))
+          ["PROVISIONAL", "DRAFT"].includes(
+            String(booking?.status || "").toUpperCase()
           );
 
         const isRequirementConfirmed =
